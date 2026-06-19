@@ -3,429 +3,401 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>PNFT Infografía Lab — Arquitectura de Infografías (Gratuita)</title>
-    <link rel="preconnect" href="https://fonts.googleapis.com">
-    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <title>PNFT Infografía Lab · Asistente Completo</title>
     <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@300;400;500;600;700;800&display=swap" rel="stylesheet">
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/pdf.js/3.11.174/pdf.min.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/mammoth@1.6.0/mammoth.browser.min.js"></script>
+    <script src="https://unpkg.com/pptx2json@0.0.7/dist/pptx2json.min.js"></script>
     <style>
         :root {
-            --turquesa-principal: #09B7AE;
-            --turquesa-secundario: #0BD2CE;
-            --azul-oscuro: #014D6B;
-            --azul-medio: #0B6284;
-            --celeste-claro: #62BDF3;
-            --azul-institucional: #063B7F;
-            --morado: #45258F;
-            --verde: #9ED16F;
-            --gris-neutro: #C9C9C9;
-            --gris-claro: #E8ECF1;
-            --blanco: #FFFFFF;
-            --negro-suave: #1A1D23;
-            --gris-texto: #4A5568;
-            --gris-fondo: #F5F7FA;
-            --sombra-suave: 0 2px 12px rgba(0,0,0,0.06);
-            --sombra-media: 0 8px 32px rgba(0,0,0,0.10);
-            --borde-redondeado: 14px;
-            --borde-redondeado-lg: 20px;
-            --transicion: 0.25s cubic-bezier(0.4,0,0.2,1);
-            --font-poppins: 'Poppins', system-ui, sans-serif;
+            --turquesa: #09B7AE; --azul-oscuro: #014D6B; --azul-inst: #063B7F;
+            --verde: #9ED16F; --gris-neutro: #C9C9C9; --gris-claro: #E8ECF1;
+            --blanco: #FFFFFF; --gris-texto: #4A5568; --fondo: #F5F7FA;
+            --sombra: 0 8px 32px rgba(0,0,0,0.08);
+            --font: 'Poppins', system-ui, sans-serif;
         }
         * { margin:0; padding:0; box-sizing:border-box; }
         body {
-            font-family: var(--font-poppins);
-            background: var(--gris-fondo);
-            color: var(--negro-suave);
-            line-height:1.6;
-            min-height:100vh;
-            display:flex; flex-direction:column;
+            font-family: var(--font); background: var(--fondo);
+            color: #1A1D23; min-height:100vh; display:flex; flex-direction:column;
         }
-        .app-header {
-            background: var(--blanco);
-            border-bottom:1px solid rgba(0,0,0,0.06);
-            padding:0.9rem 1.5rem;
+        header {
+            background: var(--blanco); padding:0.8rem 1.5rem;
             display:flex; align-items:center; justify-content:space-between;
-            gap:1rem; flex-wrap:wrap;
+            flex-wrap:wrap; gap:0.8rem; box-shadow: 0 2px 8px rgba(0,0,0,0.05);
             position:sticky; top:0; z-index:100;
-            box-shadow: var(--sombra-suave);
         }
-        .logo-area { display:flex; align-items:center; gap:0.7rem; }
+        .logo { display:flex; align-items:center; gap:0.5rem; font-weight:700; color:var(--azul-oscuro); }
         .logo-icon {
-            width:40px; height:40px;
-            background:linear-gradient(135deg, var(--turquesa-principal), var(--azul-institucional));
+            width:38px; height:38px; background:linear-gradient(135deg, var(--turquesa), var(--azul-inst));
             border-radius:10px; display:flex; align-items:center; justify-content:center;
-            color:#fff; font-weight:800; font-size:1.2rem;
+            color:#fff; font-weight:800;
         }
-        .app-header h1 { font-size:1.2rem; font-weight:700; color:var(--azul-oscuro); }
-        .app-header h1 span { color:var(--turquesa-principal); font-weight:800; }
-        .header-actions { display:flex; align-items:center; gap:0.6rem; flex-wrap:wrap; }
         .btn {
-            font-family:var(--font-poppins); font-weight:600; font-size:0.85rem;
-            padding:0.55rem 1.1rem; border-radius:30px; border:none;
-            cursor:pointer; transition:all var(--transicion);
-            display:inline-flex; align-items:center; gap:0.4rem; white-space:nowrap;
+            font-family:var(--font); font-weight:600; font-size:0.85rem;
+            padding:0.5rem 1.2rem; border-radius:30px; border:none;
+            cursor:pointer; transition:0.25s; display:inline-flex; align-items:center; gap:0.4rem;
+            background:var(--turquesa); color:#fff; border:2px solid var(--turquesa);
         }
-        .btn-outline { background:transparent; border:2px solid var(--turquesa-principal); color:var(--turquesa-principal); }
-        .btn-outline:hover { background:var(--turquesa-principal); color:#fff; }
-        .btn-primary { background:var(--turquesa-principal); color:#fff; border:2px solid var(--turquesa-principal); }
-        .btn-primary:hover { background:var(--azul-institucional); border-color:var(--azul-institucional); }
-        .btn-gemini { background:transparent; border:2px solid #4285F4; color:#4285F4; }
-        .btn-gemini:hover { background:#4285F4; color:#fff; }
-        .btn-sm { padding:0.4rem 0.9rem; font-size:0.78rem; }
+        .btn-outline { background:transparent; color:var(--turquesa); }
+        .btn-outline:hover { background:var(--turquesa); color:#fff; }
         .btn:disabled { opacity:0.5; pointer-events:none; }
-        .app-container { display:flex; flex:1; max-width:1500px; margin:0 auto; width:100%; padding:1rem; min-height:calc(100vh - 130px); }
-        .sidebar {
-            width:300px; flex-shrink:0; background:var(--blanco);
-            border-radius:var(--borde-redondeado-lg); padding:1.3rem 1rem;
-            box-shadow:var(--sombra-media); position:sticky; top:90px;
-            height:fit-content; max-height:calc(100vh - 120px); overflow-y:auto;
+        .container {
+            max-width:900px; margin:1.5rem auto; padding:0 1rem;
+            display:flex; flex-direction:column; gap:1.2rem; flex:1;
         }
-        .sidebar h3 { font-size:0.85rem; text-transform:uppercase; letter-spacing:0.06em; color:var(--azul-medio); margin-bottom:0.4rem; }
-        .stage-list { list-style:none; display:flex; flex-direction:column; gap:0.25rem; }
-        .stage-item {
-            display:flex; align-items:center; gap:0.6rem; padding:0.7rem 0.8rem;
-            border-radius:10px; cursor:pointer; transition:all var(--transicion);
-            font-weight:500; font-size:0.88rem; color:var(--gris-texto);
-            border:1.5px solid transparent;
+        .chat-panel {
+            background:var(--blanco); border-radius:20px; padding:1.5rem;
+            box-shadow:var(--sombra); display:flex; flex-direction:column; gap:1rem;
+            max-height:65vh; overflow-y:auto;
         }
-        .stage-item:hover { background:var(--gris-claro); }
-        .stage-item.active { background:rgba(9,183,174,0.08); color:var(--azul-institucional); font-weight:700; border-color:var(--turquesa-principal); }
-        .stage-item.completed { color:var(--verde); font-weight:600; }
-        .stage-num { width:30px; height:30px; border-radius:50%; background:var(--gris-claro); display:flex; align-items:center; justify-content:center; font-weight:700; font-size:0.8rem; }
-        .stage-item.active .stage-num { background:var(--turquesa-principal); color:#fff; }
-        .stage-item.completed .stage-num { background:var(--verde); color:#fff; }
-        .main-content { flex:1; margin-left:1.2rem; display:flex; flex-direction:column; gap:1rem; min-width:0; }
-        .card { background:var(--blanco); border-radius:var(--borde-redondeado-lg); padding:1.5rem 1.8rem; box-shadow:var(--sombra-media); }
-        .card-header { display:flex; align-items:center; justify-content:space-between; flex-wrap:wrap; gap:0.8rem; margin-bottom:1rem; }
-        .card-header h2 { font-size:1.3rem; font-weight:700; color:var(--azul-oscuro); }
-        .badge { padding:0.3rem 0.8rem; border-radius:20px; font-size:0.7rem; font-weight:700; text-transform:uppercase; }
-        .badge-pnft { background:rgba(9,183,174,0.12); color:var(--turquesa-principal); }
-        .badge-free { background:rgba(66,133,244,0.12); color:#4285F4; }
-        textarea, input, select {
-            font-family:var(--font-poppins); width:100%; padding:0.8rem 1rem;
-            border-radius:10px; border:1.5px solid var(--gris-neutro); font-size:0.9rem;
-            transition:all var(--transicion); background:var(--gris-fondo); outline:none;
+        .message {
+            display:flex; gap:0.8rem; align-items:flex-start;
+            animation: fadeIn 0.3s ease;
         }
-        textarea:focus, input:focus { border-color:var(--turquesa-principal); box-shadow:0 0 0 3px rgba(9,183,174,0.1); background:#fff; }
-        textarea { min-height:140px; line-height:1.5; }
-        label { font-weight:600; font-size:0.85rem; color:var(--azul-oscuro); display:block; margin-bottom:0.35rem; }
-        .form-group { margin-bottom:1rem; }
-        .response-box {
-            background:var(--gris-fondo); border-radius:10px; padding:1.2rem;
-            max-height:500px; overflow-y:auto; font-size:0.88rem; line-height:1.7;
-            white-space:pre-wrap; border:1px dashed var(--gris-neutro);
+        @keyframes fadeIn { from { opacity:0; transform:translateY(10px); } to { opacity:1; transform:translateY(0); } }
+        .avatar {
+            width:36px; height:36px; border-radius:50%; display:flex; align-items:center;
+            justify-content:center; font-size:1rem; flex-shrink:0;
         }
-        .response-box.loading { display:flex; align-items:center; justify-content:center; gap:0.6rem; color:var(--turquesa-principal); }
-        .spinner { width:22px; height:22px; border:3px solid var(--gris-neutro); border-top-color:var(--turquesa-principal); border-radius:50%; animation:spin 0.7s linear infinite; }
-        @keyframes spin { to { transform:rotate(360deg); } }
-        .progress-bar-container { background:var(--gris-claro); border-radius:20px; height:8px; margin:0.5rem 0 1rem; overflow:hidden; }
-        .progress-bar-fill { height:100%; background:linear-gradient(90deg, var(--turquesa-principal), var(--azul-institucional)); border-radius:20px; width:0%; transition:width 0.5s ease; }
-        .toast { position:fixed; bottom:2rem; right:2rem; background:var(--azul-institucional); color:#fff; padding:0.8rem 1.5rem; border-radius:30px; font-weight:600; font-size:0.85rem; box-shadow:0 16px 48px rgba(0,0,0,0.15); z-index:999; opacity:0; transform:translateY(20px); transition:all 0.3s; pointer-events:none; }
-        .toast.show { opacity:1; transform:translateY(0); }
-        .toast.success { background:var(--verde); color:#1a3a0a; }
-        .toast.error { background:#e74c3c; }
-        .modal-overlay { position:fixed; inset:0; background:rgba(0,0,0,0.55); z-index:200; display:flex; align-items:center; justify-content:center; backdrop-filter:blur(4px); }
-        .modal { background:#fff; border-radius:var(--borde-redondeado-lg); padding:2rem; max-width:480px; width:90%; box-shadow:0 16px 48px rgba(0,0,0,0.15); }
-        .engine-selector { display:flex; gap:1rem; align-items:center; background:var(--gris-claro); padding:0.3rem; border-radius:30px; }
-        .engine-option { padding:0.4rem 1rem; border-radius:30px; cursor:pointer; font-weight:600; font-size:0.8rem; transition:all var(--transicion); }
-        .engine-option.active { background:#fff; box-shadow:0 2px 8px rgba(0,0,0,0.1); }
-        @media (max-width:1024px) {
-            .app-container { flex-direction:column; padding:0.6rem; }
-            .sidebar { width:100%; position:static; max-height:none; flex-direction:row; flex-wrap:wrap; gap:0.3rem; padding:0.8rem; overflow-x:auto; }
-            .stage-list { flex-direction:row; flex-wrap:wrap; }
-            .main-content { margin-left:0; margin-top:0.5rem; }
+        .assistant .avatar { background:var(--turquesa); color:#fff; }
+        .user .avatar { background:var(--azul-inst); color:#fff; }
+        .bubble {
+            background:var(--fondo); padding:0.8rem 1.2rem; border-radius:18px;
+            max-width:80%; font-size:0.9rem; line-height:1.5; color:#1A1D23;
+            border:1px solid var(--gris-neutro);
+        }
+        .user .bubble { background:var(--turquesa); color:#fff; border-color:var(--turquesa); }
+        .input-area {
+            display:flex; gap:0.6rem; margin-top:0.5rem;
+        }
+        textarea, input[type="text"] {
+            font-family:var(--font); width:100%; padding:0.7rem 1rem;
+            border-radius:14px; border:1.5px solid var(--gris-neutro);
+            font-size:0.9rem; background:var(--blanco); resize:none;
+        }
+        textarea:focus, input:focus { border-color:var(--turquesa); outline:none; box-shadow:0 0 0 3px rgba(9,183,174,0.1); }
+        .file-upload-area {
+            border:2px dashed var(--gris-neutro); border-radius:14px;
+            padding:1.2rem; text-align:center; margin:0.8rem 0; background:var(--fondo);
+        }
+        .file-upload-area label { cursor:pointer; color:var(--turquesa); font-weight:600; }
+        .file-upload-area input[type="file"] { display:none; }
+        .progress-steps {
+            display:flex; gap:0.3rem; flex-wrap:wrap; margin:0.5rem 0;
+        }
+        .step-dot {
+            width:28px; height:28px; border-radius:50%; background:var(--gris-claro);
+            display:flex; align-items:center; justify-content:center;
+            font-size:0.65rem; font-weight:700; color:var(--gris-texto);
+        }
+        .step-dot.completed { background:var(--verde); color:#fff; }
+        .step-dot.active { background:var(--turquesa); color:#fff; }
+        .toast {
+            position:fixed; bottom:2rem; right:2rem; background:var(--azul-inst);
+            color:#fff; padding:0.8rem 1.5rem; border-radius:30px; font-weight:600;
+            z-index:999; opacity:0; transition:0.3s;
+        }
+        .toast.show { opacity:1; }
+        @media (max-width:600px) {
+            .bubble { max-width:90%; }
         }
     </style>
 </head>
 <body>
-    <header class="app-header">
-        <div class="logo-area">
+    <header>
+        <div class="logo">
             <div class="logo-icon">PNFT</div>
-            <h1>Infografía <span>Lab</span> <span style="font-size:0.7rem;background:#4285F4;color:#fff;padding:0.2rem 0.5rem;border-radius:20px;">GRATIS</span></h1>
+            <span>Infografía Lab · Asistente Completo</span>
         </div>
-        <div class="header-actions">
-            <div class="engine-selector" id="engineSelector">
-                <span class="engine-option" data-engine="copy">📋 Copiar prompt</span>
-                <span class="engine-option active" data-engine="gemini">🧠 Gemini (gratis)</span>
-            </div>
+        <div>
             <button class="btn btn-outline btn-sm" id="btnApiKey">🔑 Clave Gemini</button>
-            <button class="btn btn-sm" id="btnReset" style="background:transparent;">↺</button>
+            <button class="btn btn-sm" id="btnReset" style="background:transparent;color:var(--gris-texto);">↺</button>
         </div>
     </header>
 
-    <div class="modal-overlay" id="modalApi" style="display:none;">
-        <div class="modal">
-            <h2>🧠 Clave gratuita de Google Gemini</h2>
-            <p>Obtén tu API Key gratuita en <a href="https://aistudio.google.com/apikey" target="_blank">aistudio.google.com</a> (sin tarjeta). Pégala aquí:</p>
-            <div class="form-group">
-                <input type="password" id="apiKeyInput" placeholder="AIza...">
+    <div class="container">
+        <div class="progress-steps" id="stepIndicator"></div>
+
+        <div class="chat-panel" id="chatPanel">
+            <div class="message assistant">
+                <div class="avatar">🤖</div>
+                <div class="bubble">
+                    ¡Hola! Soy tu asistente para crear infografías curriculares PNFT.<br>
+                    Voy a guiarte paso a paso por todo el proceso.<br>
+                    <strong>Primero, pega tu documento</strong> (Word, PDF, PowerPoint) o <strong>carga un archivo</strong>.
+                </div>
             </div>
-            <div style="display:flex;gap:0.5rem;justify-content:flex-end;">
-                <button class="btn btn-outline btn-sm" id="btnCancelApi">Cancelar</button>
-                <button class="btn btn-primary btn-sm" id="btnSaveApi">💾 Guardar</button>
-            </div>
+        </div>
+
+        <div class="input-area" id="inputArea">
+            <textarea id="userInput" rows="2" placeholder="Escribe tu respuesta..."></textarea>
+            <button class="btn" id="btnSend">➤</button>
+        </div>
+
+        <div style="display:flex;gap:0.5rem;flex-wrap:wrap;" id="quickActions">
+            <button class="btn btn-outline btn-sm" id="btnUploadFile">📂 Cargar archivo</button>
+            <button class="btn btn-outline btn-sm" id="btnSkipStep" style="display:none;">⏭️ Saltar</button>
+        </div>
+        <input type="file" id="fileInput" accept=".docx,.pdf,.pptx,.txt" style="display:none;">
+    </div>
+
+    <div id="modalApi" style="display:none;position:fixed;inset:0;background:rgba(0,0,0,0.5);z-index:200;align-items:center;justify-content:center;">
+        <div style="background:#fff;padding:2rem;border-radius:20px;max-width:400px;width:90%;">
+            <h3>🔑 Clave Gemini (gratis)</h3>
+            <p style="font-size:0.85rem;">Consíguela en <a href="https://aistudio.google.com/apikey" target="_blank">Google AI Studio</a></p>
+            <input type="password" id="apiKeyInput" placeholder="AIza..." style="width:100%;margin:0.5rem 0;">
+            <button class="btn" id="btnSaveApi">Guardar</button>
+            <button class="btn btn-outline" id="btnCancelApi">Cancelar</button>
         </div>
     </div>
 
-    <div class="app-container">
-        <aside class="sidebar">
-            <h3>🧩 Etapas PNFT</h3>
-            <ul class="stage-list" id="stageList">
-                <li class="stage-item active" data-stage="0"><span class="stage-num">0</span> Documento</li>
-                <li class="stage-item" data-stage="1"><span class="stage-num">1</span> Comprensión</li>
-                <li class="stage-item" data-stage="2"><span class="stage-num">2</span> Jerarquía</li>
-                <li class="stage-item" data-stage="3"><span class="stage-num">3</span> Arquitectura</li>
-                <li class="stage-item" data-stage="4"><span class="stage-num">4</span> Wireframe</li>
-                <li class="stage-item" data-stage="5"><span class="stage-num">5</span> Retícula</li>
-                <li class="stage-item" data-stage="6"><span class="stage-num">6</span> Visual</li>
-                <li class="stage-item" data-stage="7"><span class="stage-num">7</span> Restricciones</li>
-                <li class="stage-item" data-stage="8"><span class="stage-num">8</span> JSON</li>
-                <li class="stage-item" data-stage="9"><span class="stage-num">9</span> Infografía</li>
-            </ul>
-        </aside>
-
-        <main class="main-content">
-            <div class="card">
-                <div class="card-header">
-                    <h2 id="stageTitle">📄 Documento Fuente</h2>
-                    <span class="badge badge-free" id="engineBadge">🧠 Gemini gratis</span>
-                    <span class="badge badge-pnft" id="stageBadge">Etapa 0/9</span>
-                </div>
-                <div class="progress-bar-container"><div class="progress-bar-fill" id="progressBar"></div></div>
-                <div id="stageBody"></div>
-                <div style="display:flex;gap:0.6rem;justify-content:flex-end;margin-top:1.2rem;" id="stageActions">
-                    <button class="btn btn-outline btn-sm" id="btnCopyPrompt">📋 Copiar Prompt</button>
-                    <button class="btn btn-primary" id="btnExecute">▶️ Ejecutar</button>
-                </div>
-            </div>
-            <div class="card" id="responseCard" style="display:none;">
-                <div class="card-header">
-                    <h2>🤖 Respuesta</h2>
-                    <button class="btn btn-outline btn-sm" id="btnCopyResponse">📋 Copiar</button>
-                </div>
-                <div class="response-box" id="responseBox"></div>
-            </div>
-        </main>
-    </div>
     <div class="toast" id="toast"></div>
 
     <script>
         (function() {
             const state = {
                 apiKey: localStorage.getItem('pnft_gemini_key') || '',
-                engine: localStorage.getItem('pnft_engine') || 'gemini',
-                currentStage: 0,
-                completedStages: new Set(JSON.parse(localStorage.getItem('pnft_completed') || '[]')),
-                documentText: localStorage.getItem('pnft_document') || '',
-                stageResponses: JSON.parse(localStorage.getItem('pnft_responses') || '{}'),
+                engine: 'gemini',
+                step: 0,
+                documentText: '',
+                answers: {},
             };
 
-            const stagePrompts = [
-                null,
-                `Actúa como arquitecto de información, diseñador editorial y especialista en infografías educativas.\nAnaliza el documento proporcionado.\nNO generes todavía la infografía.\nIdentifica:\n- Temas principales.\n- Temas secundarios.\n- Temas complementarios.\n- Información que debe verse primero.\n- Información que debe recordarse después.\n- Información que requiere acción.\n- Información que sirve como contexto.\n\nPresenta una tabla con:\nSección | Función | Nivel de importancia | Justificación`,
-                `Clasifica cada sección según la escala PNFT:\nPeso 1 = Contexto\nPeso 3 = Comprensión\nPeso 5 = Aplicación o recuerdo\n\nJustifica cada clasificación.\nDefine:\n- qué debe ver primero el lector\n- qué debe recordar después\n- qué debe aplicar\n- qué solo contextualiza`,
-                `Genera 3 propuestas de arquitectura visual.\nIncluye para cada una:\n- ventajas\n- desventajas\n- tipo de lectura\n- casos de uso\nRepresenta con diagramas ASCII.`,
-                `Convierte la arquitectura seleccionada en wireframe.\nIncluye:\n- orden de lectura\n- jerarquía visual\n- tamaño relativo de bloques\n- flujo visual\nRepresenta en ASCII.`,
-                `Define la retícula PNFT estándar 12 columnas.\nEspecifica: tamaño del lienzo (16:9), columnas, filas, distribución, porcentajes.\nLuego define el sistema cromático PNFT:\nPaleta: #09B7AE, #0BD2CE, #014D6B, #0B6284, #62BDF3, #063B7F, #45258F, #9ED16F, #C9C9C9\nRegla: color = codificación pedagógica. Define áreas, jerarquía cromática, contraste.`,
-                `Define el sistema de diseño visual PNFT:\nORIENTACIÓN: Horizontal 16:9, lectura izquierda→derecha\nESTILO: Educativo, Académico, Profesional, Moderno, Secundaria (no infantil, no comercial)\nTIPOGRAFÍA: Poppins Bold (títulos), SemiBold (subtítulos), Regular (contenido)\nICONOGRAFÍA: Solo 3D semi realista (cerebro, bloques, dashboards, robot, escudo). Prohibido flat/emojis/clipart.\nILUSTRACIONES: Adolescentes 16-18, vestimenta casual institucional.\nCOMPOSICIÓN: Tarjetas redondeadas, alto contraste, lectura ≤10s por bloque.`,
-                `Verifica cumplimiento de restricciones PNFT:\nPROHIBIDO: modificar títulos, saberes, indicadores, resumir, reinterpretar, reorganizar, agregar contenido, cambiar tipografía/paleta.\nPROHIBIDO VISUAL: infantil, caricatura, emojis, clipart, gamer, comercial.\nOBLIGATORIO: fidelidad 100%, respeto al contenido, arquitectura, wireframe, retícula.\nPresenta tabla de cumplimiento.`,
-                `Genera JSON final basado en análisis, jerarquía, arquitectura, wireframe, retícula, sistema visual y restricciones aprobadas. No agregar, no reorganizar, no resumir.`,
-                `Genera la infografía final.\nReglas: fidelidad 100%, sin cambios estructurales, sin reinterpretación, formato 16:9, paleta PNFT, Poppins, iconos 3D, estilo educativo profesional.`
+            // Pasos basados en el Prompt Maestro PNFT completo
+            const steps = [
+                { field:'document', question:'📄 Pega el documento curricular o carga un archivo (Word, PDF, PowerPoint).', help:'También puedes escribir el texto directamente.' },
+                { field:'temas_principales', question:'🧩 ETAPA 1 – Comprensión: ¿Cuáles son los temas principales y secundarios del documento?', help:'Ej: Tema principal: Pensamiento Computacional. Secundarios: Algoritmos, Descomposición.' },
+                { field:'informacion_clave', question:'👁️ ¿Qué información debe ver primero el lector y qué debe recordar después?', help:'Define la jerarquía visual inicial.' },
+                { field:'accion_contexto', question:'⚖️ ETAPA 2 – Pesos PNFT: ¿Qué contenido requiere acción (aplicar) y cuál solo contextualiza?', help:'Peso 5 = aplicar, Peso 1 = solo contexto.' },
+                { field:'arquitectura', question:'🏗️ ETAPA 3 – Arquitectura: ¿Prefieres tarjetas, columnas, línea de tiempo o diseño mixto?', help:'Describe cómo organizar la información.' },
+                { field:'wireframe', question:'🧱 ETAPA 4 – Wireframe: ¿Qué orden de lectura prefieres? (izquierda→derecha, arriba→abajo)', help:'También puedes indicar tamaños relativos de bloques.' },
+                { field:'reticula', question:'📐 ETAPA 5 – Retícula: ¿Usamos la estándar 12 columnas 16:9? ¿Alguna preferencia de porcentajes?', help:'Responde "estándar" o indica cambios.' },
+                { field:'colores', question:'🎨 ETAPA 5.5 – Color: Además de la paleta PNFT, ¿quieres destacar algún color para alguna sección?', help:'La paleta incluye turquesa, azul, verde, morado, gris.' },
+                { field:'estilo_visual', question:'🎨 ETAPA 6 – Estilo: Confirmamos tipografía Poppins, iconos 3D, ilustraciones juveniles académicas. ¿Alguna preferencia adicional?', help:'Responde "no" si estás de acuerdo.' },
+                { field:'composicion', question:'🧱 ETAPA 6.2 – Composición: ¿Prefieres tarjetas redondeadas, mucho espacio en blanco, alto contraste?', help:'Describe el balance visual deseado.' },
+                { field:'densidad', question:'🧠 ETAPA 6.3 – Densidad: ¿Máximo 3–5 ideas por bloque? ¿Cuál es la idea principal de cada sección?', help:'Control de carga cognitiva.' },
+                { field:'auditoria', question:'🧪 ETAPA 6.5 – Auditoría: ¿Cumplimos con 16:9, Poppins, paleta, iconos 3D, no infantil? (responde "sí" o indica ajustes)', help:'Checklist visual.' },
+                { field:'restricciones', question:'🚨 ETAPA 7 – Restricciones: Confirmamos no modificar, resumir ni agregar contenido. ¿Alguna restricción adicional?', help:'Responde "no" si estás de acuerdo.' },
+                { field:'json', question:'🧾 ETAPA 8 – JSON: ¿Quieres generar un JSON estructurado? (responde "sí" o "no")', help:'Si respondes sí, se incluirá en la infografía final.' },
             ];
-
-            const stageTitles = [
-                '📄 Documento Fuente',
-                '🧠 Comprensión', '⚖️ Jerarquía', '🏗️ Arquitectura', '🧱 Wireframe',
-                '📐 Retícula + Color', '🎨 Sistema Visual', '🚨 Restricciones', '🧾 JSON', '🖼️ Infografía'
-            ];
-
-            const $ = (sel) => document.querySelector(sel);
-            const $$ = (sel) => document.querySelectorAll(sel);
 
             function saveState() {
                 localStorage.setItem('pnft_gemini_key', state.apiKey);
-                localStorage.setItem('pnft_engine', state.engine);
-                localStorage.setItem('pnft_completed', JSON.stringify([...state.completedStages]));
+                localStorage.setItem('pnft_answers', JSON.stringify(state.answers));
+                localStorage.setItem('pnft_step', state.step);
                 localStorage.setItem('pnft_document', state.documentText);
-                localStorage.setItem('pnft_responses', JSON.stringify(state.stageResponses));
             }
 
-            function toast(msg, type='') {
-                const t = $('#toast');
-                t.textContent = msg; t.className = 'toast '+type+' show';
+            function toast(msg) {
+                const t = document.getElementById('toast');
+                t.textContent = msg; t.className = 'toast show';
                 clearTimeout(t._t); t._t = setTimeout(() => t.classList.remove('show'), 2500);
             }
 
-            function updateProgress() {
-                const pct = Math.round((state.completedStages.size / 9) * 100);
-                $('#progressBar').style.width = pct + '%';
-                $('#stageBadge').textContent = `Etapa ${state.currentStage}/9`;
+            function updateStepIndicator() {
+                const container = document.getElementById('stepIndicator');
+                container.innerHTML = steps.map((s, i) => {
+                    let cls = 'step-dot';
+                    if (i < state.step) cls += ' completed';
+                    else if (i === state.step) cls += ' active';
+                    return `<span class="${cls}" title="${s.question}">${i+1}</span>`;
+                }).join('');
             }
 
-            function updateSidebar() {
-                $$('.stage-item').forEach(item => {
-                    const s = parseInt(item.dataset.stage);
-                    item.classList.remove('active','completed');
-                    if (s === state.currentStage) item.classList.add('active');
-                    if (s>0 && state.completedStages.has(s)) item.classList.add('completed');
-                });
+            function addMessage(role, text) {
+                const panel = document.getElementById('chatPanel');
+                const div = document.createElement('div');
+                div.className = `message ${role}`;
+                div.innerHTML = `<div class="avatar">${role==='assistant'?'🤖':'👤'}</div><div class="bubble">${text.replace(/\n/g,'<br>')}</div>`;
+                panel.appendChild(div);
+                panel.scrollTop = panel.scrollHeight;
             }
 
-            function escapeHTML(s) { const d = document.createElement('div'); d.textContent = s; return d.innerHTML; }
-
-            function buildFullPrompt(stageNum) {
-                let p = stagePrompts[stageNum] || '';
-                p += '\n\n📎 DOCUMENTO FUENTE:\n' + (state.documentText || '[Sin documento]');
-                for (let i=1; i<stageNum; i++) {
-                    if (state.stageResponses[i]) p += '\n\n📋 ETAPA '+i+':\n' + state.stageResponses[i];
+            function showQuestion(index) {
+                if (index >= steps.length) {
+                    addMessage('assistant','✅ ¡Completaste todas las etapas!<br>Ahora puedo generar la infografía con la IA.<br>Pulsa <strong>"Generar Infografía"</strong> o escribe "generar".');
+                    document.getElementById('btnSend').textContent = '🖼️ Generar Infografía';
+                    document.getElementById('btnSend').dataset.action = 'generate';
+                    document.getElementById('btnSkipStep').style.display = 'none';
+                    return;
                 }
+                const step = steps[index];
+                addMessage('assistant', `<strong>${step.question}</strong><br><span style="font-size:0.8rem;color:var(--gris-texto);">${step.help||''}</span>`);
+                document.getElementById('btnSend').textContent = '➤';
+                document.getElementById('btnSend').dataset.action = 'answer';
+                document.getElementById('btnSkipStep').style.display = 'inline-flex';
+            }
+
+            function buildMasterPrompt() {
+                let p = `Actúa como arquitecto de información, diseñador editorial y especialista en infografías educativas.\n`;
+                p += `Genera una infografía profesional PNFT siguiendo estrictamente este proceso:\n\n`;
+                p += `📎 DOCUMENTO FUENTE:\n${state.documentText}\n\n`;
+                p += `🧩 ETAPA 1 – COMPRENSIÓN:\n${state.answers['temas_principales']||''}\n`;
+                p += `Información que debe verse primero y recordarse: ${state.answers['informacion_clave']||''}\n\n`;
+                p += `⚖️ ETAPA 2 – JERARQUÍA Y PESOS:\n`;
+                p += `Acción/aplicar (peso 5): ${state.answers['accion_contexto']||''}\n\n`;
+                p += `🏗️ ETAPA 3 – ARQUITECTURA:\nPreferencia: ${state.answers['arquitectura']||'Tarjetas'}\n\n`;
+                p += `🧱 ETAPA 4 – WIREFRAME:\nOrden de lectura y flujo: ${state.answers['wireframe']||'Izquierda a derecha'}\n\n`;
+                p += `📐 ETAPA 5 – RETÍCULA:\n${state.answers['reticula']||'Estándar 12 columnas, 16:9'}\n\n`;
+                p += `🎨 ETAPA 5.5 – SISTEMA CROMÁTICO:\nPaleta PNFT: #09B7AE, #0BD2CE, #014D6B, #0B6284, #62BDF3, #063B7F, #45258F, #9ED16F, #C9C9C9\n`;
+                p += `Indicaciones adicionales: ${state.answers['colores']||'Ninguna'}\n\n`;
+                p += `🎨 ETAPA 6 – SISTEMA VISUAL:\nTipografía Poppins, iconos 3D, ilustraciones juveniles académicas. ${state.answers['estilo_visual']||''}\n\n`;
+                p += `🧱 ETAPA 6.2 – COMPOSICIÓN VISUAL:\n${state.answers['composicion']||'Tarjetas redondeadas, espacios amplios, alto contraste'}\n\n`;
+                p += `🧠 ETAPA 6.3 – DENSIDAD COGNITIVA:\n${state.answers['densidad']||'Máximo 4 ideas por bloque, idea principal destacada'}\n\n`;
+                p += `🧪 ETAPA 6.5 – AUDITORÍA VISUAL:\n${state.answers['auditoria']||'Cumple con todos los requisitos'}\n\n`;
+                p += `🚨 ETAPA 7 – RESTRICCIONES:\nNo modificar, resumir ni agregar contenido. ${state.answers['restricciones']||''}\n\n`;
+                if (state.answers['json'] && state.answers['json'].toLowerCase().includes('sí')) {
+                    p += `🧾 ETAPA 8 – JSON:\nGenerar también un JSON estructurado con la información.\n\n`;
+                }
+                p += `🖼️ ETAPA 9 – INFOGRAFÍA FINAL:\nGenera la infografía final con fidelidad 100%, formato 16:9, paleta PNFT, Poppins, iconos 3D, estilo educativo profesional secundaria.\n`;
+                p += `Respeta todas las restricciones y la arquitectura definida.`;
                 return p;
             }
 
-            async function callGemini(promptText) {
+            async function callGemini(prompt) {
                 if (!state.apiKey || !state.apiKey.startsWith('AIza')) throw new Error('Clave Gemini no configurada.');
                 const res = await fetch(`https://generativelanguage.googleapis.com/v1beta/models/gemini-2.0-flash:generateContent?key=${state.apiKey}`, {
                     method:'POST',
                     headers:{'Content-Type':'application/json'},
                     body: JSON.stringify({
-                        contents:[{parts:[{text:promptText}]}],
+                        contents:[{parts:[{text:prompt}]}],
                         generationConfig:{temperature:0.4, maxOutputTokens:3000}
                     })
                 });
-                if (!res.ok) { const e = await res.json().catch(()=>({})); throw new Error(e.error?.message || 'Error '+res.status); }
+                if (!res.ok) {
+                    const err = await res.json().catch(()=>({}));
+                    throw new Error(err.error?.message || 'Error '+res.status);
+                }
                 const data = await res.json();
                 return data.candidates[0].content.parts[0].text;
             }
 
-            function renderStage(num) {
-                state.currentStage = num;
-                $('#stageTitle').textContent = stageTitles[num];
-                updateProgress(); updateSidebar();
-                let html = '';
-                if (num === 0) {
-                    html = `<div class="form-group"><label>📎 Documento curricular:</label><textarea id="docInput" rows="10">${escapeHTML(state.documentText)}</textarea></div>`;
-                } else {
-                    html = `<div class="form-group"><label>📝 Prompt:</label><textarea id="promptInput" rows="8">${escapeHTML(stagePrompts[num])}</textarea></div>`;
-                }
-                $('#stageBody').innerHTML = html;
-                $('#btnExecute').textContent = num === 0 ? '💾 Guardar' : '▶️ Ejecutar';
-                if (state.stageResponses[num]) {
-                    $('#responseCard').style.display = 'block';
-                    $('#responseBox').textContent = state.stageResponses[num];
-                } else if (num === 0 && state.documentText) {
-                    $('#responseCard').style.display = 'block';
-                    $('#responseBox').textContent = '📄 Documento guardado.';
-                } else {
-                    $('#responseCard').style.display = 'none';
-                }
-            }
-
-            // Eventos
-            $('#btnExecute').addEventListener('click', async () => {
-                const num = state.currentStage;
-                if (num === 0) {
-                    const doc = $('#docInput')?.value.trim();
-                    if (!doc) return toast('Ingresa el documento','error');
-                    state.documentText = doc; saveState();
-                    $('#responseCard').style.display = 'block';
-                    $('#responseBox').textContent = '📄 Documento guardado.';
-                    return toast('Documento guardado','success');
-                }
-                if (!state.documentText) return toast('Primero guarda el documento en Etapa 0','error');
-                const prompt = $('#promptInput')?.value.trim() || stagePrompts[num];
-                const full = buildFullPrompt(num);
-                const finalPrompt = (prompt !== stagePrompts[num]) ? prompt + '\n\n📎 DOCUMENTO:\n'+state.documentText : full;
-
-                $('#responseCard').style.display = 'block';
-                $('#responseBox').classList.add('loading');
-                $('#responseBox').innerHTML = '<span class="spinner"></span> Consultando IA...';
-                $('#btnExecute').disabled = true;
-
+            async function generateInfographic() {
+                const masterPrompt = buildMasterPrompt();
+                addMessage('assistant', '⏳ Generando infografía con IA...');
                 try {
                     let result;
                     if (state.engine === 'gemini') {
-                        result = await callGemini(finalPrompt);
+                        result = await callGemini(masterPrompt);
                     } else {
-                        // Modo copiar: no llama API, solo muestra prompt
-                        navigator.clipboard.writeText(finalPrompt);
-                        result = '📋 Prompt copiado al portapapeles. Pégalo en ChatGPT o Gemini.\n\n--- PROMPT ---\n' + finalPrompt;
+                        navigator.clipboard.writeText(masterPrompt);
+                        result = '📋 Prompt maestro copiado. Pégalo en ChatGPT o Gemini.\n\n--- PROMPT ---\n' + masterPrompt;
                     }
-                    $('#responseBox').classList.remove('loading');
-                    $('#responseBox').textContent = result;
-                    if (state.engine === 'gemini') {
-                        state.stageResponses[num] = result;
-                        state.completedStages.add(num);
-                        saveState(); updateProgress(); updateSidebar();
-                        toast('✅ Etapa '+num+' completada','success');
-                    } else {
-                        toast('📋 Prompt copiado', 'success');
-                    }
-                } catch(e) {
-                    $('#responseBox').classList.remove('loading');
-                    $('#responseBox').textContent = '❌ '+e.message;
-                    toast('❌ '+e.message,'error');
-                } finally {
-                    $('#btnExecute').disabled = false;
+                    addMessage('assistant', '🎉 ¡Infografía lista!\n\n' + result);
+                    document.getElementById('btnSend').textContent = '🔄 Nueva infografía';
+                    document.getElementById('btnSend').dataset.action = 'reset';
+                } catch (e) {
+                    addMessage('assistant', '❌ Error: ' + e.message + '\n\nPrompt copiado como respaldo.');
+                    navigator.clipboard.writeText(masterPrompt);
+                    toast('Prompt copiado');
+                }
+            }
+
+            async function handleSend() {
+                const input = document.getElementById('userInput');
+                const text = input.value.trim();
+                const action = document.getElementById('btnSend').dataset.action;
+
+                if (action === 'generate') { await generateInfographic(); return; }
+                if (action === 'reset') {
+                    state.step = 0; state.answers = {}; state.documentText = '';
+                    document.getElementById('chatPanel').innerHTML = '';
+                    document.getElementById('btnSend').dataset.action = 'answer';
+                    document.getElementById('btnSend').textContent = '➤';
+                    showQuestion(0); updateStepIndicator(); saveState();
+                    return;
+                }
+                if (!text) return;
+
+                addMessage('user', text);
+                if (state.step < steps.length) {
+                    const field = steps[state.step].field;
+                    if (field === 'document') state.documentText = text;
+                    else state.answers[field] = text;
+                    state.step++;
+                    saveState(); updateStepIndicator();
+                }
+                input.value = '';
+                showQuestion(state.step < steps.length ? state.step : state.step);
+            }
+
+            document.getElementById('btnSend').addEventListener('click', handleSend);
+            document.getElementById('userInput').addEventListener('keydown', (e) => {
+                if (e.key === 'Enter' && !e.shiftKey) { e.preventDefault(); handleSend(); }
+            });
+            document.getElementById('btnSkipStep').addEventListener('click', () => {
+                if (state.step < steps.length) {
+                    state.answers[steps[state.step].field] = 'No especificado';
+                    state.step++; updateStepIndicator();
+                    showQuestion(state.step < steps.length ? state.step : state.step);
                 }
             });
-
-            $('#btnCopyPrompt').addEventListener('click', () => {
-                if (state.currentStage === 0) return;
-                const p = buildFullPrompt(state.currentStage);
-                navigator.clipboard.writeText(p).then(()=>toast('📋 Copiado','success'));
+            document.getElementById('btnUploadFile').addEventListener('click', () => document.getElementById('fileInput').click());
+            document.getElementById('fileInput').addEventListener('change', async (e) => {
+                const file = e.target.files[0]; if (!file) return;
+                toast('⏳ Extrayendo texto...');
+                try {
+                    let text = ''; const ext = file.name.split('.').pop().toLowerCase();
+                    if (ext === 'txt') text = await file.text();
+                    else if (ext === 'docx') {
+                        const buf = await file.arrayBuffer();
+                        text = (await mammoth.extractRawText({arrayBuffer: buf})).value;
+                    } else if (ext === 'pdf') {
+                        const buf = await file.arrayBuffer();
+                        const pdf = await pdfjsLib.getDocument({data: buf}).promise;
+                        for (let i=1; i<=pdf.numPages; i++) {
+                            const page = await pdf.getPage(i);
+                            const content = await page.getTextContent();
+                            text += content.items.map(it=>it.str).join(' ')+'\n';
+                        }
+                    } else if (ext === 'pptx') {
+                        const buf = await file.arrayBuffer();
+                        const json = pptx2json(buf);
+                        json.slides.forEach(s => { s.texts.forEach(t => text += t+'\n'); });
+                    } else throw new Error('Formato no soportado');
+                    document.getElementById('userInput').value = text;
+                    toast('✅ Texto extraído. Envíalo ahora.');
+                } catch (err) { toast('❌ '+err.message); }
             });
 
-            $('#btnCopyResponse').addEventListener('click', () => {
-                navigator.clipboard.writeText($('#responseBox').textContent).then(()=>toast('📋 Copiado','success'));
+            document.getElementById('btnApiKey').addEventListener('click', () => {
+                document.getElementById('apiKeyInput').value = state.apiKey;
+                document.getElementById('modalApi').style.display = 'flex';
             });
-
-            $('#stageList').addEventListener('click', e => {
-                const item = e.target.closest('.stage-item');
-                if (!item) return;
-                renderStage(parseInt(item.dataset.stage));
+            document.getElementById('btnCancelApi').addEventListener('click', () => document.getElementById('modalApi').style.display = 'none');
+            document.getElementById('btnSaveApi').addEventListener('click', () => {
+                state.apiKey = document.getElementById('apiKeyInput').value.trim();
+                saveState(); document.getElementById('modalApi').style.display = 'none';
+                toast('🔑 Clave guardada');
             });
-
-            // Selector de motor
-            $$('.engine-option').forEach(opt => {
-                opt.addEventListener('click', () => {
-                    $$('.engine-option').forEach(o=>o.classList.remove('active'));
-                    opt.classList.add('active');
-                    state.engine = opt.dataset.engine;
-                    saveState();
-                    $('#engineBadge').textContent = state.engine==='gemini' ? '🧠 Gemini gratis' : '📋 Copiar manual';
-                    $('#engineBadge').className = state.engine==='gemini' ? 'badge badge-free' : 'badge badge-pnft';
-                    toast('Modo: ' + (state.engine==='gemini'?'Gemini (gratis)':'Copiar prompt'),'success');
-                });
-            });
-
-            // Modal API Key
-            $('#btnApiKey').addEventListener('click', ()=>{
-                $('#apiKeyInput').value = state.apiKey;
-                $('#modalApi').style.display = 'flex';
-            });
-            $('#btnCancelApi').addEventListener('click', ()=> $('#modalApi').style.display = 'none');
-            $('#btnSaveApi').addEventListener('click', ()=>{
-                state.apiKey = $('#apiKeyInput').value.trim();
-                saveState();
-                $('#modalApi').style.display = 'none';
-                toast('🔑 Clave guardada','success');
-            });
-            $('#btnReset').addEventListener('click', ()=>{
-                if (confirm('¿Reiniciar sesión?')) {
-                    state.documentText=''; state.stageResponses={}; state.completedStages=new Set();
-                    state.currentStage=0; saveState(); renderStage(0); updateSidebar(); updateProgress();
-                    $('#responseCard').style.display='none'; toast('🔄 Reiniciado','success');
+            document.getElementById('btnReset').addEventListener('click', () => {
+                if (confirm('¿Reiniciar toda la conversación?')) {
+                    state.step=0; state.answers={}; state.documentText='';
+                    document.getElementById('chatPanel').innerHTML = '';
+                    document.getElementById('btnSend').dataset.action = 'answer';
+                    document.getElementById('btnSend').textContent = '➤';
+                    showQuestion(0); updateStepIndicator(); saveState();
                 }
             });
 
             // Inicializar
-            if (state.engine === 'copy') {
-                $$('.engine-option')[0].classList.add('active');
-                $$('.engine-option')[1].classList.remove('active');
-                $('#engineBadge').textContent = '📋 Copiar manual';
-                $('#engineBadge').className = 'badge badge-pnft';
+            const savedStep = localStorage.getItem('pnft_step');
+            if (savedStep) state.step = parseInt(savedStep);
+            const savedAnswers = localStorage.getItem('pnft_answers');
+            if (savedAnswers) state.answers = JSON.parse(savedAnswers);
+            state.documentText = localStorage.getItem('pnft_document') || '';
+            updateStepIndicator();
+            if (state.step === 0) showQuestion(0);
+            else {
+                // Reconstruir mensajes previos
+                for (let i=0; i<state.step; i++) {
+                    const step = steps[i];
+                    if (step.field === 'document') addMessage('user', state.documentText.substring(0,150)+'...');
+                    else addMessage('user', state.answers[step.field] || '');
+                }
+                showQuestion(state.step);
             }
-            renderStage(state.currentStage || 0);
-            updateSidebar(); updateProgress();
         })();
     </script>
 </body>
