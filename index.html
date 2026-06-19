@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>PNFT Infografía Lab · Estructura Optimizada</title>
+    <title>PNFT Infografía Lab · Control granular</title>
     <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@300;400;500;600;700;800&display=swap" rel="stylesheet">
     <script src="https://cdnjs.cloudflare.com/ajax/libs/pdf.js/3.11.174/pdf.min.js"></script>
     <script src="https://cdn.jsdelivr.net/npm/mammoth@1.6.0/mammoth.browser.min.js"></script>
@@ -89,6 +89,16 @@
             font-size:0.8rem; color:var(--gris-texto);
             background:var(--gris-claro); padding:0.8rem; border-radius:10px;
         }
+        .density-editor {
+            background: #FFF3E0; border: 1px solid #FF9800; border-radius: 10px;
+            padding: 1rem; margin-top: 1rem;
+        }
+        .density-editor h4 { color: #E65100; }
+        .idea-item {
+            display:flex; align-items:center; gap:0.5rem; margin:0.3rem 0;
+        }
+        .idea-item input { flex:1; }
+        .idea-item button { background: #ff5252; color: #fff; border: none; border-radius: 4px; cursor: pointer; padding: 0.2rem 0.5rem; }
         @media (max-width:800px) {
             .main-container { flex-direction:column; }
             .left-panel { width:100%; max-height:200px; }
@@ -99,7 +109,7 @@
     <header>
         <div class="logo">
             <div class="logo-icon">PNFT</div>
-            <span>Infografía Lab · Optimizada</span>
+            <span>Infografía Lab · Control granular</span>
         </div>
         <div>
             <button class="btn btn-outline btn-sm" id="btnApiKey">🔑 Clave Gemini</button>
@@ -148,7 +158,15 @@
                     <div class="flex-row" style="margin-top:0.5rem;">
                         <button class="btn btn-sm" id="btnApprove">✅ Aprobar y continuar</button>
                         <button class="btn btn-outline btn-sm" id="btnRetry">🔄 Reenviar</button>
+                        <button class="btn btn-outline btn-sm" id="btnRefineDensity" style="display:none;">🧠 Revisar densidad</button>
                     </div>
+                </div>
+                <!-- Editor de densidad cognitiva (oculto hasta activarse) -->
+                <div id="densityEditor" style="display:none;" class="density-editor">
+                    <h4>🧠 Ajuste de densidad cognitiva</h4>
+                    <p>Selecciona las ideas que deben quedarse en cada bloque (máx. 5)</p>
+                    <div id="densityBlocks"></div>
+                    <button class="btn btn-sm" id="btnSaveDensity">💾 Guardar ajustes de densidad</button>
                 </div>
             </div>
 
@@ -181,9 +199,9 @@
                 documentText: '',
                 approvedSteps: new Set(JSON.parse(localStorage.getItem('pnft_approved') || '[]')),
                 stepResponses: JSON.parse(localStorage.getItem('pnft_responses') || '{}'),
+                densityAdjusted: false,
             };
 
-            // 3 macrobloques optimizados
             const blocks = [
                 {
                     id: 'estructura',
@@ -315,13 +333,143 @@
                     if (state.stepResponses[block.id]) {
                         document.getElementById('responseContainer').style.display = 'block';
                         document.getElementById('responseArea').textContent = state.stepResponses[block.id];
+                        checkDensityWarnings(state.stepResponses[block.id]);
                     } else {
                         document.getElementById('responseContainer').style.display = 'none';
+                        document.getElementById('btnRefineDensity').style.display = 'none';
                     }
                 } else if (state.currentStep >= blocks.length) {
                     document.getElementById('stageCard').style.display = 'none';
                     document.getElementById('finalCard').style.display = 'block';
                 }
+            }
+
+            function checkDensityWarnings(responseText) {
+                // Activa el botón de densidad si hay advertencias de densidad en la respuesta
+                const btn = document.getElementById('btnRefineDensity');
+                if (responseText.includes('densidad') || responseText.includes('⚠')) {
+                    btn.style.display = 'inline-flex';
+                } else {
+                    btn.style.display = 'none';
+                }
+            }
+
+            function extractDensityBlocks(responseText) {
+                // Extrae bloques con más de 5 ideas de la respuesta (muy básico, busca listas largas)
+                const blocksWithIssues = [];
+                const lines = responseText.split('\n');
+                let currentBlock = null;
+                let ideaCount = 0;
+                lines.forEach(line => {
+                    if (line.includes('BLOQUE') || line.includes('Tarjeta') || line.includes('Sección')) {
+                        if (currentBlock && ideaCount > 5) {
+                            currentBlock.ideas = currentBlock.ideas.slice(0, ideaCount);
+                            blocksWithIssues.push(currentBlock);
+                        }
+                        currentBlock = { title: line.trim(), ideas: [] };
+                        ideaCount = 0;
+                    } else if (line.trim().startsWith('-') || line.trim().startsWith('•')) {
+                        if (currentBlock) {
+                            currentBlock.ideas.push(line.replace(/^[-•]\s*/, '').trim());
+                            ideaCount++;
+                        }
+                    }
+                });
+                if (currentBlock && ideaCount > 5) {
+                    currentBlock.ideas = currentBlock.ideas.slice(0, ideaCount);
+                    blocksWithIssues.push(currentBlock);
+                }
+                return blocksWithIssues.length > 0 ? blocksWithIssues : null;
+            }
+
+            function showDensityEditor(responseText) {
+                const blocksWithIssues = extractDensityBlocks(responseText);
+                if (!blocksWithIssues) {
+                    toast('No se detectaron bloques con sobrecarga de ideas.');
+                    return;
+                }
+                const container = document.getElementById('densityBlocks');
+                container.innerHTML = '';
+                blocksWithIssues.forEach((block, idx) => {
+                    const div = document.createElement('div');
+                    div.innerHTML = `<strong>${block.title}</strong>`;
+                    block.ideas.forEach((idea, i) => {
+                        const ideaDiv = document.createElement('div');
+                        ideaDiv.className = 'idea-item';
+                        ideaDiv.innerHTML = `
+                            <input type="text" value="${escapeHtml(idea)}" data-block="${idx}" data-index="${i}">
+                            <button class="remove-idea">X</button>
+                        `;
+                        div.appendChild(ideaDiv);
+                    });
+                    const addBtn = document.createElement('button');
+                    addBtn.textContent = '+ Agregar idea';
+                    addBtn.className = 'btn btn-sm btn-outline';
+                    addBtn.addEventListener('click', () => {
+                        const newIdea = document.createElement('div');
+                        newIdea.className = 'idea-item';
+                        newIdea.innerHTML = `
+                            <input type="text" placeholder="Nueva idea" data-block="${idx}" data-index="${block.ideas.length}">
+                            <button class="remove-idea">X</button>
+                        `;
+                        div.appendChild(newIdea);
+                        block.ideas.push('');
+                    });
+                    div.appendChild(addBtn);
+                    container.appendChild(div);
+                });
+                document.getElementById('densityEditor').style.display = 'block';
+                // Eventos para eliminar idea
+                container.addEventListener('click', (e) => {
+                    if (e.target.classList.contains('remove-idea')) {
+                        e.target.parentElement.remove();
+                    }
+                });
+                // Guardar estado temporal
+                state._densityBlocks = blocksWithIssues;
+            }
+
+            function saveDensityAdjustments() {
+                const blocksWithIssues = state._densityBlocks;
+                if (!blocksWithIssues) return;
+                // Recoger las ideas editadas
+                const inputs = document.querySelectorAll('#densityBlocks input');
+                inputs.forEach(input => {
+                    const blockIdx = parseInt(input.dataset.block);
+                    const ideaIdx = parseInt(input.dataset.index);
+                    if (blocksWithIssues[blockIdx] && ideaIdx < blocksWithIssues[blockIdx].ideas.length) {
+                        blocksWithIssues[blockIdx].ideas[ideaIdx] = input.value;
+                    }
+                });
+                // Reconstruir la respuesta de la IA con los ajustes (solo reemplazamos la sección de densidad)
+                const originalResponse = state.stepResponses[blocks[state.currentStep].id];
+                // Buscamos el bloque problemático y reemplazamos sus ideas
+                let newResponse = originalResponse;
+                blocksWithIssues.forEach(block => {
+                    const escapedTitle = escapeRegExp(block.title);
+                    const regex = new RegExp(`(${escapedTitle}[\\s\\S]*?)(?=\\n\\n|$)`, 'g');
+                    newResponse = newResponse.replace(regex, (match) => {
+                        const lines = match.split('\n');
+                        const newLines = lines.map(line => {
+                            if (line.trim().startsWith('-') || line.trim().startsWith('•')) return '';
+                            else return line;
+                        }).filter(l => l !== '');
+                        newLines.push(...block.ideas.map(idea => `- ${idea}`));
+                        return newLines.join('\n');
+                    });
+                });
+                state.stepResponses[blocks[state.currentStep].id] = newResponse;
+                document.getElementById('responseArea').textContent = newResponse;
+                document.getElementById('densityEditor').style.display = 'none';
+                toast('✅ Ajustes de densidad guardados en la respuesta');
+                state._densityBlocks = null;
+            }
+
+            function escapeHtml(text) {
+                return text.replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;').replace(/"/g, '&quot;');
+            }
+            function escapeRegExp(string) {
+                return string.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
             }
 
             async function sendToGemini(prompt) {
@@ -385,6 +533,7 @@
                     const response = await sendToGemini(prompt);
                     document.getElementById('responseArea').textContent = response;
                     document.getElementById('responseContainer').style.display = 'block';
+                    checkDensityWarnings(response);
                 } catch (err) { toast('❌ '+err.message); }
             });
 
@@ -397,8 +546,10 @@
 
             document.getElementById('btnPasteResponse').addEventListener('click', async () => {
                 try {
-                    document.getElementById('responseArea').textContent = await navigator.clipboard.readText();
+                    const text = await navigator.clipboard.readText();
+                    document.getElementById('responseArea').textContent = text;
                     document.getElementById('responseContainer').style.display = 'block';
+                    checkDensityWarnings(text);
                 } catch { toast('No se pudo leer del portapapeles'); }
             });
 
@@ -414,6 +565,7 @@
                     state.currentStep = blocks.length;
                 }
                 document.getElementById('promptText').value = '';
+                document.getElementById('densityEditor').style.display = 'none';
                 saveState();
                 updateUI();
                 toast('✅ Bloque aprobado');
@@ -422,7 +574,16 @@
             document.getElementById('btnRetry').addEventListener('click', () => {
                 document.getElementById('responseContainer').style.display = 'none';
                 document.getElementById('responseArea').textContent = '';
+                document.getElementById('densityEditor').style.display = 'none';
+                document.getElementById('btnRefineDensity').style.display = 'none';
             });
+
+            document.getElementById('btnRefineDensity').addEventListener('click', () => {
+                const response = document.getElementById('responseArea').textContent;
+                showDensityEditor(response);
+            });
+
+            document.getElementById('btnSaveDensity').addEventListener('click', saveDensityAdjustments);
 
             document.getElementById('btnBuildFinal').addEventListener('click', () => {
                 let final = '🧠 PROMPT MAESTRO PNFT OPTIMIZADO\n\n📎 DOCUMENTO:\n' + state.documentText + '\n';
