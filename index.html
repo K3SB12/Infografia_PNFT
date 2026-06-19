@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>PNFT Infografía Lab – Control por Etapas</title>
+    <title>PNFT Infografía Lab – Control por Etapas (completo)</title>
     <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@300;400;500;600;700;800&display=swap" rel="stylesheet">
     <script src="https://cdnjs.cloudflare.com/ajax/libs/pdf.js/3.11.174/pdf.min.js"></script>
     <script src="https://cdn.jsdelivr.net/npm/mammoth@1.6.0/mammoth.browser.min.js"></script>
@@ -41,34 +41,27 @@
         .btn-outline { background:transparent; color:var(--turquesa); }
         .btn-outline:hover { background:var(--turquesa); color:#fff; }
         .btn:disabled { opacity:0.5; pointer-events:none; }
-        .main-container {
-            display:flex; flex:1; overflow:hidden;
-        }
+        .main-container { display:flex; flex:1; overflow:hidden; }
         .left-panel {
-            width:350px; background:var(--blanco); border-right:1px solid var(--gris-claro);
+            width:320px; background:var(--blanco); border-right:1px solid var(--gris-claro);
             display:flex; flex-direction:column;
         }
-        .stages-list {
-            flex:1; overflow-y:auto; padding:1rem;
-        }
+        .stages-list { flex:1; overflow-y:auto; padding:1rem; }
         .stage-item {
-            display:flex; align-items:center; gap:0.6rem; padding:0.8rem;
-            border-radius:10px; cursor:pointer; margin-bottom:0.3rem;
-            font-size:0.9rem; color:var(--gris-texto); border:1px solid transparent;
+            display:flex; align-items:center; gap:0.5rem; padding:0.7rem 0.8rem;
+            border-radius:10px; cursor:pointer; margin-bottom:0.2rem;
+            font-size:0.85rem; color:var(--gris-texto); border:1px solid transparent;
         }
         .stage-item.active { background:rgba(9,183,174,0.08); color:var(--azul-oscuro); font-weight:600; border-color:var(--turquesa); }
         .stage-item.completed { color:var(--verde); }
         .stage-num {
-            width:28px; height:28px; border-radius:50%; background:var(--gris-claro);
+            width:26px; height:26px; border-radius:50%; background:var(--gris-claro);
             display:flex; align-items:center; justify-content:center;
-            font-weight:700; font-size:0.8rem; flex-shrink:0;
+            font-weight:700; font-size:0.7rem; flex-shrink:0;
         }
         .stage-item.active .stage-num { background:var(--turquesa); color:#fff; }
         .stage-item.completed .stage-num { background:var(--verde); color:#fff; }
-        .right-panel {
-            flex:1; display:flex; flex-direction:column; padding:1.5rem;
-            overflow-y:auto;
-        }
+        .right-panel { flex:1; display:flex; flex-direction:column; padding:1.5rem; overflow-y:auto; }
         .card {
             background:var(--blanco); border-radius:16px; padding:1.5rem;
             box-shadow: 0 4px 20px rgba(0,0,0,0.06); margin-bottom:1.5rem;
@@ -106,7 +99,7 @@
     <header>
         <div class="logo">
             <div class="logo-icon">PNFT</div>
-            <span>Infografía Lab · Control por Etapas</span>
+            <span>Infografía Lab · Control por Etapas (completo)</span>
         </div>
         <div>
             <button class="btn btn-outline btn-sm" id="btnApiKey">🔑 Clave Gemini</button>
@@ -115,7 +108,6 @@
     </header>
 
     <div class="main-container">
-        <!-- Panel izquierdo: lista de etapas -->
         <div class="left-panel">
             <div class="stages-list" id="stagesList"></div>
             <div style="padding:1rem;">
@@ -124,21 +116,17 @@
             </div>
         </div>
 
-        <!-- Panel derecho: contenido de la etapa actual -->
         <div class="right-panel" id="rightPanel">
-            <!-- Documento -->
             <div class="card" id="docCard" style="display:none;">
                 <h3>📄 Documento fuente</h3>
                 <textarea id="docText" rows="4" placeholder="Pega aquí el texto..."></textarea>
                 <button class="btn btn-sm" id="btnSaveDoc" style="margin-top:0.5rem;">Guardar documento</button>
             </div>
 
-            <!-- Estándares PNFT -->
             <div class="card pnft-standards" id="standardsCard" style="display:none;">
                 ✅ <strong>Estándares PNFT aplicados:</strong> 16:9, Poppins, iconos 3D, no infantil, paleta oficial, restricciones de no modificar/resumir/agregar.
             </div>
 
-            <!-- Etapa actual -->
             <div class="card" id="stageCard" style="display:none;">
                 <h3 id="stageTitle"></h3>
                 <p id="stageDescription" style="font-size:0.9rem; color:var(--gris-texto); margin-bottom:0.5rem;"></p>
@@ -158,7 +146,6 @@
                 </div>
             </div>
 
-            <!-- Generación final -->
             <div class="card" id="finalCard" style="display:none;">
                 <h3>🖼️ Generar infografía final</h3>
                 <p>Todas las etapas han sido aprobadas. Ahora puedes construir el prompt maestro completo.</p>
@@ -182,30 +169,42 @@
 
     <script>
         (function() {
-            // Estado
             const state = {
                 apiKey: localStorage.getItem('pnft_api_key') || '',
-                currentStage: 1,
+                currentStep: 0, // índice en el array steps
                 documentText: '',
-                approvedStages: new Set(JSON.parse(localStorage.getItem('pnft_approved') || '[]')),
-                stageResponses: JSON.parse(localStorage.getItem('pnft_responses') || '{}'),
+                approvedSteps: new Set(JSON.parse(localStorage.getItem('pnft_approved') || '[]')),
+                stepResponses: JSON.parse(localStorage.getItem('pnft_responses') || '{}'),
             };
 
-            // Definición de las 9 etapas (prompts)
-            const stages = [
-                null, // índice 0 no usado
-                { title: '🧩 Etapa 1 – Comprensión del contenido', desc: 'Analiza el documento y presenta una tabla con secciones, función, importancia y justificación.', prompt: 'Actúa como arquitecto de información, diseñador editorial y especialista en infografías educativas.\n\nAnaliza el documento proporcionado.\n\nNO generes todavía la infografía.\n\nIdentifica:\n- Temas principales.\n- Temas secundarios.\n- Temas complementarios.\n- Información que debe verse primero.\n- Información que debe recordarse después.\n- Información que requiere acción.\n- Información que sirve como contexto.\n\nPresenta una tabla con:\nSección | Función | Nivel de importancia | Justificación' },
-                { title: '🧠 Etapa 2 – Jerarquía y Pesos PNFT', desc: 'Clasifica cada sección según la escala PNFT (1,3,5) y justifica.', prompt: 'Clasifica cada sección según la escala PNFT:\nPeso 1 = Contexto\nPeso 3 = Comprensión\nPeso 5 = Aplicación o recuerdo\n\nJustifica cada clasificación.\n\nDefine:\n- qué debe ver primero el lector\n- qué debe recordar después\n- qué debe aplicar\n- qué solo contextualiza' },
-                { title: '🏗️ Etapa 3 – Arquitectura de Información', desc: 'Genera 3 propuestas de arquitectura visual con diagramas ASCII.', prompt: 'Genera 3 propuestas de arquitectura visual.\n\nIncluye para cada una:\n- ventajas\n- desventajas\n- tipo de lectura\n- casos de uso\n\nRepresenta con diagramas ASCII.' },
-                { title: '🧱 Etapa 4 – Wireframe', desc: 'Convierte la arquitectura seleccionada en wireframe (ASCII).', prompt: 'Convierte la arquitectura seleccionada en wireframe.\n\nIncluye:\n- orden de lectura\n- jerarquía visual\n- tamaño relativo de bloques\n- flujo visual\n\nRepresenta en ASCII.' },
-                { title: '📐 Etapa 5 – Retícula + Sistema Cromático', desc: 'Define retícula 12 columnas y codificación de color.', prompt: 'Define la retícula PNFT estándar 12 columnas (16:9).\nEspecifica: tamaño del lienzo, columnas, filas, distribución, porcentajes.\n\nLuego define el sistema cromático PNFT usando la paleta:\n#09B7AE, #0BD2CE, #014D6B, #0B6284, #62BDF3, #063B7F, #45258F, #9ED16F, #C9C9C9\nRegla: color = codificación pedagógica. Define áreas, jerarquía cromática, contraste.' },
-                { title: '🎨 Etapa 6 – Sistema de Diseño Visual', desc: 'Confirma estilo, tipografía, iconos 3D, ilustraciones.', prompt: 'Define el sistema de diseño visual PNFT:\nORIENTACIÓN: Horizontal 16:9, lectura izquierda→derecha\nESTILO: Educativo, Académico, Profesional, Moderno, Secundaria (no infantil, no comercial)\nTIPOGRAFÍA: Poppins Bold títulos, SemiBold subtítulos, Regular contenido\nICONOGRAFÍA: Solo 3D semi realista (cerebro, bloques, dashboards, robot, escudo). Prohibido flat, emojis, clipart.\nILUSTRACIONES: Adolescentes 16-18, vestimenta casual institucional.\nCOMPOSICIÓN: Tarjetas redondeadas, alto contraste, lectura ≤10s por bloque.' },
-                { title: '🧱 Etapa 6.2 – Composición Visual', desc: 'Distribución de bloques, espacios en blanco, equilibrio.', prompt: 'Define:\n- distribución de bloques\n- espacios en blanco\n- alineación general\n- jerarquía visual\n- balance gráfico\n\nRegla: Lectura por bloque ≤ 10 segundos.' },
-                { title: '🧠 Etapa 6.3 – Densidad Cognitiva', desc: 'Control de carga de ideas por bloque.', prompt: 'Para cada bloque define:\n- máximo 3–5 ideas\n- idea principal\n- ideas secundarias\n- nivel de complejidad\n\nRegla: Evitar saturación cognitiva.' },
-                { title: '🧪 Etapa 6.5 – Auditoría Visual', desc: 'Verifica cumplimiento de requisitos visuales.', prompt: 'Verifica cumplimiento:\n□ 16:9 correcto\n□ lectura izquierda a derecha\n□ Poppins aplicado\n□ paleta PNFT correcta\n□ iconografía 3D coherente\n□ estructura curricular intacta\n□ ejes visibles\n□ legibilidad alta\n□ equilibrio visual\n\nPresenta tabla de cumplimiento.' },
-                { title: '🚨 Etapa 7 – Restricciones de Producción', desc: 'Confirma prohibiciones y obligaciones.', prompt: 'Verifica las restricciones PNFT:\nPROHIBIDO: modificar títulos, saberes, indicadores, resumir, reinterpretar, reorganizar, agregar contenido, cambiar tipografía/paleta.\nPROHIBIDO VISUAL: infantil, caricatura, emojis, clipart, gamer, comercial.\nOBLIGATORIO: fidelidad 100%, respeto total al contenido, arquitectura, wireframe, retícula.\n\nPresenta tabla de cumplimiento.' },
-                { title: '🧾 Etapa 8 – Generación de JSON', desc: 'Genera JSON estructurado.', prompt: 'Genera JSON final basado en:\n- análisis aprobado\n- jerarquía aprobada\n- arquitectura aprobada\n- wireframe aprobado\n- retícula aprobada\n- sistema visual PNFT\n- restricciones\n\nNo agregar nada. No reorganizar. No resumir.' },
-                { title: '🖼️ Etapa 9 – Generación de Infografía', desc: 'Genera la infografía final.', prompt: 'Genera la infografía final.\nReglas: fidelidad 100%, sin cambios estructurales, sin reinterpretación, sin elementos adicionales.\nFormato 16:9, paleta PNFT, Poppins, iconos 3D, estilo educativo profesional secundaria.' },
+            // Lista completa de etapas según el Prompt Maestro
+            const steps = [
+                { id: '1', title: '🧩 Etapa 1 – Comprensión del contenido', desc: 'Analiza el documento y presenta una tabla con secciones, función, importancia y justificación.',
+                  prompt: 'Actúa como arquitecto de información, diseñador editorial y especialista en infografías educativas.\n\nAnaliza el documento proporcionado.\n\nNO generes todavía la infografía.\n\nIdentifica:\n- Temas principales.\n- Temas secundarios.\n- Temas complementarios.\n- Información que debe verse primero.\n- Información que debe recordarse después.\n- Información que requiere acción.\n- Información que sirve como contexto.\n\nPresenta una tabla con:\nSección | Función | Nivel de importancia | Justificación' },
+                { id: '2', title: '🧠 Etapa 2 – Jerarquía y Pesos PNFT', desc: 'Clasifica cada sección según la escala PNFT (1,3,5) y justifica.',
+                  prompt: 'Clasifica cada sección según la escala PNFT:\nPeso 1 = Contexto\nPeso 3 = Comprensión\nPeso 5 = Aplicación o recuerdo\n\nJustifica cada clasificación.\n\nDefine:\n- qué debe ver primero el lector\n- qué debe recordar después\n- qué debe aplicar\n- qué solo contextualiza' },
+                { id: '3', title: '🏗️ Etapa 3 – Arquitectura de Información', desc: 'Genera 3 propuestas de arquitectura visual con diagramas ASCII.',
+                  prompt: 'Genera 3 propuestas de arquitectura visual.\n\nIncluye para cada una:\n- ventajas\n- desventajas\n- tipo de lectura\n- casos de uso\n\nRepresenta con diagramas ASCII.' },
+                { id: '4', title: '🧱 Etapa 4 – Wireframe', desc: 'Convierte la arquitectura seleccionada en wireframe (ASCII).',
+                  prompt: 'Convierte la arquitectura seleccionada en wireframe.\n\nIncluye:\n- orden de lectura\n- jerarquía visual\n- tamaño relativo de bloques\n- flujo visual\n\nRepresenta en ASCII.' },
+                { id: '5', title: '📐 Etapa 5 – Retícula PNFT', desc: 'Define retícula de 12 columnas, tamaño del lienzo y distribución.',
+                  prompt: 'Define la retícula PNFT estándar:\n|1|2|3|4|5|6|7|8|9|10|11|12|\n\nEspecifica:\n- tamaño del lienzo\n- columnas\n- filas\n- distribución\n- porcentajes de bloques' },
+                { id: '5.5', title: '🎨 Etapa 5.5 – Sistema Cromático PNFT', desc: 'Define el uso pedagógico del color con la paleta oficial.',
+                  prompt: 'Paleta oficial PNFT:\n#09B7AE, #0BD2CE, #014D6B, #0B6284, #62BDF3, #063B7F, #45258F, #9ED16F, #C9C9C9\n\nRegla clave: El color = codificación pedagógica, no decoración.\n\nDefine:\n- codificación de áreas por color\n- jerarquía cromática\n- bloques de integración\n- contraste y legibilidad' },
+                { id: '6', title: '🎨 Etapa 6 – Sistema de Diseño Visual PNFT', desc: 'Confirma orientación, estilo, tipografía, iconos 3D, ilustraciones.',
+                  prompt: 'ORIENTACIÓN: Horizontal 16:9, lectura izquierda → derecha\nESTILO GENERAL: Educativo, Académico, Profesional, Moderno, Secundaria, No infantil, No comercial\nTIPOGRAFÍA: Poppins Bold (títulos), SemiBold (sub), Regular (contenido)\nICONOGRAFÍA: Solo iconos 3D semi realistas (cerebro, bloques, dashboards, robot, escudo). Prohibido flat, emojis, clipart, caricaturas.\nILUSTRACIONES: Adolescentes 16-18 años, vestimenta casual institucional, sin infantilización.\nELEMENTOS TECNOLÓGICOS: dashboards, IA, programación, robótica, automatización, interfaces digitales.\nCOMPOSICIÓN: tarjetas redondeadas, espacios amplios, alto contraste, equilibrio texto/imagen, legibilidad alta.' },
+                { id: '6.2', title: '🧱 Etapa 6.2 – Composición Visual', desc: 'Distribución de bloques, espacios en blanco, equilibrio, ≤10s.',
+                  prompt: 'Define:\n- distribución de bloques\n- espacios en blanco\n- alineación general\n- jerarquía visual\n- balance gráfico\n\nRegla: Lectura por bloque ≤ 10 segundos.' },
+                { id: '6.3', title: '🧠 Etapa 6.3 – Densidad Cognitiva', desc: 'Control de carga de ideas por bloque (máx 3-5, complejidad).',
+                  prompt: 'Para cada bloque define:\n- máximo 3–5 ideas\n- idea principal\n- ideas secundarias\n- nivel de complejidad\n\nRegla: Evitar saturación cognitiva.' },
+                { id: '6.5', title: '🧪 Etapa 6.5 – Auditoría Visual PNFT', desc: 'Verifica cumplimiento de requisitos visuales.',
+                  prompt: 'Verifica cumplimiento:\n□ 16:9 correcto\n□ lectura izquierda a derecha\n□ Poppins aplicado\n□ paleta PNFT correcta\n□ iconografía 3D coherente\n□ estructura curricular intacta\n□ ejes visibles\n□ legibilidad alta\n□ equilibrio visual\n\nPresenta tabla de cumplimiento.' },
+                { id: '7', title: '🚨 Etapa 7 – Restricciones de Producción PNFT', desc: 'Confirma prohibiciones y obligaciones.',
+                  prompt: 'PROHIBIDO:\n- modificar títulos, saberes, indicadores\n- resumir contenido, reinterpretar\n- reorganizar bloques, fusionar secciones\n- agregar contenido nuevo\n- cambiar tipografía o paleta\nPROHIBIDO VISUAL: infantil, caricatura, emojis, clipart, gamer, comercial, cómic\nPROHIBIDO CURRICULAR: inventar saberes, convertir ejemplos en obligatorios\nOBLIGATORIO: fidelidad 100%, respeto total al contenido, arquitectura, wireframe, retícula, sistema PNFT.\n\nVerifica cumplimiento con tabla.' },
+                { id: '8', title: '🧾 Etapa 8 – Generación de JSON', desc: 'Genera JSON final sin agregar, reorganizar ni resumir.',
+                  prompt: 'Genera JSON final basado en:\n- análisis aprobado\n- jerarquía aprobada\n- arquitectura aprobada\n- wireframe aprobado\n- retícula aprobada\n- sistema visual PNFT\n- restricciones\n\nNo agregar nada. No reorganizar. No resumir.' },
+                { id: '9', title: '🖼️ Etapa 9 – Generación de Infografía', desc: 'Genera la infografía final con fidelidad 100%.',
+                  prompt: 'Genera la infografía final.\nReglas:\n- fidelidad 100%\n- sin cambios estructurales\n- sin reinterpretación\n- sin elementos adicionales\n- formato 16:9, paleta PNFT, Poppins, iconos 3D, estilo educativo profesional secundaria.' }
             ];
 
             function toast(msg) {
@@ -216,31 +215,29 @@
 
             function saveState() {
                 localStorage.setItem('pnft_api_key', state.apiKey);
-                localStorage.setItem('pnft_approved', JSON.stringify([...state.approvedStages]));
-                localStorage.setItem('pnft_responses', JSON.stringify(state.stageResponses));
+                localStorage.setItem('pnft_approved', JSON.stringify([...state.approvedSteps]));
+                localStorage.setItem('pnft_responses', JSON.stringify(state.stepResponses));
                 localStorage.setItem('pnft_document', state.documentText);
             }
 
             function updateUI() {
-                // Lista de etapas
                 const list = document.getElementById('stagesList');
                 list.innerHTML = '';
-                for (let i = 1; i <= 9; i++) {
+                steps.forEach((step, index) => {
                     const div = document.createElement('div');
                     div.className = 'stage-item';
-                    if (i === state.currentStage) div.classList.add('active');
-                    if (state.approvedStages.has(i)) div.classList.add('completed');
-                    div.innerHTML = `<span class="stage-num">${i}</span> ${stages[i].title}`;
+                    if (index === state.currentStep) div.classList.add('active');
+                    if (state.approvedSteps.has(step.id)) div.classList.add('completed');
+                    div.innerHTML = `<span class="stage-num">${step.id}</span> ${step.title}`;
                     div.addEventListener('click', () => {
-                        if (state.documentText && (i === state.currentStage || state.approvedStages.has(i-1))) {
-                            state.currentStage = i;
+                        if (state.documentText && (index === 0 || state.approvedSteps.has(steps[index-1].id))) {
+                            state.currentStep = index;
                             updateUI();
                         }
                     });
                     list.appendChild(div);
-                }
+                });
 
-                // Documento
                 const docCard = document.getElementById('docCard');
                 if (!state.documentText) {
                     docCard.style.display = 'block';
@@ -249,30 +246,29 @@
                     document.getElementById('standardsCard').style.display = 'block';
                 }
 
-                // Etapa actual
                 const stageCard = document.getElementById('stageCard');
                 const finalCard = document.getElementById('finalCard');
-                if (state.currentStage <= 9 && state.documentText) {
+                if (state.documentText && state.currentStep < steps.length) {
                     stageCard.style.display = 'block';
                     finalCard.style.display = 'none';
-                    const stage = stages[state.currentStage];
-                    document.getElementById('stageTitle').textContent = stage.title;
-                    document.getElementById('stageDescription').textContent = stage.desc;
-                    document.getElementById('promptText').value = stage.prompt + '\n\n📎 DOCUMENTO:\n' + state.documentText;
-                    // Mostrar respuesta si ya fue aprobada
-                    if (state.stageResponses[state.currentStage]) {
+                    const step = steps[state.currentStep];
+                    document.getElementById('stageTitle').textContent = step.title;
+                    document.getElementById('stageDescription').textContent = step.desc;
+                    document.getElementById('promptText').value = step.prompt + '\n\n📎 DOCUMENTO:\n' + state.documentText;
+                    if (state.stepResponses[step.id]) {
                         document.getElementById('responseContainer').style.display = 'block';
-                        document.getElementById('responseArea').textContent = state.stageResponses[state.currentStage];
+                        document.getElementById('responseArea').textContent = state.stepResponses[step.id];
                     } else {
                         document.getElementById('responseContainer').style.display = 'none';
                     }
-                } else if (state.currentStage > 9) {
+                } else if (state.currentStep >= steps.length) {
                     stageCard.style.display = 'none';
                     finalCard.style.display = 'block';
                 }
             }
 
             async function sendToGemini(prompt) {
+                if (!state.apiKey) throw new Error('Clave Gemini no configurada');
                 const res = await fetch(`https://generativelanguage.googleapis.com/v1beta/models/gemini-2.0-flash:generateContent?key=${state.apiKey}`, {
                     method:'POST',
                     headers:{'Content-Type':'application/json'},
@@ -286,12 +282,11 @@
                 return data.candidates[0].content.parts[0].text;
             }
 
-            // Eventos
             document.getElementById('btnSaveDoc').addEventListener('click', () => {
                 const text = document.getElementById('docText').value.trim();
                 if (!text) return toast('Ingresa el documento');
                 state.documentText = text;
-                state.currentStage = 1;
+                state.currentStep = 0;
                 saveState();
                 updateUI();
                 toast('Documento guardado');
@@ -332,15 +327,15 @@
                     const response = await sendToGemini(prompt);
                     document.getElementById('responseArea').textContent = response;
                     document.getElementById('responseContainer').style.display = 'block';
-                } catch (err) {
-                    toast('❌ '+err.message);
-                }
+                } catch (err) { toast('❌ '+err.message); }
             });
 
             document.getElementById('btnCopyPrompt').addEventListener('click', () => {
                 const prompt = document.getElementById('promptText').value;
-                navigator.clipboard.writeText(prompt).then(() => toast('📋 Prompt copiado'));
-                document.getElementById('btnPasteResponse').style.display = 'inline-flex';
+                navigator.clipboard.writeText(prompt).then(() => {
+                    toast('📋 Prompt copiado');
+                    document.getElementById('btnPasteResponse').style.display = 'inline-flex';
+                });
             });
 
             document.getElementById('btnPasteResponse').addEventListener('click', async () => {
@@ -354,12 +349,13 @@
             document.getElementById('btnApprove').addEventListener('click', () => {
                 const response = document.getElementById('responseArea').textContent;
                 if (!response) return toast('No hay respuesta');
-                state.stageResponses[state.currentStage] = response;
-                state.approvedStages.add(state.currentStage);
-                if (state.currentStage < 9) {
-                    state.currentStage++;
+                const stepId = steps[state.currentStep].id;
+                state.stepResponses[stepId] = response;
+                state.approvedSteps.add(stepId);
+                if (state.currentStep < steps.length - 1) {
+                    state.currentStep++;
                 } else {
-                    state.currentStage = 10; // final
+                    state.currentStep = steps.length; // final
                 }
                 saveState();
                 updateUI();
@@ -374,22 +370,20 @@
             document.getElementById('btnBuildFinal').addEventListener('click', () => {
                 let final = '🧠 PROMPT MAESTRO PNFT COMPLETO\n\n';
                 final += '📎 DOCUMENTO FUENTE:\n' + state.documentText + '\n\n';
-                for (let i=1; i<=9; i++) {
-                    if (state.stageResponses[i]) {
-                        final += `✅ ETAPA ${i} APROBADA:\n${state.stageResponses[i]}\n\n`;
+                steps.forEach(step => {
+                    if (state.stepResponses[step.id]) {
+                        final += `✅ ${step.title}:\n${state.stepResponses[step.id]}\n\n`;
                     }
-                }
+                });
                 final += '🖼️ ETAPA 9 – GENERACIÓN DE INFOGRAFÍA FINAL:\n';
-                final += 'Genera la infografía final con fidelidad 100%, formato 16:9, paleta PNFT, Poppins, iconos 3D, estilo educativo profesional secundaria. Respeta todas las restricciones.';
+                final += 'Genera la infografía final con fidelidad 100%, formato 16:9, paleta PNFT, Poppins, iconos 3D, estilo educativo profesional secundaria.';
                 document.getElementById('finalPrompt').value = final;
             });
 
             document.getElementById('btnCopyFinal').addEventListener('click', () => {
-                const final = document.getElementById('finalPrompt').value;
-                navigator.clipboard.writeText(final).then(() => toast('📋 Prompt final copiado'));
+                navigator.clipboard.writeText(document.getElementById('finalPrompt').value).then(() => toast('📋 Prompt final copiado'));
             });
 
-            // Modal API
             document.getElementById('btnApiKey').addEventListener('click', () => {
                 document.getElementById('apiKeyInput').value = state.apiKey;
                 document.getElementById('modalApi').style.display = 'flex';
@@ -401,23 +395,19 @@
                 document.getElementById('modalApi').style.display = 'none';
                 toast('Clave guardada');
             });
-
             document.getElementById('btnReset').addEventListener('click', () => {
                 if (confirm('¿Reiniciar?')) {
                     state.documentText = '';
-                    state.currentStage = 1;
-                    state.approvedStages.clear();
-                    state.stageResponses = {};
+                    state.currentStep = 0;
+                    state.approvedSteps.clear();
+                    state.stepResponses = {};
                     saveState();
                     updateUI();
                     toast('Reiniciado');
                 }
             });
 
-            // Inicializar
-            if (state.documentText) {
-                document.getElementById('docText').value = state.documentText;
-            }
+            if (state.documentText) document.getElementById('docText').value = state.documentText;
             updateUI();
         })();
     </script>
