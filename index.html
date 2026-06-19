@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>PNFT Infografía Lab – Asistente Completo</title>
+    <title>PNFT Infografía Lab</title>
     <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@300;400;500;600;700;800&display=swap" rel="stylesheet">
     <script src="https://cdnjs.cloudflare.com/ajax/libs/pdf.js/3.11.174/pdf.min.js"></script>
     <script src="https://cdn.jsdelivr.net/npm/mammoth@1.6.0/mammoth.browser.min.js"></script>
@@ -14,18 +14,18 @@
             --verde: #9ED16F; --gris-neutro: #C9C9C9; --gris-claro: #E8ECF1;
             --blanco: #FFFFFF; --gris-texto: #4A5568; --fondo: #F5F7FA;
             --sombra: 0 8px 32px rgba(0,0,0,0.08);
-            --font: 'Poppins', system-ui, sans-serif;
+            --font: 'Poppins', sans-serif;
         }
         * { margin:0; padding:0; box-sizing:border-box; }
         body {
             font-family: var(--font); background: var(--fondo);
-            color: #1A1D23; min-height:100vh; display:flex; flex-direction:column;
+            color: #1A1D23; height:100vh; display:flex; flex-direction:column;
         }
         header {
             background: var(--blanco); padding:0.8rem 1.5rem;
             display:flex; align-items:center; justify-content:space-between;
             flex-wrap:wrap; gap:0.8rem; box-shadow: 0 2px 8px rgba(0,0,0,0.05);
-            position:sticky; top:0; z-index:100;
+            z-index:100;
         }
         .logo { display:flex; align-items:center; gap:0.5rem; font-weight:700; color:var(--azul-oscuro); }
         .logo-icon {
@@ -42,17 +42,19 @@
         .btn-outline { background:transparent; color:var(--turquesa); }
         .btn-outline:hover { background:var(--turquesa); color:#fff; }
         .btn:disabled { opacity:0.5; pointer-events:none; }
-        .container {
-            max-width:900px; margin:1.5rem auto; padding:0 1rem;
-            display:flex; flex-direction:column; gap:1.2rem; flex:1;
+        .app-layout {
+            display:flex; flex:1; overflow:hidden;
         }
-        .chat-panel {
-            background:var(--blanco); border-radius:20px; padding:1.5rem;
-            box-shadow:var(--sombra); display:flex; flex-direction:column; gap:1rem;
-            max-height:60vh; overflow-y:auto;
+        /* Panel de conversación (izquierda) */
+        .chat-side {
+            width:40%; min-width:300px; background:var(--blanco);
+            display:flex; flex-direction:column;
+            box-shadow: var(--sombra); z-index:10;
         }
-        .message { display:flex; gap:0.8rem; align-items:flex-start; animation: fadeIn 0.3s ease; }
-        @keyframes fadeIn { from { opacity:0; transform:translateY(10px); } to { opacity:1; transform:translateY(0); } }
+        .chat-messages {
+            flex:1; overflow-y:auto; padding:1.2rem; display:flex; flex-direction:column; gap:1rem;
+        }
+        .message { display:flex; gap:0.8rem; align-items:flex-start; }
         .avatar {
             width:36px; height:36px; border-radius:50%; display:flex; align-items:center;
             justify-content:center; font-size:1rem; flex-shrink:0;
@@ -61,46 +63,52 @@
         .user .avatar { background:var(--azul-inst); color:#fff; }
         .bubble {
             background:var(--fondo); padding:0.8rem 1.2rem; border-radius:18px;
-            max-width:80%; font-size:0.9rem; line-height:1.5; color:#1A1D23;
+            max-width:85%; font-size:0.9rem; line-height:1.5; color:#1A1D23;
             border:1px solid var(--gris-neutro);
         }
         .user .bubble { background:var(--turquesa); color:#fff; border-color:var(--turquesa); }
-        .suggestion-card {
-            background:var(--blanco); border:1px solid var(--gris-neutro);
-            border-radius:12px; padding:0.8rem; margin:0.4rem 0;
-            display:flex; align-items:center; justify-content:space-between; gap:0.8rem;
+        .chat-input {
+            padding:1rem; border-top:1px solid var(--gris-claro);
         }
-        .input-area { display:flex; gap:0.6rem; margin-top:0.5rem; }
         textarea, input[type="text"] {
             font-family:var(--font); width:100%; padding:0.7rem 1rem;
             border-radius:14px; border:1.5px solid var(--gris-neutro);
             font-size:0.9rem; background:var(--blanco); resize:none;
         }
         textarea:focus, input:focus { border-color:var(--turquesa); outline:none; box-shadow:0 0 0 3px rgba(9,183,174,0.1); }
-        .progress-steps { display:flex; gap:0.3rem; flex-wrap:wrap; margin:0.5rem 0; }
-        .step-dot {
-            width:28px; height:28px; border-radius:50%; background:var(--gris-claro);
-            display:flex; align-items:center; justify-content:center;
-            font-size:0.65rem; font-weight:700; color:var(--gris-texto);
+        /* Panel de diseño (derecha) */
+        .design-side {
+            flex:1; background:var(--fondo); padding:1.5rem; overflow-y:auto;
+            display:flex; flex-direction:column; gap:1rem;
         }
-        .step-dot.completed { background:var(--verde); color:#fff; }
-        .step-dot.active { background:var(--turquesa); color:#fff; }
+        .design-card {
+            background:var(--blanco); border-radius:16px; padding:1.2rem;
+            box-shadow: var(--sombra);
+        }
+        .design-card h3 { color:var(--azul-oscuro); margin-bottom:0.5rem; }
+        .editable-field {
+            width:100%; border:1px dashed var(--gris-neutro); border-radius:8px;
+            padding:0.5rem; margin:0.3rem 0; font-family:var(--font);
+            background:var(--gris-claro); font-size:0.85rem;
+        }
+        .editable-field:focus { border-color:var(--turquesa); background:#fff; }
+        .color-palette {
+            display:flex; gap:0.4rem; flex-wrap:wrap; margin-top:0.5rem;
+        }
+        .color-dot {
+            width:28px; height:28px; border-radius:50%; cursor:pointer; border:2px solid transparent;
+        }
+        .color-dot.selected { border-color:var(--azul-oscuro); }
         .toast {
             position:fixed; bottom:2rem; right:2rem; background:var(--azul-inst);
             color:#fff; padding:0.8rem 1.5rem; border-radius:30px; font-weight:600;
             z-index:999; opacity:0; transition:0.3s;
         }
         .toast.show { opacity:1; }
-        .mode-selector {
-            display:flex; gap:0.5rem; background:var(--gris-claro); padding:0.3rem; border-radius:30px;
-        }
-        .mode-option {
-            padding:0.4rem 1rem; border-radius:30px; font-weight:600; font-size:0.8rem;
-            cursor:pointer; transition:0.25s;
-        }
-        .mode-option.active { background:var(--blanco); box-shadow:0 2px 8px rgba(0,0,0,0.1); }
-        @media (max-width:600px) {
-            .bubble { max-width:90%; }
+        @media (max-width:800px) {
+            .app-layout { flex-direction:column; }
+            .chat-side { width:100%; max-height:50vh; }
+            .design-side { flex:1; }
         }
     </style>
 </head>
@@ -108,37 +116,76 @@
     <header>
         <div class="logo">
             <div class="logo-icon">PNFT</div>
-            <span>Infografía Lab</span>
+            <span>Infografía Lab · Modo Colega</span>
         </div>
-        <div style="display:flex; gap:0.8rem; align-items:center; flex-wrap:wrap;">
-            <div class="mode-selector" id="modeSelector">
-                <span class="mode-option active" data-mode="gemini">🧠 Gemini</span>
-                <span class="mode-option" data-mode="chatgpt">📋 ChatGPT</span>
-            </div>
+        <div style="display:flex; gap:0.8rem; align-items:center;">
             <button class="btn btn-outline btn-sm" id="btnApiKey">🔑 Clave</button>
-            <button class="btn btn-sm" id="btnReset" style="background:transparent;color:var(--gris-texto);">↺</button>
+            <button class="btn btn-sm" id="btnReset">↺ Reiniciar</button>
         </div>
     </header>
 
-    <div class="container">
-        <div class="progress-steps" id="stepIndicator"></div>
-        <div class="chat-panel" id="chatPanel"></div>
-        <div class="input-area" id="inputArea">
-            <textarea id="userInput" rows="2" placeholder="Escribe aquí..."></textarea>
-            <button class="btn" id="btnSend">➤</button>
+    <div class="app-layout">
+        <!-- Lado izquierdo: Conversación -->
+        <div class="chat-side">
+            <div class="chat-messages" id="chatMessages">
+                <div class="message assistant">
+                    <div class="avatar">🤖</div>
+                    <div class="bubble">
+                        ¡Hola! Soy tu asistente para crear infografías curriculares PNFT.<br>
+                        <strong>Pega tu documento</strong> (Word, PDF, PowerPoint) o <strong>carga un archivo</strong>.
+                    </div>
+                </div>
+            </div>
+            <div class="chat-input">
+                <div style="display:flex; gap:0.5rem;">
+                    <textarea id="userInput" rows="1" placeholder="Escribe aquí..."></textarea>
+                    <button class="btn" id="btnSend">➤</button>
+                </div>
+                <div style="margin-top:0.5rem; display:flex; gap:0.5rem; flex-wrap:wrap;">
+                    <button class="btn btn-outline btn-sm" id="btnUploadFile">📂 Cargar archivo</button>
+                    <button class="btn btn-outline btn-sm" id="btnIASuggest" style="display:none;">🤖 Sugerencia IA</button>
+                </div>
+                <input type="file" id="fileInput" accept=".docx,.pdf,.pptx,.txt" style="display:none;">
+            </div>
         </div>
-        <div style="display:flex; gap:0.5rem; flex-wrap:wrap;">
-            <button class="btn btn-outline btn-sm" id="btnUploadFile">📂 Cargar archivo</button>
-            <button class="btn btn-outline btn-sm" id="btnSkipStep" style="display:none;">⏭️ Saltar</button>
-            <button class="btn btn-outline btn-sm" id="btnAnalyze" style="display:none;">🤖 Analizar con IA</button>
+
+        <!-- Lado derecho: Diseño en vivo -->
+        <div class="design-side" id="designPanel">
+            <div class="design-card" id="docInfoCard" style="display:none;">
+                <h3>📄 Documento</h3>
+                <p style="font-size:0.85rem; color:var(--gris-texto);" id="docSummary"></p>
+            </div>
+            <div class="design-card" id="infographicDraft" style="display:none;">
+                <h3>🖼️ Borrador de infografía</h3>
+                <label>Título principal</label>
+                <input class="editable-field" id="editTitle" placeholder="Título de la infografía">
+                <label>Idea principal</label>
+                <input class="editable-field" id="editMainIdea" placeholder="Lo más importante a recordar">
+                <label>Organización visual</label>
+                <select class="editable-field" id="editLayout">
+                    <option value="tarjetas">Tarjetas</option>
+                    <option value="columnas">Columnas</option>
+                    <option value="linea_tiempo">Línea de tiempo</option>
+                </select>
+                <label>Colores dominantes</label>
+                <div class="color-palette" id="colorPalette">
+                    <span class="color-dot" style="background:#09B7AE;" data-color="#09B7AE"></span>
+                    <span class="color-dot" style="background:#014D6B;" data-color="#014D6B"></span>
+                    <span class="color-dot" style="background:#9ED16F;" data-color="#9ED16F"></span>
+                    <span class="color-dot" style="background:#45258F;" data-color="#45258F"></span>
+                    <span class="color-dot" style="background:#62BDF3;" data-color="#62BDF3"></span>
+                </div>
+                <label>Secciones (puedes editar)</label>
+                <textarea class="editable-field" id="editSections" rows="4" placeholder="Lista de secciones..."></textarea>
+                <button class="btn btn-sm" id="btnGenerate" style="margin-top:0.8rem;">🖼️ Generar infografía final</button>
+            </div>
         </div>
-        <input type="file" id="fileInput" accept=".docx,.pdf,.pptx,.txt" style="display:none;">
     </div>
 
     <div id="modalApi" style="display:none;position:fixed;inset:0;background:rgba(0,0,0,0.5);z-index:200;align-items:center;justify-content:center;">
         <div style="background:#fff;padding:2rem;border-radius:20px;max-width:400px;width:90%;">
-            <h3>🔑 Clave de API</h3>
-            <p style="font-size:0.85rem;">Gemini (gratis): <a href="https://aistudio.google.com/apikey" target="_blank">aistudio.google.com</a></p>
+            <h3>🔑 Clave Gemini (gratis)</h3>
+            <p style="font-size:0.85rem;"><a href="https://aistudio.google.com/apikey" target="_blank">Obtener clave gratuita</a></p>
             <input type="password" id="apiKeyInput" placeholder="AIza...">
             <button class="btn" id="btnSaveApi">Guardar</button>
             <button class="btn btn-outline" id="btnCancelApi">Cancelar</button>
@@ -148,139 +195,125 @@
 
     <script>
         (function() {
-            // ========== ESTADO ==========
+            // Estado global
             const state = {
-                mode: localStorage.getItem('pnft_mode') || 'gemini',       // 'gemini' o 'chatgpt'
-                apiKey: localStorage.getItem('pnft_gemini_key') || '',
-                step: 0,
+                apiKey: localStorage.getItem('pnft_api_key') || '',
+                mode: 'gemini', // 'gemini' o 'chatgpt'
                 documentText: '',
-                answers: {},
-                analysisInProgress: false,   // ← evita bucles
+                design: {
+                    title: '',
+                    mainIdea: '',
+                    layout: 'tarjetas',
+                    colors: ['#09B7AE', '#014D6B'],
+                    sections: []
+                },
+                conversationStep: 0, // 0=documento, 1=idea principal, 2=organización, 3=secciones
+                analysisInProgress: false,
             };
 
-            // ========== ETAPAS (basadas en el prompt maestro) ==========
-            const steps = [
-                { field:'document', question:'📄 Pega o carga el documento curricular.', help:'Word, PDF, PowerPoint o texto directo.' },
-                { field:'comprension', question:'🧩 ETAPA 1 – Comprensión: ¿Temas principales, secundarios, qué ver primero?', help:'Puedes analizar con IA o responder manualmente.' },
-                { field:'jerarquia', question:'⚖️ ETAPA 2 – Pesos PNFT: ¿Qué aplicar (peso 5) y qué es contexto (peso 1)?', help:'Clasifica según criticidad pedagógica.' },
-                { field:'arquitectura', question:'🏗️ ETAPA 3 – Arquitectura: ¿Tarjetas, columnas, línea de tiempo?', help:'Elige tipo de organización visual.' },
-                { field:'wireframe', question:'🧱 ETAPA 4 – Wireframe: ¿Orden de lectura y flujo visual?', help:'Ej: izquierda→derecha, arriba→abajo.' },
-                { field:'reticula_color', question:'📐 ETAPA 5 – Retícula + Color: ¿Estándar 12 columnas? ¿Colores especiales?', help:'Paleta PNFT: #09B7AE, #014D6B...' },
-                { field:'sistema_visual', question:'🎨 ETAPA 6 – Estilo: Poppins, iconos 3D, ilustraciones juveniles.', help:'Confirma o ajusta el sistema visual.' },
-                { field:'composicion', question:'🧱 ETAPA 6.2 – Composición: Espacios, equilibrio texto/imagen.', help:'Define distribución de tarjetas.' },
-                { field:'densidad', question:'🧠 ETAPA 6.3 – Densidad: Máximo 3-5 ideas por bloque.', help:'Control de carga cognitiva.' },
-                { field:'auditoria', question:'🧪 ETAPA 6.5 – Auditoría: ¿Cumple 16:9, Poppins, paleta, no infantil?', help:'Responde sí o indica ajustes.' },
-                { field:'restricciones', question:'🚨 ETAPA 7 – Restricciones: No modificar, no resumir, no agregar.', help:'Confirma las reglas PNFT.' },
-                { field:'json', question:'🧾 ETAPA 8 – JSON: ¿Quieres generar JSON estructurado?', help:'Responde sí o no.' },
-            ];
-
-            // ========== FUNCIONES ==========
-            function saveState() {
-                localStorage.setItem('pnft_mode', state.mode);
-                localStorage.setItem('pnft_gemini_key', state.apiKey);
-                localStorage.setItem('pnft_step', state.step);
-                localStorage.setItem('pnft_document', state.documentText);
-                localStorage.setItem('pnft_answers', JSON.stringify(state.answers));
-            }
-
+            // ========== UI ==========
             function toast(msg) {
                 const t = document.getElementById('toast');
                 t.textContent = msg; t.className = 'toast show';
                 clearTimeout(t._t); t._t = setTimeout(() => t.classList.remove('show'), 2500);
             }
 
-            function updateUI() {
-                document.getElementById('stepIndicator').innerHTML = steps.map((s,i) => {
-                    let cls = 'step-dot';
-                    if (i < state.step) cls += ' completed';
-                    else if (i === state.step) cls += ' active';
-                    return `<span class="${cls}" title="${s.question}">${i+1}</span>`;
-                }).join('');
-                const modeOptions = document.querySelectorAll('.mode-option');
-                modeOptions.forEach(opt => {
-                    opt.classList.toggle('active', opt.dataset.mode === state.mode);
-                });
-            }
-
-            function addMessage(role, text, extraHTML = '') {
-                const panel = document.getElementById('chatPanel');
+            function addChatMessage(role, text) {
+                const container = document.getElementById('chatMessages');
                 const div = document.createElement('div');
                 div.className = `message ${role}`;
-                div.innerHTML = `<div class="avatar">${role==='assistant'?'🤖':'👤'}</div><div class="bubble">${text.replace(/\n/g,'<br>')}${extraHTML}</div>`;
-                panel.appendChild(div);
-                panel.scrollTop = panel.scrollHeight;
+                div.innerHTML = `<div class="avatar">${role==='assistant'?'🤖':'👤'}</div><div class="bubble">${text.replace(/\n/g,'<br>')}</div>`;
+                container.appendChild(div);
+                container.scrollTop = container.scrollHeight;
             }
 
-            function showStep(index) {
-                if (index >= steps.length) {
-                    addMessage('assistant','✅ ¡Etapas completas! Pulsa <strong>Generar Infografía</strong>.');
-                    document.getElementById('btnSend').textContent = '🖼️ Generar Infografía';
-                    document.getElementById('btnSend').dataset.action = 'generate';
-                    document.getElementById('btnSkipStep').style.display = 'none';
-                    document.getElementById('btnAnalyze').style.display = 'none';
-                    return;
-                }
-                const step = steps[index];
-                addMessage('assistant', `<strong>${step.question}</strong><br><span style="font-size:0.8rem;color:var(--gris-texto);">${step.help||''}</span>`);
-                document.getElementById('btnSend').textContent = '➤';
-                document.getElementById('btnSend').dataset.action = 'answer';
-                document.getElementById('btnSkipStep').style.display = 'inline-flex';
-                // Mostrar botón de análisis solo si hay documento y estamos en una etapa que pueda ser analizada
-                const showAnalyze = (index > 0 && state.documentText && !state.analysisInProgress);
-                document.getElementById('btnAnalyze').style.display = showAnalyze ? 'inline-flex' : 'none';
-            }
-
-            // Construir el prompt maestro completo
-            function buildMasterPrompt() {
-                let p = `Actúa como arquitecto de información, diseñador editorial y especialista en infografías educativas.\n\n`;
-                p += `Genera una infografía profesional PNFT siguiendo estrictamente este proceso:\n\n`;
-                p += `📎 DOCUMENTO FUENTE:\n${state.documentText}\n\n`;
-                for (let key in state.answers) {
-                    p += `📌 ${key}: ${state.answers[key]}\n`;
-                }
-                p += `\n🖼️ ETAPA 9 – INFOGRAFÍA FINAL:\n`;
-                p += `Formato 16:9, paleta PNFT (#09B7AE, #0BD2CE, #014D6B, #0B6284, #62BDF3, #063B7F, #45258F, #9ED16F, #C9C9C9), tipografía Poppins, iconos 3D semi realistas, estilo educativo profesional secundaria. No infantil, no comercial. Respetar fielmente el contenido original sin modificarlo, resumirlo o agregar nada.`;
-                return p;
-            }
-
-            // Llamada a Gemini
-            async function callGemini(prompt) {
-                if (!state.apiKey || !state.apiKey.startsWith('AIza')) throw new Error('Clave Gemini no configurada.');
-                const res = await fetch(`https://generativelanguage.googleapis.com/v1beta/models/gemini-2.0-flash:generateContent?key=${state.apiKey}`, {
-                    method:'POST',
-                    headers:{'Content-Type':'application/json'},
-                    body: JSON.stringify({
-                        contents:[{parts:[{text:prompt}]}],
-                        generationConfig:{temperature:0.4, maxOutputTokens:2500}
-                    })
+            function updateDesignPanel() {
+                document.getElementById('editTitle').value = state.design.title;
+                document.getElementById('editMainIdea').value = state.design.mainIdea;
+                document.getElementById('editLayout').value = state.design.layout;
+                document.getElementById('editSections').value = state.design.sections.join('\n');
+                // Actualizar colores seleccionados
+                document.querySelectorAll('.color-dot').forEach(dot => {
+                    dot.classList.toggle('selected', state.design.colors.includes(dot.dataset.color));
                 });
-                if (!res.ok) {
-                    const err = await res.json().catch(()=>({}));
-                    throw new Error(err.error?.message || 'Error ' + res.status);
+                if (state.documentText) {
+                    document.getElementById('docInfoCard').style.display = 'block';
+                    document.getElementById('docSummary').textContent = 'Documento cargado (' + state.documentText.length + ' caracteres)';
                 }
-                const data = await res.json();
-                return data.candidates[0].content.parts[0].text;
+                if (state.design.title || state.design.mainIdea || state.design.sections.length > 0) {
+                    document.getElementById('infographicDraft').style.display = 'block';
+                }
             }
 
-            // Función de análisis (solo se llama con el botón "Analizar con IA")
-            async function performAnalysis() {
+            function saveState() {
+                localStorage.setItem('pnft_api_key', state.apiKey);
+                localStorage.setItem('pnft_design', JSON.stringify(state.design));
+                localStorage.setItem('pnft_document', state.documentText);
+                localStorage.setItem('pnft_convStep', state.conversationStep);
+            }
+
+            // ========== Flujo de conversación ==========
+            function askNextQuestion() {
+                if (state.conversationStep === 0) {
+                    addChatMessage('assistant', '¿Cuál es la <strong>idea principal</strong> que quieres que recuerden los estudiantes?');
+                    document.getElementById('btnIASuggest').style.display = 'inline-flex';
+                } else if (state.conversationStep === 1) {
+                    addChatMessage('assistant', '¿Cómo prefieres organizar la información?<br><em>Tarjetas, columnas, línea de tiempo...</em>');
+                } else if (state.conversationStep === 2) {
+                    addChatMessage('assistant', '¿Qué <strong>secciones o temas</strong> debe tener la infografía? (escríbelos separados por comas o en líneas)');
+                } else {
+                    addChatMessage('assistant', '✅ ¡Perfecto! Puedes seguir ajustando el diseño a la derecha. Cuando estés listo, haz clic en <strong>Generar infografía final</strong>.');
+                    document.getElementById('btnIASuggest').style.display = 'none';
+                }
+            }
+
+            function processUserInput(text) {
+                if (state.conversationStep === 0) {
+                    state.design.title = text;
+                    document.getElementById('editTitle').value = text;
+                } else if (state.conversationStep === 1) {
+                    state.design.layout = text.toLowerCase().includes('columna') ? 'columnas' : 
+                                         text.toLowerCase().includes('línea') ? 'linea_tiempo' : 'tarjetas';
+                    document.getElementById('editLayout').value = state.design.layout;
+                } else if (state.conversationStep === 2) {
+                    const sections = text.split(/[,.\n]+/).map(s => s.trim()).filter(s => s);
+                    state.design.sections = sections;
+                    document.getElementById('editSections').value = sections.join('\n');
+                }
+                state.conversationStep++;
+                saveState();
+                updateDesignPanel();
+                if (state.conversationStep <= 2) askNextQuestion();
+                else {
+                    addChatMessage('assistant', 'Puedes editar cualquier campo del diseño a la derecha. Cuando estés listo, pulsa "Generar infografía final".');
+                }
+            }
+
+            // ========== Análisis con IA ==========
+            async function getIASuggestion() {
                 if (state.analysisInProgress) return;
                 state.analysisInProgress = true;
-                const step = steps[state.step];
-                const analysisPrompt = `Analiza el siguiente documento curricular y responde ÚNICAMENTE con un JSON que contenga la información solicitada para la etapa "${step.field}".\n\nDocumento:\n${state.documentText}\n\nFormato JSON esperado (ejemplo): {"temas_principales": ["..."], ...}`;
-                addMessage('assistant', '⏳ Analizando con IA...');
+                const prompt = `Documento: ${state.documentText}\n\nProporciona una sugerencia para el título principal, la idea clave y una lista de secciones para una infografía educativa. Devuelve ÚNICAMENTE un JSON con el formato: {"title": "...", "mainIdea": "...", "sections": ["..."]}`;
                 try {
                     let result;
-                    if (state.mode === 'gemini' && state.apiKey) {
-                        result = await callGemini(analysisPrompt);
+                    if (state.apiKey && state.mode === 'gemini') {
+                        const res = await fetch(`https://generativelanguage.googleapis.com/v1beta/models/gemini-2.0-flash:generateContent?key=${state.apiKey}`, {
+                            method:'POST',
+                            headers:{'Content-Type':'application/json'},
+                            body: JSON.stringify({
+                                contents:[{parts:[{text:prompt}]}],
+                                generationConfig:{temperature:0.4, maxOutputTokens:1000}
+                            })
+                        });
+                        if (!res.ok) throw new Error((await res.json()).error?.message);
+                        const data = await res.json();
+                        result = data.candidates[0].content.parts[0].text;
                     } else {
-                        // Modo ChatGPT: copiar prompt y esperar respuesta manual
-                        navigator.clipboard.writeText(analysisPrompt);
-                        toast('📋 Prompt copiado. Pégalo en ChatGPT y luego pega aquí la respuesta JSON.');
+                        navigator.clipboard.writeText(prompt);
+                        toast('Prompt copiado. Pega la respuesta JSON aquí.');
                         result = await new Promise(resolve => {
                             const input = document.getElementById('userInput');
-                            input.placeholder = 'Pega aquí el JSON de la IA...';
-                            input.focus();
+                            input.placeholder = 'Pega aquí la respuesta JSON...';
                             const origHandler = document.getElementById('btnSend').onclick;
                             document.getElementById('btnSend').onclick = () => {
                                 resolve(input.value.trim());
@@ -289,161 +322,38 @@
                             };
                         });
                     }
-                    // Intentar parsear JSON
-                    const jsonData = JSON.parse(result.replace(/```json|```/g, ''));
-                    // Mostrar sugerencias
-                    showSuggestionCards(jsonData, step.field);
+                    const json = JSON.parse(result.replace(/```json|```/g, ''));
+                    state.design.title = json.title || state.design.title;
+                    state.design.mainIdea = json.mainIdea || state.design.mainIdea;
+                    if (json.sections) state.design.sections = json.sections;
+                    updateDesignPanel();
+                    addChatMessage('assistant', '✨ He actualizado el diseño con sugerencias de la IA. Puedes editarlas a la derecha.');
                 } catch (e) {
-                    addMessage('assistant', `❌ Error: ${e.message}. Responde manualmente.`);
+                    addChatMessage('assistant', '❌ No pude obtener sugerencias: ' + e.message);
                 }
                 state.analysisInProgress = false;
             }
 
-            function showSuggestionCards(jsonData, field) {
-                const container = document.getElementById('chatPanel');
-                const cardDiv = document.createElement('div');
-                cardDiv.className = 'message assistant';
-                let html = '<div class="avatar">🤖</div><div class="bubble"><strong>Sugerencias de la IA:</strong><br>';
-                html += `<pre style="font-size:0.8rem;">${JSON.stringify(jsonData, null, 2)}</pre>`;
-                html += `<div style="margin-top:0.8rem;display:flex;gap:0.5rem;">
-                    <button class="btn btn-sm accept-suggestion">✅ Usar</button>
-                    <button class="btn btn-outline btn-sm edit-suggestion">✏️ Editar</button>
-                </div></div>`;
-                cardDiv.innerHTML = html;
-                container.appendChild(cardDiv);
-                container.scrollTop = container.scrollHeight;
-
-                const acceptBtn = cardDiv.querySelector('.accept-suggestion');
-                const editBtn = cardDiv.querySelector('.edit-suggestion');
-                acceptBtn.addEventListener('click', () => {
-                    state.answers[field] = JSON.stringify(jsonData);
-                    state.step++;
-                    saveState(); updateUI();
-                    cardDiv.remove();
-                    showStep(state.step);
-                });
-                editBtn.addEventListener('click', () => {
-                    const textarea = document.createElement('textarea');
-                    textarea.value = JSON.stringify(jsonData, null, 2);
-                    textarea.rows = 4;
-                    cardDiv.querySelector('.bubble').appendChild(textarea);
-                    const saveBtn = document.createElement('button');
-                    saveBtn.textContent = 'Guardar cambios';
-                    saveBtn.className = 'btn btn-sm';
-                    saveBtn.addEventListener('click', () => {
-                        try {
-                            const newData = JSON.parse(textarea.value);
-                            state.answers[field] = JSON.stringify(newData);
-                            state.step++;
-                            saveState(); updateUI();
-                            cardDiv.remove();
-                            showStep(state.step);
-                        } catch (e) { toast('JSON inválido'); }
-                    });
-                    cardDiv.querySelector('.bubble').appendChild(saveBtn);
-                    acceptBtn.disabled = true;
-                    editBtn.disabled = true;
-                });
-            }
-
-            // Manejar envío de texto
-            async function handleSend() {
+            // ========== Eventos ==========
+            document.getElementById('btnSend').addEventListener('click', () => {
                 const input = document.getElementById('userInput');
                 const text = input.value.trim();
-                const action = document.getElementById('btnSend').dataset.action;
-
-                if (action === 'generate') {
-                    const master = buildMasterPrompt();
-                    if (state.mode === 'gemini' && state.apiKey) {
-                        addMessage('assistant', '⏳ Generando infografía...');
-                        try {
-                            const result = await callGemini(master);
-                            addMessage('assistant', '🎉 ¡Infografía lista!\n\n' + result);
-                        } catch (e) {
-                            addMessage('assistant', '❌ ' + e.message);
-                        }
-                    } else {
-                        navigator.clipboard.writeText(master);
-                        addMessage('assistant', '📋 Prompt maestro copiado. Pégalo en ChatGPT para obtener la infografía.');
-                    }
-                    document.getElementById('btnSend').textContent = '🔄 Reiniciar';
-                    document.getElementById('btnSend').dataset.action = 'reset';
-                    return;
-                }
-
-                if (action === 'reset') {
-                    state.step = 0; state.answers = {}; state.documentText = '';
-                    document.getElementById('chatPanel').innerHTML = '';
-                    document.getElementById('btnSend').textContent = '➤';
-                    document.getElementById('btnSend').dataset.action = 'answer';
-                    showStep(0); updateUI(); saveState();
-                    return;
-                }
-
                 if (!text) return;
-
-                // Procesar respuesta manual
-                const field = steps[state.step].field;
-                if (field === 'document') {
-                    state.documentText = text;
-                    addMessage('user', '📄 Documento guardado (' + text.length + ' caracteres)');
-                } else {
-                    state.answers[field] = text;
-                    addMessage('user', text);
-                }
-                state.step++;
-                saveState(); updateUI();
+                addChatMessage('user', text);
                 input.value = '';
-                showStep(state.step);
-            }
-
-            // Event Listeners
-            document.getElementById('btnSend').addEventListener('click', handleSend);
-            document.getElementById('userInput').addEventListener('keydown', (e) => {
-                if (e.key === 'Enter' && !e.shiftKey) { e.preventDefault(); handleSend(); }
-            });
-            document.getElementById('btnSkipStep').addEventListener('click', () => {
-                const field = steps[state.step].field;
-                state.answers[field] = 'No especificado';
-                state.step++;
-                saveState(); updateUI();
-                showStep(state.step);
-            });
-            document.getElementById('btnAnalyze').addEventListener('click', performAnalysis);
-
-            // Cambio de modo
-            document.querySelectorAll('.mode-option').forEach(opt => {
-                opt.addEventListener('click', () => {
-                    state.mode = opt.dataset.mode;
-                    saveState(); updateUI();
-                    toast('Modo: ' + (state.mode === 'gemini' ? 'Gemini (gratis)' : 'ChatGPT (copiar prompt)'));
-                });
-            });
-
-            // Modal API Key
-            document.getElementById('btnApiKey').addEventListener('click', () => {
-                document.getElementById('apiKeyInput').value = state.apiKey;
-                document.getElementById('modalApi').style.display = 'flex';
-            });
-            document.getElementById('btnCancelApi').addEventListener('click', () => document.getElementById('modalApi').style.display = 'none');
-            document.getElementById('btnSaveApi').addEventListener('click', () => {
-                state.apiKey = document.getElementById('apiKeyInput').value.trim();
-                saveState();
-                document.getElementById('modalApi').style.display = 'none';
-                toast('Clave guardada');
-            });
-
-            document.getElementById('btnReset').addEventListener('click', () => {
-                if (confirm('¿Reiniciar todo?')) {
-                    state.step=0; state.answers={}; state.documentText='';
-                    document.getElementById('chatPanel').innerHTML = '';
-                    document.getElementById('btnSend').textContent = '➤';
-                    document.getElementById('btnSend').dataset.action = 'answer';
-                    showStep(0); updateUI(); saveState();
+                if (state.conversationStep === 0 && !state.documentText) {
+                    // Asumimos que es el documento
+                    state.documentText = text;
+                    document.getElementById('docInfoCard').style.display = 'block';
+                    document.getElementById('docSummary').textContent = 'Documento cargado (' + text.length + ' caracteres)';
+                    addChatMessage('assistant', '📄 Documento recibido. Vamos a diseñar la infografía.');
+                    askNextQuestion();
+                    saveState();
+                } else {
+                    processUserInput(text);
                 }
             });
 
-            // Carga de archivos
             document.getElementById('btnUploadFile').addEventListener('click', () => document.getElementById('fileInput').click());
             document.getElementById('fileInput').addEventListener('change', async (e) => {
                 const file = e.target.files[0]; if (!file) return;
@@ -467,19 +377,118 @@
                         const json = pptx2json(buf);
                         json.slides.forEach(s => s.texts.forEach(t => text += t+'\n'));
                     } else throw new Error('Formato no soportado');
-                    document.getElementById('userInput').value = text;
-                    toast('✅ Texto extraído. Envíalo.');
+                    state.documentText = text;
+                    document.getElementById('docInfoCard').style.display = 'block';
+                    document.getElementById('docSummary').textContent = 'Documento cargado (' + text.length + ' caracteres)';
+                    addChatMessage('assistant', '📄 Documento cargado correctamente. Vamos a diseñar la infografía.');
+                    askNextQuestion();
+                    saveState();
                 } catch (err) { toast('❌ '+err.message); }
             });
 
+            document.getElementById('btnIASuggest').addEventListener('click', getIASuggestion);
+
+            // Edición en vivo desde el panel derecho
+            document.getElementById('editTitle').addEventListener('input', (e) => {
+                state.design.title = e.target.value; saveState();
+            });
+            document.getElementById('editMainIdea').addEventListener('input', (e) => {
+                state.design.mainIdea = e.target.value; saveState();
+            });
+            document.getElementById('editLayout').addEventListener('change', (e) => {
+                state.design.layout = e.target.value; saveState();
+            });
+            document.getElementById('editSections').addEventListener('input', (e) => {
+                state.design.sections = e.target.value.split('\n').filter(s => s.trim());
+                saveState();
+            });
+            document.querySelectorAll('.color-dot').forEach(dot => {
+                dot.addEventListener('click', () => {
+                    const color = dot.dataset.color;
+                    if (state.design.colors.includes(color)) {
+                        state.design.colors = state.design.colors.filter(c => c !== color);
+                    } else {
+                        if (state.design.colors.length >= 2) state.design.colors.shift();
+                        state.design.colors.push(color);
+                    }
+                    updateDesignPanel();
+                    saveState();
+                });
+            });
+
+            // Generar infografía final
+            document.getElementById('btnGenerate').addEventListener('click', async () => {
+                const prompt = `Genera una infografía educativa PNFT con estos parámetros:
+                Título: ${state.design.title}
+                Idea principal: ${state.design.mainIdea}
+                Organización: ${state.design.layout}
+                Colores dominantes: ${state.design.colors.join(', ')}
+                Secciones: ${state.design.sections.join(', ')}
+                Documento fuente: ${state.documentText}
+                Requisitos: formato 16:9, tipografía Poppins, iconos 3D semi realistas, estilo profesional secundaria, no infantil.`;
+                if (state.apiKey && state.mode === 'gemini') {
+                    try {
+                        const res = await fetch(`https://generativelanguage.googleapis.com/v1beta/models/gemini-2.0-flash:generateContent?key=${state.apiKey}`, {
+                            method:'POST',
+                            headers:{'Content-Type':'application/json'},
+                            body: JSON.stringify({
+                                contents:[{parts:[{text:prompt}]}],
+                                generationConfig:{temperature:0.4, maxOutputTokens:2000}
+                            })
+                        });
+                        const data = await res.json();
+                        const result = data.candidates[0].content.parts[0].text;
+                        addChatMessage('assistant', '🎉 Infografía generada:\n' + result);
+                    } catch (e) {
+                        addChatMessage('assistant', '❌ Error: ' + e.message);
+                    }
+                } else {
+                    navigator.clipboard.writeText(prompt);
+                    addChatMessage('assistant', '📋 Prompt copiado. Pégalo en ChatGPT para obtener la infografía.');
+                }
+            });
+
+            // Modal API Key
+            document.getElementById('btnApiKey').addEventListener('click', () => {
+                document.getElementById('apiKeyInput').value = state.apiKey;
+                document.getElementById('modalApi').style.display = 'flex';
+            });
+            document.getElementById('btnCancelApi').addEventListener('click', () => document.getElementById('modalApi').style.display = 'none');
+            document.getElementById('btnSaveApi').addEventListener('click', () => {
+                state.apiKey = document.getElementById('apiKeyInput').value.trim();
+                saveState();
+                document.getElementById('modalApi').style.display = 'none';
+                toast('Clave guardada');
+            });
+            document.getElementById('btnReset').addEventListener('click', () => {
+                if (confirm('¿Reiniciar?')) {
+                    state.documentText = '';
+                    state.design = { title:'', mainIdea:'', layout:'tarjetas', colors:['#09B7AE','#014D6B'], sections:[] };
+                    state.conversationStep = 0;
+                    document.getElementById('chatMessages').innerHTML = '';
+                    document.getElementById('docInfoCard').style.display = 'none';
+                    document.getElementById('infographicDraft').style.display = 'none';
+                    updateDesignPanel();
+                    saveState();
+                    addChatMessage('assistant', '¡Empecemos de nuevo! Pega tu documento.');
+                }
+            });
+
             // Inicializar
-            const savedStep = localStorage.getItem('pnft_step');
-            if (savedStep) state.step = parseInt(savedStep);
-            const savedAnswers = localStorage.getItem('pnft_answers');
-            if (savedAnswers) state.answers = JSON.parse(savedAnswers);
+            const savedDesign = localStorage.getItem('pnft_design');
+            if (savedDesign) state.design = JSON.parse(savedDesign);
             state.documentText = localStorage.getItem('pnft_document') || '';
-            updateUI();
-            showStep(state.step);
+            state.conversationStep = parseInt(localStorage.getItem('pnft_convStep') || '0');
+            if (state.documentText) {
+                document.getElementById('docInfoCard').style.display = 'block';
+                document.getElementById('docSummary').textContent = 'Documento cargado (' + state.documentText.length + ' caracteres)';
+            }
+            updateDesignPanel();
+            if (state.conversationStep === 0 && !state.documentText) {
+                // mensaje inicial ya está
+            } else if (state.conversationStep <= 2) {
+                askNextQuestion();
+            }
         })();
     </script>
 </body>
