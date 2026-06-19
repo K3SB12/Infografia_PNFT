@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>PNFT Infografía Lab – Control por Etapas + Guardado</title>
+    <title>PNFT Infografía Lab · Estructura Optimizada</title>
     <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@300;400;500;600;700;800&display=swap" rel="stylesheet">
     <script src="https://cdnjs.cloudflare.com/ajax/libs/pdf.js/3.11.174/pdf.min.js"></script>
     <script src="https://cdn.jsdelivr.net/npm/mammoth@1.6.0/mammoth.browser.min.js"></script>
@@ -43,7 +43,7 @@
         .btn:disabled { opacity:0.5; pointer-events:none; }
         .main-container { display:flex; flex:1; overflow:hidden; }
         .left-panel {
-            width:320px; background:var(--blanco); border-right:1px solid var(--gris-claro);
+            width:280px; background:var(--blanco); border-right:1px solid var(--gris-claro);
             display:flex; flex-direction:column;
         }
         .stages-list { flex:1; overflow-y:auto; padding:1rem; }
@@ -99,7 +99,7 @@
     <header>
         <div class="logo">
             <div class="logo-icon">PNFT</div>
-            <span>Infografía Lab · Guardado JSON</span>
+            <span>Infografía Lab · Optimizada</span>
         </div>
         <div>
             <button class="btn btn-outline btn-sm" id="btnApiKey">🔑 Clave Gemini</button>
@@ -114,8 +114,8 @@
                 <button class="btn btn-outline btn-sm" id="btnUploadFile">📂 Cargar documento</button>
                 <input type="file" id="fileInput" accept=".docx,.pdf,.pptx,.txt" hidden>
                 <div style="display:flex; gap:0.5rem;">
-                    <button class="btn btn-outline btn-sm" id="btnSaveProgress" style="flex:1;">💾 Guardar progreso</button>
-                    <button class="btn btn-outline btn-sm" id="btnLoadProgress" style="flex:1;">📥 Cargar progreso</button>
+                    <button class="btn btn-outline btn-sm" id="btnSaveProgress" style="flex:1;">💾 Guardar</button>
+                    <button class="btn btn-outline btn-sm" id="btnLoadProgress" style="flex:1;">📥 Cargar</button>
                 </div>
                 <input type="file" id="loadJsonInput" accept=".json" hidden>
             </div>
@@ -135,8 +135,8 @@
             <div class="card" id="stageCard" style="display:none;">
                 <h3 id="stageTitle"></h3>
                 <p id="stageDescription" style="font-size:0.9rem; color:var(--gris-texto); margin-bottom:0.5rem;"></p>
-                <label style="font-weight:600; font-size:0.85rem;">📝 Prompt (puedes editarlo antes de enviar):</label>
-                <textarea id="promptText" rows="8"></textarea>
+                <label style="font-weight:600; font-size:0.85rem;">📝 Prompt (editable):</label>
+                <textarea id="promptText" rows="6"></textarea>
                 <div class="flex-row" style="margin-top:0.8rem;">
                     <button class="btn" id="btnSendToAI">🤖 Enviar a Gemini</button>
                     <button class="btn btn-outline" id="btnCopyPrompt">📋 Copiar para ChatGPT</button>
@@ -154,9 +154,9 @@
 
             <div class="card" id="finalCard" style="display:none;">
                 <h3>🖼️ Generar infografía final</h3>
-                <p>Todas las etapas han sido aprobadas. Ahora puedes construir el prompt maestro completo.</p>
+                <p>Todos los bloques han sido aprobados. Ahora puedes construir el prompt maestro completo.</p>
                 <button class="btn" id="btnBuildFinal">🪄 Construir prompt maestro</button>
-                <textarea id="finalPrompt" rows="8" style="margin-top:1rem;" readonly></textarea>
+                <textarea id="finalPrompt" rows="6" style="margin-top:1rem;" readonly></textarea>
                 <button class="btn btn-outline btn-sm" id="btnCopyFinal" style="margin-top:0.5rem;">📋 Copiar prompt final</button>
             </div>
         </div>
@@ -183,33 +183,54 @@
                 stepResponses: JSON.parse(localStorage.getItem('pnft_responses') || '{}'),
             };
 
-            const steps = [
-                { id: '1', title: '🧩 Etapa 1 – Comprensión del contenido', desc: 'Analiza el documento y presenta una tabla con secciones, función, importancia y justificación.',
-                  prompt: 'Actúa como arquitecto de información, diseñador editorial y especialista en infografías educativas.\n\nAnaliza el documento proporcionado.\n\nNO generes todavía la infografía.\n\nIdentifica:\n- Temas principales.\n- Temas secundarios.\n- Temas complementarios.\n- Información que debe verse primero.\n- Información que debe recordarse después.\n- Información que requiere acción.\n- Información que sirve como contexto.\n\nPresenta una tabla con:\nSección | Función | Nivel de importancia | Justificación' },
-                { id: '2', title: '🧠 Etapa 2 – Jerarquía y Pesos PNFT', desc: 'Clasifica cada sección según la escala PNFT (1,3,5) y justifica.',
-                  prompt: 'Clasifica cada sección según la escala PNFT:\nPeso 1 = Contexto\nPeso 3 = Comprensión\nPeso 5 = Aplicación o recuerdo\n\nJustifica cada clasificación.\n\nDefine:\n- qué debe ver primero el lector\n- qué debe recordar después\n- qué debe aplicar\n- qué solo contextualiza' },
-                { id: '3', title: '🏗️ Etapa 3 – Arquitectura de Información', desc: 'Genera 3 propuestas de arquitectura visual con diagramas ASCII.',
-                  prompt: 'Genera 3 propuestas de arquitectura visual.\n\nIncluye para cada una:\n- ventajas\n- desventajas\n- tipo de lectura\n- casos de uso\n\nRepresenta con diagramas ASCII.' },
-                { id: '4', title: '🧱 Etapa 4 – Wireframe', desc: 'Convierte la arquitectura seleccionada en wireframe (ASCII).',
-                  prompt: 'Convierte la arquitectura seleccionada en wireframe.\n\nIncluye:\n- orden de lectura\n- jerarquía visual\n- tamaño relativo de bloques\n- flujo visual\n\nRepresenta en ASCII.' },
-                { id: '5', title: '📐 Etapa 5 – Retícula PNFT', desc: 'Define retícula de 12 columnas, tamaño del lienzo y distribución.',
-                  prompt: 'Define la retícula PNFT estándar:\n|1|2|3|4|5|6|7|8|9|10|11|12|\n\nEspecifica:\n- tamaño del lienzo\n- columnas\n- filas\n- distribución\n- porcentajes de bloques' },
-                { id: '5.5', title: '🎨 Etapa 5.5 – Sistema Cromático PNFT', desc: 'Define el uso pedagógico del color con la paleta oficial.',
-                  prompt: 'Paleta oficial PNFT:\n#09B7AE, #0BD2CE, #014D6B, #0B6284, #62BDF3, #063B7F, #45258F, #9ED16F, #C9C9C9\n\nRegla clave: El color = codificación pedagógica, no decoración.\n\nDefine:\n- codificación de áreas por color\n- jerarquía cromática\n- bloques de integración\n- contraste y legibilidad' },
-                { id: '6', title: '🎨 Etapa 6 – Sistema de Diseño Visual PNFT', desc: 'Confirma orientación, estilo, tipografía, iconos 3D, ilustraciones.',
-                  prompt: 'ORIENTACIÓN: Horizontal 16:9, lectura izquierda → derecha\nESTILO GENERAL: Educativo, Académico, Profesional, Moderno, Secundaria, No infantil, No comercial\nTIPOGRAFÍA: Poppins Bold (títulos), SemiBold (sub), Regular (contenido)\nICONOGRAFÍA: Solo iconos 3D semi realistas (cerebro, bloques, dashboards, robot, escudo). Prohibido flat, emojis, clipart, caricaturas.\nILUSTRACIONES: Adolescentes 16-18 años, vestimenta casual institucional, sin infantilización.\nELEMENTOS TECNOLÓGICOS: dashboards, IA, programación, robótica, automatización, interfaces digitales.\nCOMPOSICIÓN: tarjetas redondeadas, espacios amplios, alto contraste, equilibrio texto/imagen, legibilidad alta.' },
-                { id: '6.2', title: '🧱 Etapa 6.2 – Composición Visual', desc: 'Distribución de bloques, espacios en blanco, equilibrio, ≤10s.',
-                  prompt: 'Define:\n- distribución de bloques\n- espacios en blanco\n- alineación general\n- jerarquía visual\n- balance gráfico\n\nRegla: Lectura por bloque ≤ 10 segundos.' },
-                { id: '6.3', title: '🧠 Etapa 6.3 – Densidad Cognitiva', desc: 'Control de carga de ideas por bloque (máx 3-5, complejidad).',
-                  prompt: 'Para cada bloque define:\n- máximo 3–5 ideas\n- idea principal\n- ideas secundarias\n- nivel de complejidad\n\nRegla: Evitar saturación cognitiva.' },
-                { id: '6.5', title: '🧪 Etapa 6.5 – Auditoría Visual PNFT', desc: 'Verifica cumplimiento de requisitos visuales.',
-                  prompt: 'Verifica cumplimiento:\n□ 16:9 correcto\n□ lectura izquierda a derecha\n□ Poppins aplicado\n□ paleta PNFT correcta\n□ iconografía 3D coherente\n□ estructura curricular intacta\n□ ejes visibles\n□ legibilidad alta\n□ equilibrio visual\n\nPresenta tabla de cumplimiento.' },
-                { id: '7', title: '🚨 Etapa 7 – Restricciones de Producción PNFT', desc: 'Confirma prohibiciones y obligaciones.',
-                  prompt: 'PROHIBIDO:\n- modificar títulos, saberes, indicadores\n- resumir contenido, reinterpretar\n- reorganizar bloques, fusionar secciones\n- agregar contenido nuevo\n- cambiar tipografía o paleta\nPROHIBIDO VISUAL: infantil, caricatura, emojis, clipart, gamer, comercial, cómic\nPROHIBIDO CURRICULAR: inventar saberes, convertir ejemplos en obligatorios\nOBLIGATORIO: fidelidad 100%, respeto total al contenido, arquitectura, wireframe, retícula, sistema PNFT.\n\nVerifica cumplimiento con tabla.' },
-                { id: '8', title: '🧾 Etapa 8 – Generación de JSON', desc: 'Genera JSON final sin agregar, reorganizar ni resumir.',
-                  prompt: 'Genera JSON final basado en:\n- análisis aprobado\n- jerarquía aprobada\n- arquitectura aprobada\n- wireframe aprobado\n- retícula aprobada\n- sistema visual PNFT\n- restricciones\n\nNo agregar nada. No reorganizar. No resumir.' },
-                { id: '9', title: '🖼️ Etapa 9 – Generación de Infografía', desc: 'Genera la infografía final con fidelidad 100%.',
-                  prompt: 'Genera la infografía final.\nReglas:\n- fidelidad 100%\n- sin cambios estructurales\n- sin reinterpretación\n- sin elementos adicionales\n- formato 16:9, paleta PNFT, Poppins, iconos 3D, estilo educativo profesional secundaria.' }
+            // 3 macrobloques optimizados
+            const blocks = [
+                {
+                    id: 'estructura',
+                    title: '🧩 Bloque 1 – Sistema de Estructura',
+                    desc: 'Define wireframe 16:9, distribución de bloques, flujo de lectura y organización PNFT en un solo mapa estructural.',
+                    prompt: `Actúa como arquitecto de información y diseñador editorial PNFT.
+
+                    Analiza el documento y define en UN SOLO BLOQUE COHERENTE:
+
+                    1. Wireframe base en formato 16:9 con 12 columnas.
+                    2. Distribución de bloques principales.
+                    3. Flujo de lectura (izquierda → derecha).
+                    4. Organización de secciones según la estructura curricular.
+
+                    Usa diagramas ASCII para representarlo.`
+                },
+                {
+                    id: 'jerarquia',
+                    title: '🎯 Bloque 2 – Sistema de Jerarquía Multicapa',
+                    desc: 'Unifica jerarquía tipográfica, visual, cromática (paleta PNFT) e importancia pedagógica.',
+                    prompt: `Aplica el sistema de jerarquía PNFT unificando en un solo análisis:
+
+                    1. Jerarquía tipográfica (Poppins Bold, SemiBold, Regular).
+                    2. Jerarquía por tamaño y espaciado.
+                    3. Jerarquía cromática usando la paleta oficial:
+                       #09B7AE, #0BD2CE, #014D6B, #0B6284, #62BDF3, #063B7F, #45258F, #9ED16F, #C9C9C9
+                       (El color es codificación pedagógica, no decoración).
+                    4. Jerarquía de bloques según importancia pedagógica (Pesos PNFT: 1 contexto, 3 comprensión, 5 aplicación).
+
+                    Justifica cada decisión.`
+                },
+                {
+                    id: 'estilo',
+                    title: '🎨 Bloque 3 – Estilo Visual y Restricciones',
+                    desc: 'Define el estilo profesional, iconografía 3D, prohibiciones y legibilidad ≤10s.',
+                    prompt: `Aplica el sistema de estilo y restricciones PNFT:
+
+                    1. ESTILO: Educativo, académico, profesional, moderno, secundaria. No infantil, no comercial.
+                    2. TIPOGRAFÍA: Poppins (Bold títulos, SemiBold subtítulos, Regular contenido).
+                    3. ICONOGRAFÍA: Solo 3D semi realista (cerebro, bloques, robot, escudo). Prohibido flat, emojis, clipart, caricaturas.
+                    4. ILUSTRACIONES: Adolescentes 16-18 años, vestimenta casual institucional.
+                    5. COMPOSICIÓN: Tarjetas redondeadas, alto contraste, equilibrio texto/imagen, lectura ≤10s por bloque.
+                    6. DENSIDAD COGNITIVA: Máximo 3-5 ideas por bloque. Evitar saturación.
+                    7. RESTRICCIONES: No modificar, resumir, reinterpretar ni agregar contenido. Fidelidad 100% al documento original.
+
+                    Verifica el cumplimiento con una tabla.`
+                }
             ];
 
             function toast(msg) {
@@ -225,7 +246,6 @@
                 localStorage.setItem('pnft_document', state.documentText);
             }
 
-            // Exportar el progreso a un archivo JSON
             function exportProgress() {
                 const data = {
                     documentText: state.documentText,
@@ -233,42 +253,30 @@
                     approvedSteps: [...state.approvedSteps],
                     stepResponses: state.stepResponses,
                 };
-                const jsonStr = JSON.stringify(data, null, 2);
-                const blob = new Blob([jsonStr], {type: 'application/json'});
-                const url = URL.createObjectURL(blob);
+                const blob = new Blob([JSON.stringify(data, null, 2)], {type: 'application/json'});
                 const a = document.createElement('a');
-                a.href = url;
+                a.href = URL.createObjectURL(blob);
                 a.download = 'pnft_progreso.json';
-                document.body.appendChild(a);
                 a.click();
-                document.body.removeChild(a);
-                URL.revokeObjectURL(url);
-                toast('💾 Progreso guardado como archivo JSON');
+                toast('💾 Progreso guardado como JSON');
             }
 
-            // Cargar progreso desde un archivo JSON
             function loadProgressFromFile(file) {
                 const reader = new FileReader();
                 reader.onload = (e) => {
                     try {
                         const data = JSON.parse(e.target.result);
-                        if (!data.documentText || !data.stepResponses || !data.approvedSteps) {
-                            throw new Error('Formato inválido');
-                        }
+                        if (!data.documentText || !data.stepResponses || !data.approvedSteps) throw new Error('Formato inválido');
                         if (!confirm('¿Cargar este progreso? Se reemplazará el trabajo actual.')) return;
                         state.documentText = data.documentText;
                         state.approvedSteps = new Set(data.approvedSteps);
                         state.stepResponses = data.stepResponses;
                         state.currentStep = data.currentStep || 0;
                         saveState();
-                        // Limpiar el campo de prompt actual
                         document.getElementById('promptText').value = '';
-                        document.getElementById('promptText').dataset.stepId = '';
                         updateUI();
-                        toast('📥 Progreso cargado exitosamente');
-                    } catch (err) {
-                        toast('❌ Error al cargar el archivo JSON');
-                    }
+                        toast('📥 Progreso cargado');
+                    } catch (err) { toast('❌ Error al cargar el JSON'); }
                 };
                 reader.readAsText(file);
             }
@@ -276,14 +284,14 @@
             function updateUI() {
                 const list = document.getElementById('stagesList');
                 list.innerHTML = '';
-                steps.forEach((step, index) => {
+                blocks.forEach((block, index) => {
                     const div = document.createElement('div');
                     div.className = 'stage-item';
                     if (index === state.currentStep) div.classList.add('active');
-                    if (state.approvedSteps.has(step.id)) div.classList.add('completed');
-                    div.innerHTML = `<span class="stage-num">${step.id}</span> ${step.title}`;
+                    if (state.approvedSteps.has(block.id)) div.classList.add('completed');
+                    div.innerHTML = `<span class="stage-num">${index+1}</span> ${block.title}`;
                     div.addEventListener('click', () => {
-                        if (state.documentText && (index === 0 || state.approvedSteps.has(steps[index-1].id))) {
+                        if (state.documentText && (index === 0 || state.approvedSteps.has(blocks[index-1].id))) {
                             state.currentStep = index;
                             updateUI();
                         }
@@ -291,35 +299,28 @@
                     list.appendChild(div);
                 });
 
-                const docCard = document.getElementById('docCard');
-                if (!state.documentText) {
-                    docCard.style.display = 'block';
-                } else {
-                    docCard.style.display = 'none';
-                    document.getElementById('standardsCard').style.display = 'block';
-                }
+                document.getElementById('docCard').style.display = state.documentText ? 'none' : 'block';
+                if (state.documentText) document.getElementById('standardsCard').style.display = 'block';
 
-                const stageCard = document.getElementById('stageCard');
-                const finalCard = document.getElementById('finalCard');
-                if (state.documentText && state.currentStep < steps.length) {
-                    stageCard.style.display = 'block';
-                    finalCard.style.display = 'none';
-                    const step = steps[state.currentStep];
-                    document.getElementById('stageTitle').textContent = step.title;
-                    document.getElementById('stageDescription').textContent = step.desc;
-                    if (!document.getElementById('promptText').value || document.getElementById('promptText').dataset.stepId !== step.id) {
-                        document.getElementById('promptText').value = step.prompt + '\n\n📎 DOCUMENTO:\n' + state.documentText;
-                        document.getElementById('promptText').dataset.stepId = step.id;
+                if (state.documentText && state.currentStep < blocks.length) {
+                    document.getElementById('stageCard').style.display = 'block';
+                    document.getElementById('finalCard').style.display = 'none';
+                    const block = blocks[state.currentStep];
+                    document.getElementById('stageTitle').textContent = block.title;
+                    document.getElementById('stageDescription').textContent = block.desc;
+                    if (!document.getElementById('promptText').value || document.getElementById('promptText').dataset.blockId !== block.id) {
+                        document.getElementById('promptText').value = block.prompt + '\n\n📎 DOCUMENTO:\n' + state.documentText;
+                        document.getElementById('promptText').dataset.blockId = block.id;
                     }
-                    if (state.stepResponses[step.id]) {
+                    if (state.stepResponses[block.id]) {
                         document.getElementById('responseContainer').style.display = 'block';
-                        document.getElementById('responseArea').textContent = state.stepResponses[step.id];
+                        document.getElementById('responseArea').textContent = state.stepResponses[block.id];
                     } else {
                         document.getElementById('responseContainer').style.display = 'none';
                     }
-                } else if (state.currentStep >= steps.length) {
-                    stageCard.style.display = 'none';
-                    finalCard.style.display = 'block';
+                } else if (state.currentStep >= blocks.length) {
+                    document.getElementById('stageCard').style.display = 'none';
+                    document.getElementById('finalCard').style.display = 'block';
                 }
             }
 
@@ -330,7 +331,7 @@
                     headers:{'Content-Type':'application/json'},
                     body: JSON.stringify({
                         contents:[{parts:[{text:prompt}]}],
-                        generationConfig:{temperature:0.4, maxOutputTokens:2000}
+                        generationConfig:{temperature:0.4, maxOutputTokens:3000}
                     })
                 });
                 if (!res.ok) throw new Error((await res.json()).error?.message || 'Error');
@@ -388,8 +389,7 @@
             });
 
             document.getElementById('btnCopyPrompt').addEventListener('click', () => {
-                const prompt = document.getElementById('promptText').value;
-                navigator.clipboard.writeText(prompt).then(() => {
+                navigator.clipboard.writeText(document.getElementById('promptText').value).then(() => {
                     toast('📋 Prompt copiado');
                     document.getElementById('btnPasteResponse').style.display = 'inline-flex';
                 });
@@ -397,8 +397,7 @@
 
             document.getElementById('btnPasteResponse').addEventListener('click', async () => {
                 try {
-                    const text = await navigator.clipboard.readText();
-                    document.getElementById('responseArea').textContent = text;
+                    document.getElementById('responseArea').textContent = await navigator.clipboard.readText();
                     document.getElementById('responseContainer').style.display = 'block';
                 } catch { toast('No se pudo leer del portapapeles'); }
             });
@@ -406,19 +405,18 @@
             document.getElementById('btnApprove').addEventListener('click', () => {
                 const response = document.getElementById('responseArea').textContent;
                 if (!response) return toast('No hay respuesta');
-                const stepId = steps[state.currentStep].id;
-                state.stepResponses[stepId] = response;
-                state.approvedSteps.add(stepId);
-                if (state.currentStep < steps.length - 1) {
+                const blockId = blocks[state.currentStep].id;
+                state.stepResponses[blockId] = response;
+                state.approvedSteps.add(blockId);
+                if (state.currentStep < blocks.length - 1) {
                     state.currentStep++;
                 } else {
-                    state.currentStep = steps.length;
+                    state.currentStep = blocks.length;
                 }
                 document.getElementById('promptText').value = '';
-                document.getElementById('promptText').dataset.stepId = '';
                 saveState();
                 updateUI();
-                toast('✅ Etapa aprobada');
+                toast('✅ Bloque aprobado');
             });
 
             document.getElementById('btnRetry').addEventListener('click', () => {
@@ -427,15 +425,13 @@
             });
 
             document.getElementById('btnBuildFinal').addEventListener('click', () => {
-                let final = '🧠 PROMPT MAESTRO PNFT COMPLETO\n\n';
-                final += '📎 DOCUMENTO FUENTE:\n' + state.documentText + '\n\n';
-                steps.forEach(step => {
-                    if (state.stepResponses[step.id]) {
-                        final += `✅ ${step.title}:\n${state.stepResponses[step.id]}\n\n`;
+                let final = '🧠 PROMPT MAESTRO PNFT OPTIMIZADO\n\n📎 DOCUMENTO:\n' + state.documentText + '\n';
+                blocks.forEach(block => {
+                    if (state.stepResponses[block.id]) {
+                        final += `✅ ${block.title}:\n${state.stepResponses[block.id]}\n\n`;
                     }
                 });
-                final += '🖼️ ETAPA 9 – GENERACIÓN DE INFOGRAFÍA FINAL:\n';
-                final += 'Genera la infografía final con fidelidad 100%, formato 16:9, paleta PNFT, Poppins, iconos 3D, estilo educativo profesional secundaria.';
+                final += '🖼️ GENERACIÓN DE INFOGRAFÍA FINAL:\nFidelidad 100%, 16:9, paleta PNFT, Poppins, iconos 3D, profesional.';
                 document.getElementById('finalPrompt').value = final;
             });
 
@@ -443,18 +439,12 @@
                 navigator.clipboard.writeText(document.getElementById('finalPrompt').value).then(() => toast('📋 Prompt final copiado'));
             });
 
-            // Guardar y cargar progreso
             document.getElementById('btnSaveProgress').addEventListener('click', exportProgress);
-            document.getElementById('btnLoadProgress').addEventListener('click', () => {
-                document.getElementById('loadJsonInput').click();
-            });
+            document.getElementById('btnLoadProgress').addEventListener('click', () => document.getElementById('loadJsonInput').click());
             document.getElementById('loadJsonInput').addEventListener('change', (e) => {
-                const file = e.target.files[0];
-                if (file) loadProgressFromFile(file);
-                e.target.value = ''; // permite recargar el mismo archivo
+                if (e.target.files[0]) loadProgressFromFile(e.target.files[0]);
             });
 
-            // Modal API
             document.getElementById('btnApiKey').addEventListener('click', () => {
                 document.getElementById('apiKeyInput').value = state.apiKey;
                 document.getElementById('modalApi').style.display = 'flex';
@@ -473,7 +463,6 @@
                     state.approvedSteps.clear();
                     state.stepResponses = {};
                     document.getElementById('promptText').value = '';
-                    document.getElementById('promptText').dataset.stepId = '';
                     saveState();
                     updateUI();
                     toast('Reiniciado');
