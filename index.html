@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>PNFT Infografía Lab</title>
+    <title>PNFT Infografía Lab · Modo Colega</title>
     <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@300;400;500;600;700;800&display=swap" rel="stylesheet">
     <script src="https://cdnjs.cloudflare.com/ajax/libs/pdf.js/3.11.174/pdf.min.js"></script>
     <script src="https://cdn.jsdelivr.net/npm/mammoth@1.6.0/mammoth.browser.min.js"></script>
@@ -13,7 +13,6 @@
             --turquesa: #09B7AE; --azul-oscuro: #014D6B; --azul-inst: #063B7F;
             --verde: #9ED16F; --gris-neutro: #C9C9C9; --gris-claro: #E8ECF1;
             --blanco: #FFFFFF; --gris-texto: #4A5568; --fondo: #F5F7FA;
-            --sombra: 0 8px 32px rgba(0,0,0,0.08);
             --font: 'Poppins', sans-serif;
         }
         * { margin:0; padding:0; box-sizing:border-box; }
@@ -45,11 +44,9 @@
         .app-layout {
             display:flex; flex:1; overflow:hidden;
         }
-        /* Panel de conversación (izquierda) */
         .chat-side {
             width:40%; min-width:300px; background:var(--blanco);
-            display:flex; flex-direction:column;
-            box-shadow: var(--sombra); z-index:10;
+            display:flex; flex-direction:column; box-shadow: 0 8px 32px rgba(0,0,0,0.08); z-index:10;
         }
         .chat-messages {
             flex:1; overflow-y:auto; padding:1.2rem; display:flex; flex-direction:column; gap:1rem;
@@ -76,14 +73,13 @@
             font-size:0.9rem; background:var(--blanco); resize:none;
         }
         textarea:focus, input:focus { border-color:var(--turquesa); outline:none; box-shadow:0 0 0 3px rgba(9,183,174,0.1); }
-        /* Panel de diseño (derecha) */
         .design-side {
             flex:1; background:var(--fondo); padding:1.5rem; overflow-y:auto;
             display:flex; flex-direction:column; gap:1rem;
         }
         .design-card {
             background:var(--blanco); border-radius:16px; padding:1.2rem;
-            box-shadow: var(--sombra);
+            box-shadow: 0 8px 32px rgba(0,0,0,0.08);
         }
         .design-card h3 { color:var(--azul-oscuro); margin-bottom:0.5rem; }
         .editable-field {
@@ -125,7 +121,7 @@
     </header>
 
     <div class="app-layout">
-        <!-- Lado izquierdo: Conversación -->
+        <!-- Chat (izquierda) -->
         <div class="chat-side">
             <div class="chat-messages" id="chatMessages">
                 <div class="message assistant">
@@ -149,7 +145,7 @@
             </div>
         </div>
 
-        <!-- Lado derecho: Diseño en vivo -->
+        <!-- Panel de diseño (derecha) -->
         <div class="design-side" id="designPanel">
             <div class="design-card" id="docInfoCard" style="display:none;">
                 <h3>📄 Documento</h3>
@@ -182,6 +178,7 @@
         </div>
     </div>
 
+    <!-- Modal API Key -->
     <div id="modalApi" style="display:none;position:fixed;inset:0;background:rgba(0,0,0,0.5);z-index:200;align-items:center;justify-content:center;">
         <div style="background:#fff;padding:2rem;border-radius:20px;max-width:400px;width:90%;">
             <h3>🔑 Clave Gemini (gratis)</h3>
@@ -195,10 +192,9 @@
 
     <script>
         (function() {
-            // Estado global
             const state = {
                 apiKey: localStorage.getItem('pnft_api_key') || '',
-                mode: 'gemini', // 'gemini' o 'chatgpt'
+                mode: 'gemini',
                 documentText: '',
                 design: {
                     title: '',
@@ -207,11 +203,10 @@
                     colors: ['#09B7AE', '#014D6B'],
                     sections: []
                 },
-                conversationStep: 0, // 0=documento, 1=idea principal, 2=organización, 3=secciones
+                conversationStep: 0, // 0=esperando documento, 1=pidiendo título, 2=idea principal, 3=organización, 4=secciones, 5=libre
                 analysisInProgress: false,
             };
 
-            // ========== UI ==========
             function toast(msg) {
                 const t = document.getElementById('toast');
                 t.textContent = msg; t.className = 'toast show';
@@ -232,7 +227,6 @@
                 document.getElementById('editMainIdea').value = state.design.mainIdea;
                 document.getElementById('editLayout').value = state.design.layout;
                 document.getElementById('editSections').value = state.design.sections.join('\n');
-                // Actualizar colores seleccionados
                 document.querySelectorAll('.color-dot').forEach(dot => {
                     dot.classList.toggle('selected', state.design.colors.includes(dot.dataset.color));
                 });
@@ -252,48 +246,50 @@
                 localStorage.setItem('pnft_convStep', state.conversationStep);
             }
 
-            // ========== Flujo de conversación ==========
             function askNextQuestion() {
                 if (state.conversationStep === 0) {
-                    addChatMessage('assistant', '¿Cuál es la <strong>idea principal</strong> que quieres que recuerden los estudiantes?');
-                    document.getElementById('btnIASuggest').style.display = 'inline-flex';
+                    // ya se preguntó por el documento, no hacemos nada
                 } else if (state.conversationStep === 1) {
-                    addChatMessage('assistant', '¿Cómo prefieres organizar la información?<br><em>Tarjetas, columnas, línea de tiempo...</em>');
+                    addChatMessage('assistant', '¿Qué <strong>título</strong> le ponemos a la infografía?');
+                    document.getElementById('btnIASuggest').style.display = 'inline-flex';
                 } else if (state.conversationStep === 2) {
+                    addChatMessage('assistant', '¿Cuál es la <strong>idea principal</strong> que quieres que recuerden los estudiantes?');
+                } else if (state.conversationStep === 3) {
+                    addChatMessage('assistant', '¿Cómo prefieres organizar la información?<br><em>Tarjetas, columnas, línea de tiempo...</em>');
+                } else if (state.conversationStep === 4) {
                     addChatMessage('assistant', '¿Qué <strong>secciones o temas</strong> debe tener la infografía? (escríbelos separados por comas o en líneas)');
                 } else {
-                    addChatMessage('assistant', '✅ ¡Perfecto! Puedes seguir ajustando el diseño a la derecha. Cuando estés listo, haz clic en <strong>Generar infografía final</strong>.');
+                    addChatMessage('assistant', '✅ ¡Listo! Puedes seguir ajustando el diseño a la derecha. Cuando estés listo, haz clic en <strong>Generar infografía final</strong>.');
                     document.getElementById('btnIASuggest').style.display = 'none';
                 }
             }
 
             function processUserInput(text) {
-                if (state.conversationStep === 0) {
+                if (state.conversationStep === 1) {
                     state.design.title = text;
-                    document.getElementById('editTitle').value = text;
-                } else if (state.conversationStep === 1) {
+                } else if (state.conversationStep === 2) {
+                    state.design.mainIdea = text;
+                } else if (state.conversationStep === 3) {
                     state.design.layout = text.toLowerCase().includes('columna') ? 'columnas' : 
                                          text.toLowerCase().includes('línea') ? 'linea_tiempo' : 'tarjetas';
-                    document.getElementById('editLayout').value = state.design.layout;
-                } else if (state.conversationStep === 2) {
+                } else if (state.conversationStep === 4) {
                     const sections = text.split(/[,.\n]+/).map(s => s.trim()).filter(s => s);
                     state.design.sections = sections;
-                    document.getElementById('editSections').value = sections.join('\n');
                 }
                 state.conversationStep++;
                 saveState();
                 updateDesignPanel();
-                if (state.conversationStep <= 2) askNextQuestion();
-                else {
+                if (state.conversationStep <= 4) {
+                    askNextQuestion();
+                } else {
                     addChatMessage('assistant', 'Puedes editar cualquier campo del diseño a la derecha. Cuando estés listo, pulsa "Generar infografía final".');
                 }
             }
 
-            // ========== Análisis con IA ==========
             async function getIASuggestion() {
                 if (state.analysisInProgress) return;
                 state.analysisInProgress = true;
-                const prompt = `Documento: ${state.documentText}\n\nProporciona una sugerencia para el título principal, la idea clave y una lista de secciones para una infografía educativa. Devuelve ÚNICAMENTE un JSON con el formato: {"title": "...", "mainIdea": "...", "sections": ["..."]}`;
+                const prompt = `Documento: ${state.documentText}\n\nProporciona una sugerencia para el título, idea principal y una lista de secciones para una infografía educativa. Devuelve ÚNICAMENTE un JSON con el formato: {"title": "...", "mainIdea": "...", "sections": ["..."]}`;
                 try {
                     let result;
                     if (state.apiKey && state.mode === 'gemini') {
@@ -334,22 +330,25 @@
                 state.analysisInProgress = false;
             }
 
-            // ========== Eventos ==========
+            // Eventos
             document.getElementById('btnSend').addEventListener('click', () => {
                 const input = document.getElementById('userInput');
                 const text = input.value.trim();
                 if (!text) return;
                 addChatMessage('user', text);
                 input.value = '';
+
+                // Si aún no hay documento, lo guardamos como documento
                 if (state.conversationStep === 0 && !state.documentText) {
-                    // Asumimos que es el documento
                     state.documentText = text;
+                    state.conversationStep = 1; // Pasamos a preguntar título
                     document.getElementById('docInfoCard').style.display = 'block';
                     document.getElementById('docSummary').textContent = 'Documento cargado (' + text.length + ' caracteres)';
                     addChatMessage('assistant', '📄 Documento recibido. Vamos a diseñar la infografía.');
                     askNextQuestion();
                     saveState();
                 } else {
+                    // Procesar la respuesta según la etapa
                     processUserInput(text);
                 }
             });
@@ -378,6 +377,7 @@
                         json.slides.forEach(s => s.texts.forEach(t => text += t+'\n'));
                     } else throw new Error('Formato no soportado');
                     state.documentText = text;
+                    state.conversationStep = 1;
                     document.getElementById('docInfoCard').style.display = 'block';
                     document.getElementById('docSummary').textContent = 'Documento cargado (' + text.length + ' caracteres)';
                     addChatMessage('assistant', '📄 Documento cargado correctamente. Vamos a diseñar la infografía.');
@@ -388,7 +388,7 @@
 
             document.getElementById('btnIASuggest').addEventListener('click', getIASuggestion);
 
-            // Edición en vivo desde el panel derecho
+            // Sincronización del panel de diseño con el estado
             document.getElementById('editTitle').addEventListener('input', (e) => {
                 state.design.title = e.target.value; saveState();
             });
@@ -460,6 +460,7 @@
                 document.getElementById('modalApi').style.display = 'none';
                 toast('Clave guardada');
             });
+
             document.getElementById('btnReset').addEventListener('click', () => {
                 if (confirm('¿Reiniciar?')) {
                     state.documentText = '';
@@ -474,7 +475,7 @@
                 }
             });
 
-            // Inicializar
+            // Inicializar estado guardado
             const savedDesign = localStorage.getItem('pnft_design');
             if (savedDesign) state.design = JSON.parse(savedDesign);
             state.documentText = localStorage.getItem('pnft_document') || '';
@@ -482,12 +483,13 @@
             if (state.documentText) {
                 document.getElementById('docInfoCard').style.display = 'block';
                 document.getElementById('docSummary').textContent = 'Documento cargado (' + state.documentText.length + ' caracteres)';
+                if (state.conversationStep === 0) state.conversationStep = 1;
             }
             updateDesignPanel();
-            if (state.conversationStep === 0 && !state.documentText) {
-                // mensaje inicial ya está
-            } else if (state.conversationStep <= 2) {
+            if (state.conversationStep >= 1 && state.conversationStep <= 4) {
                 askNextQuestion();
+            } else if (state.conversationStep > 4) {
+                addChatMessage('assistant', 'Puedes seguir editando el diseño o generar la infografía final.');
             }
         })();
     </script>
