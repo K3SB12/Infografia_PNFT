@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>PNFT Infografía Lab – Control por Etapas (completo)</title>
+    <title>PNFT Infografía Lab – Control por Etapas + Guardado</title>
     <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@300;400;500;600;700;800&display=swap" rel="stylesheet">
     <script src="https://cdnjs.cloudflare.com/ajax/libs/pdf.js/3.11.174/pdf.min.js"></script>
     <script src="https://cdn.jsdelivr.net/npm/mammoth@1.6.0/mammoth.browser.min.js"></script>
@@ -99,7 +99,7 @@
     <header>
         <div class="logo">
             <div class="logo-icon">PNFT</div>
-            <span>Infografía Lab · Control por Etapas (completo)</span>
+            <span>Infografía Lab · Guardado JSON</span>
         </div>
         <div>
             <button class="btn btn-outline btn-sm" id="btnApiKey">🔑 Clave Gemini</button>
@@ -110,9 +110,14 @@
     <div class="main-container">
         <div class="left-panel">
             <div class="stages-list" id="stagesList"></div>
-            <div style="padding:1rem;">
-                <button class="btn btn-outline btn-sm" id="btnUploadFile" style="width:100%;">📂 Cargar documento</button>
+            <div style="padding:1rem; display:flex; flex-direction:column; gap:0.5rem;">
+                <button class="btn btn-outline btn-sm" id="btnUploadFile">📂 Cargar documento</button>
                 <input type="file" id="fileInput" accept=".docx,.pdf,.pptx,.txt" hidden>
+                <div style="display:flex; gap:0.5rem;">
+                    <button class="btn btn-outline btn-sm" id="btnSaveProgress" style="flex:1;">💾 Guardar progreso</button>
+                    <button class="btn btn-outline btn-sm" id="btnLoadProgress" style="flex:1;">📥 Cargar progreso</button>
+                </div>
+                <input type="file" id="loadJsonInput" accept=".json" hidden>
             </div>
         </div>
 
@@ -130,7 +135,8 @@
             <div class="card" id="stageCard" style="display:none;">
                 <h3 id="stageTitle"></h3>
                 <p id="stageDescription" style="font-size:0.9rem; color:var(--gris-texto); margin-bottom:0.5rem;"></p>
-                <textarea id="promptText" rows="6" readonly></textarea>
+                <label style="font-weight:600; font-size:0.85rem;">📝 Prompt (puedes editarlo antes de enviar):</label>
+                <textarea id="promptText" rows="8"></textarea>
                 <div class="flex-row" style="margin-top:0.8rem;">
                     <button class="btn" id="btnSendToAI">🤖 Enviar a Gemini</button>
                     <button class="btn btn-outline" id="btnCopyPrompt">📋 Copiar para ChatGPT</button>
@@ -171,13 +177,12 @@
         (function() {
             const state = {
                 apiKey: localStorage.getItem('pnft_api_key') || '',
-                currentStep: 0, // índice en el array steps
+                currentStep: 0,
                 documentText: '',
                 approvedSteps: new Set(JSON.parse(localStorage.getItem('pnft_approved') || '[]')),
                 stepResponses: JSON.parse(localStorage.getItem('pnft_responses') || '{}'),
             };
 
-            // Lista completa de etapas según el Prompt Maestro
             const steps = [
                 { id: '1', title: '🧩 Etapa 1 – Comprensión del contenido', desc: 'Analiza el documento y presenta una tabla con secciones, función, importancia y justificación.',
                   prompt: 'Actúa como arquitecto de información, diseñador editorial y especialista en infografías educativas.\n\nAnaliza el documento proporcionado.\n\nNO generes todavía la infografía.\n\nIdentifica:\n- Temas principales.\n- Temas secundarios.\n- Temas complementarios.\n- Información que debe verse primero.\n- Información que debe recordarse después.\n- Información que requiere acción.\n- Información que sirve como contexto.\n\nPresenta una tabla con:\nSección | Función | Nivel de importancia | Justificación' },
@@ -220,6 +225,54 @@
                 localStorage.setItem('pnft_document', state.documentText);
             }
 
+            // Exportar el progreso a un archivo JSON
+            function exportProgress() {
+                const data = {
+                    documentText: state.documentText,
+                    currentStep: state.currentStep,
+                    approvedSteps: [...state.approvedSteps],
+                    stepResponses: state.stepResponses,
+                };
+                const jsonStr = JSON.stringify(data, null, 2);
+                const blob = new Blob([jsonStr], {type: 'application/json'});
+                const url = URL.createObjectURL(blob);
+                const a = document.createElement('a');
+                a.href = url;
+                a.download = 'pnft_progreso.json';
+                document.body.appendChild(a);
+                a.click();
+                document.body.removeChild(a);
+                URL.revokeObjectURL(url);
+                toast('💾 Progreso guardado como archivo JSON');
+            }
+
+            // Cargar progreso desde un archivo JSON
+            function loadProgressFromFile(file) {
+                const reader = new FileReader();
+                reader.onload = (e) => {
+                    try {
+                        const data = JSON.parse(e.target.result);
+                        if (!data.documentText || !data.stepResponses || !data.approvedSteps) {
+                            throw new Error('Formato inválido');
+                        }
+                        if (!confirm('¿Cargar este progreso? Se reemplazará el trabajo actual.')) return;
+                        state.documentText = data.documentText;
+                        state.approvedSteps = new Set(data.approvedSteps);
+                        state.stepResponses = data.stepResponses;
+                        state.currentStep = data.currentStep || 0;
+                        saveState();
+                        // Limpiar el campo de prompt actual
+                        document.getElementById('promptText').value = '';
+                        document.getElementById('promptText').dataset.stepId = '';
+                        updateUI();
+                        toast('📥 Progreso cargado exitosamente');
+                    } catch (err) {
+                        toast('❌ Error al cargar el archivo JSON');
+                    }
+                };
+                reader.readAsText(file);
+            }
+
             function updateUI() {
                 const list = document.getElementById('stagesList');
                 list.innerHTML = '';
@@ -254,7 +307,10 @@
                     const step = steps[state.currentStep];
                     document.getElementById('stageTitle').textContent = step.title;
                     document.getElementById('stageDescription').textContent = step.desc;
-                    document.getElementById('promptText').value = step.prompt + '\n\n📎 DOCUMENTO:\n' + state.documentText;
+                    if (!document.getElementById('promptText').value || document.getElementById('promptText').dataset.stepId !== step.id) {
+                        document.getElementById('promptText').value = step.prompt + '\n\n📎 DOCUMENTO:\n' + state.documentText;
+                        document.getElementById('promptText').dataset.stepId = step.id;
+                    }
                     if (state.stepResponses[step.id]) {
                         document.getElementById('responseContainer').style.display = 'block';
                         document.getElementById('responseArea').textContent = state.stepResponses[step.id];
@@ -323,6 +379,7 @@
             document.getElementById('btnSendToAI').addEventListener('click', async () => {
                 if (!state.apiKey) return toast('Configura tu clave Gemini');
                 const prompt = document.getElementById('promptText').value;
+                if (!prompt.trim()) return toast('El prompt está vacío');
                 try {
                     const response = await sendToGemini(prompt);
                     document.getElementById('responseArea').textContent = response;
@@ -355,8 +412,10 @@
                 if (state.currentStep < steps.length - 1) {
                     state.currentStep++;
                 } else {
-                    state.currentStep = steps.length; // final
+                    state.currentStep = steps.length;
                 }
+                document.getElementById('promptText').value = '';
+                document.getElementById('promptText').dataset.stepId = '';
                 saveState();
                 updateUI();
                 toast('✅ Etapa aprobada');
@@ -384,6 +443,18 @@
                 navigator.clipboard.writeText(document.getElementById('finalPrompt').value).then(() => toast('📋 Prompt final copiado'));
             });
 
+            // Guardar y cargar progreso
+            document.getElementById('btnSaveProgress').addEventListener('click', exportProgress);
+            document.getElementById('btnLoadProgress').addEventListener('click', () => {
+                document.getElementById('loadJsonInput').click();
+            });
+            document.getElementById('loadJsonInput').addEventListener('change', (e) => {
+                const file = e.target.files[0];
+                if (file) loadProgressFromFile(file);
+                e.target.value = ''; // permite recargar el mismo archivo
+            });
+
+            // Modal API
             document.getElementById('btnApiKey').addEventListener('click', () => {
                 document.getElementById('apiKeyInput').value = state.apiKey;
                 document.getElementById('modalApi').style.display = 'flex';
@@ -401,6 +472,8 @@
                     state.currentStep = 0;
                     state.approvedSteps.clear();
                     state.stepResponses = {};
+                    document.getElementById('promptText').value = '';
+                    document.getElementById('promptText').dataset.stepId = '';
                     saveState();
                     updateUI();
                     toast('Reiniciado');
