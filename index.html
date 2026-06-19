@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>PNFT Infografía Lab · Asistente Inteligente</title>
+    <title>PNFT Infografía Lab – Asistente Completo</title>
     <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@300;400;500;600;700;800&display=swap" rel="stylesheet">
     <script src="https://cdnjs.cloudflare.com/ajax/libs/pdf.js/3.11.174/pdf.min.js"></script>
     <script src="https://cdn.jsdelivr.net/npm/mammoth@1.6.0/mammoth.browser.min.js"></script>
@@ -49,7 +49,7 @@
         .chat-panel {
             background:var(--blanco); border-radius:20px; padding:1.5rem;
             box-shadow:var(--sombra); display:flex; flex-direction:column; gap:1rem;
-            max-height:65vh; overflow-y:auto;
+            max-height:60vh; overflow-y:auto;
         }
         .message { display:flex; gap:0.8rem; align-items:flex-start; animation: fadeIn 0.3s ease; }
         @keyframes fadeIn { from { opacity:0; transform:translateY(10px); } to { opacity:1; transform:translateY(0); } }
@@ -68,11 +68,8 @@
         .suggestion-card {
             background:var(--blanco); border:1px solid var(--gris-neutro);
             border-radius:12px; padding:0.8rem; margin:0.4rem 0;
-            display:flex; align-items:center; justify-content:space-between;
-            gap:0.8rem; flex-wrap:wrap;
+            display:flex; align-items:center; justify-content:space-between; gap:0.8rem;
         }
-        .suggestion-card .content { flex:1; font-size:0.85rem; }
-        .suggestion-card .actions { display:flex; gap:0.4rem; }
         .input-area { display:flex; gap:0.6rem; margin-top:0.5rem; }
         textarea, input[type="text"] {
             font-family:var(--font); width:100%; padding:0.7rem 1rem;
@@ -94,6 +91,14 @@
             z-index:999; opacity:0; transition:0.3s;
         }
         .toast.show { opacity:1; }
+        .mode-selector {
+            display:flex; gap:0.5rem; background:var(--gris-claro); padding:0.3rem; border-radius:30px;
+        }
+        .mode-option {
+            padding:0.4rem 1rem; border-radius:30px; font-weight:600; font-size:0.8rem;
+            cursor:pointer; transition:0.25s;
+        }
+        .mode-option.active { background:var(--blanco); box-shadow:0 2px 8px rgba(0,0,0,0.1); }
         @media (max-width:600px) {
             .bubble { max-width:90%; }
         }
@@ -103,44 +108,38 @@
     <header>
         <div class="logo">
             <div class="logo-icon">PNFT</div>
-            <span>Infografía Lab · Asistente Inteligente</span>
+            <span>Infografía Lab</span>
         </div>
-        <div>
-            <button class="btn btn-outline btn-sm" id="btnApiKey">🔑 Clave Gemini</button>
+        <div style="display:flex; gap:0.8rem; align-items:center; flex-wrap:wrap;">
+            <div class="mode-selector" id="modeSelector">
+                <span class="mode-option active" data-mode="gemini">🧠 Gemini</span>
+                <span class="mode-option" data-mode="chatgpt">📋 ChatGPT</span>
+            </div>
+            <button class="btn btn-outline btn-sm" id="btnApiKey">🔑 Clave</button>
             <button class="btn btn-sm" id="btnReset" style="background:transparent;color:var(--gris-texto);">↺</button>
         </div>
     </header>
 
     <div class="container">
         <div class="progress-steps" id="stepIndicator"></div>
-
-        <div class="chat-panel" id="chatPanel">
-            <div class="message assistant">
-                <div class="avatar">🤖</div>
-                <div class="bubble">
-                    ¡Hola! Soy tu asistente para crear infografías curriculares PNFT.<br>
-                    <strong>Pega tu documento</strong> (Word, PDF, PowerPoint) o <strong>carga un archivo</strong>.
-                </div>
-            </div>
-        </div>
-
+        <div class="chat-panel" id="chatPanel"></div>
         <div class="input-area" id="inputArea">
-            <textarea id="userInput" rows="2" placeholder="Escribe tu respuesta..."></textarea>
+            <textarea id="userInput" rows="2" placeholder="Escribe aquí..."></textarea>
             <button class="btn" id="btnSend">➤</button>
         </div>
-
-        <div style="display:flex;gap:0.5rem;flex-wrap:wrap;" id="quickActions">
+        <div style="display:flex; gap:0.5rem; flex-wrap:wrap;">
             <button class="btn btn-outline btn-sm" id="btnUploadFile">📂 Cargar archivo</button>
             <button class="btn btn-outline btn-sm" id="btnSkipStep" style="display:none;">⏭️ Saltar</button>
+            <button class="btn btn-outline btn-sm" id="btnAnalyze" style="display:none;">🤖 Analizar con IA</button>
         </div>
         <input type="file" id="fileInput" accept=".docx,.pdf,.pptx,.txt" style="display:none;">
     </div>
 
     <div id="modalApi" style="display:none;position:fixed;inset:0;background:rgba(0,0,0,0.5);z-index:200;align-items:center;justify-content:center;">
         <div style="background:#fff;padding:2rem;border-radius:20px;max-width:400px;width:90%;">
-            <h3>🔑 Clave Gemini (gratis)</h3>
-            <p style="font-size:0.85rem;">Consíguela en <a href="https://aistudio.google.com/apikey" target="_blank">Google AI Studio</a></p>
-            <input type="password" id="apiKeyInput" placeholder="AIza..." style="width:100%;margin:0.5rem 0;">
+            <h3>🔑 Clave de API</h3>
+            <p style="font-size:0.85rem;">Gemini (gratis): <a href="https://aistudio.google.com/apikey" target="_blank">aistudio.google.com</a></p>
+            <input type="password" id="apiKeyInput" placeholder="AIza...">
             <button class="btn" id="btnSaveApi">Guardar</button>
             <button class="btn btn-outline" id="btnCancelApi">Cancelar</button>
         </div>
@@ -149,96 +148,39 @@
 
     <script>
         (function() {
+            // ========== ESTADO ==========
             const state = {
+                mode: localStorage.getItem('pnft_mode') || 'gemini',       // 'gemini' o 'chatgpt'
                 apiKey: localStorage.getItem('pnft_gemini_key') || '',
-                engine: 'gemini',
                 step: 0,
                 documentText: '',
                 answers: {},
-                waitingForSuggestion: false,
+                analysisInProgress: false,   // ← evita bucles
             };
 
-            // Definición de etapas con prompts para análisis automático (piden JSON)
+            // ========== ETAPAS (basadas en el prompt maestro) ==========
             const steps = [
-                {
-                    field: 'document',
-                    question: '📄 Pega el documento curricular o carga un archivo (Word, PDF, PowerPoint).',
-                    help: 'También puedes escribir el texto directamente.',
-                    analysisPrompt: null,
-                },
-                {
-                    field: 'comprension',
-                    question: '🧩 ETAPA 1 – Comprensión del contenido',
-                    help: 'La IA analizará el documento y te mostrará sugerencias.',
-                    analysisPrompt: 'Analiza el siguiente documento curricular. Devuelve UNICAMENTE un JSON con este formato: {"temas_principales": ["tema1", "tema2"], "temas_secundarios": ["sec1", "sec2"], "informacion_clave": {"primero": "lo que debe verse primero", "recordar": "lo que debe recordarse"}, "accion": "lo que requiere acción", "contexto": "lo que solo contextualiza"}. No incluyas texto adicional.',
-                },
-                {
-                    field: 'jerarquia',
-                    question: '⚖️ ETAPA 2 – Jerarquía y Pesos PNFT',
-                    help: 'Se clasificarán los contenidos según la escala PNFT.',
-                    analysisPrompt: 'Utiliza el análisis previo y el documento. Clasifica cada sección según la escala PNFT (1=contexto, 3=comprensión, 5=aplicación/recuerdo). Devuelve UNICAMENTE un JSON con el formato: {"jerarquia": [{"seccion": "nombre", "peso": 1 o 3 o 5, "justificacion": "razón"}]}. No incluyas texto adicional.',
-                },
-                {
-                    field: 'arquitectura',
-                    question: '🏗️ ETAPA 3 – Arquitectura de Información',
-                    help: 'Se generarán 3 propuestas con diagramas ASCII.',
-                    analysisPrompt: 'Basado en el documento y análisis previo, genera 3 propuestas de arquitectura visual. Devuelve UNICAMENTE un JSON con el formato: {"propuestas": [{"nombre": "Propuesta 1", "ventajas": "...", "desventajas": "...", "tipo_lectura": "...", "diagrama_ascii": "..."}]}. No incluyas texto adicional.',
-                },
-                {
-                    field: 'wireframe',
-                    question: '🧱 ETAPA 4 – Wireframe',
-                    help: 'Se convertirá la arquitectura seleccionada en wireframe.',
-                    analysisPrompt: 'Convierte la arquitectura seleccionada (primera propuesta) en wireframe. Devuelve UNICAMENTE un JSON con el formato: {"wireframe": "diagrama ascii", "orden_lectura": "...", "jerarquia_visual": "...", "tamano_bloques": "..."}. No incluyas texto adicional.',
-                },
-                {
-                    field: 'reticula_color',
-                    question: '📐 ETAPA 5 – Retícula + Sistema Cromático',
-                    help: 'Se definirá retícula y uso pedagógico del color.',
-                    analysisPrompt: 'Define la retícula PNFT estándar 12 columnas 16:9 y el sistema cromático. Paleta: #09B7AE, #0BD2CE, #014D6B, #0B6284, #62BDF3, #063B7F, #45258F, #9ED16F, #C9C9C9. Devuelve UNICAMENTE un JSON: {"reticula": "descripción", "codificacion_color": {"area1": "color", ...}}. No incluyas texto adicional.',
-                },
-                {
-                    field: 'sistema_visual',
-                    question: '🎨 ETAPA 6 – Sistema de Diseño Visual',
-                    help: 'Se confirmará tipografía, iconos 3D, ilustraciones.',
-                    analysisPrompt: 'Confirma el sistema visual PNFT: tipografía Poppins, iconos 3D semi realistas, ilustraciones adolescentes 16-18 años, estilo académico. Devuelve UNICAMENTE un JSON: {"confirmacion": "sí", "detalles": "..."}. No incluyas texto adicional.',
-                },
-                {
-                    field: 'composicion',
-                    question: '🧱 ETAPA 6.2 – Composición Visual',
-                    help: 'Se definirá distribución de bloques y espacios.',
-                    analysisPrompt: 'Define composición visual: distribución, espacios en blanco, equilibrio texto/imagen. Devuelve UNICAMENTE un JSON: {"composicion": "descripción", "lectura_rapida": "≤10s por bloque"}. No incluyas texto adicional.',
-                },
-                {
-                    field: 'densidad',
-                    question: '🧠 ETAPA 6.3 – Densidad Cognitiva',
-                    help: 'Se controlará la carga de ideas por bloque.',
-                    analysisPrompt: 'Para cada bloque, define máximo 3-5 ideas, idea principal, secundarias y nivel de complejidad. Devuelve UNICAMENTE un JSON: {"bloques": [{"nombre": "bloque1", "ideas": ["idea1"], "principal": "...", "complejidad": "baja/media/alta"}]}. No incluyas texto adicional.',
-                },
-                {
-                    field: 'auditoria',
-                    question: '🧪 ETAPA 6.5 – Auditoría Visual',
-                    help: 'Se verificará cumplimiento de requisitos.',
-                    analysisPrompt: 'Verifica cumplimiento: 16:9, Poppins, paleta, iconos 3D, no infantil, etc. Devuelve UNICAMENTE un JSON: {"cumplimiento": [{"item": "...", "estado": "✅/❌"}]}. No incluyas texto adicional.',
-                },
-                {
-                    field: 'restricciones',
-                    question: '🚨 ETAPA 7 – Restricciones de Producción',
-                    help: 'Se confirmarán las prohibiciones y obligaciones.',
-                    analysisPrompt: 'Confirma las restricciones: no modificar, no resumir, no infantil, etc. Devuelve UNICAMENTE un JSON: {"confirmacion": "sí", "observaciones": "..."}. No incluyas texto adicional.',
-                },
-                {
-                    field: 'json_final',
-                    question: '🧾 ETAPA 8 – Generación de JSON',
-                    help: '¿Generar JSON final estructurado? (responde "sí" o "no")',
-                    analysisPrompt: null, // se maneja con respuesta directa
-                },
+                { field:'document', question:'📄 Pega o carga el documento curricular.', help:'Word, PDF, PowerPoint o texto directo.' },
+                { field:'comprension', question:'🧩 ETAPA 1 – Comprensión: ¿Temas principales, secundarios, qué ver primero?', help:'Puedes analizar con IA o responder manualmente.' },
+                { field:'jerarquia', question:'⚖️ ETAPA 2 – Pesos PNFT: ¿Qué aplicar (peso 5) y qué es contexto (peso 1)?', help:'Clasifica según criticidad pedagógica.' },
+                { field:'arquitectura', question:'🏗️ ETAPA 3 – Arquitectura: ¿Tarjetas, columnas, línea de tiempo?', help:'Elige tipo de organización visual.' },
+                { field:'wireframe', question:'🧱 ETAPA 4 – Wireframe: ¿Orden de lectura y flujo visual?', help:'Ej: izquierda→derecha, arriba→abajo.' },
+                { field:'reticula_color', question:'📐 ETAPA 5 – Retícula + Color: ¿Estándar 12 columnas? ¿Colores especiales?', help:'Paleta PNFT: #09B7AE, #014D6B...' },
+                { field:'sistema_visual', question:'🎨 ETAPA 6 – Estilo: Poppins, iconos 3D, ilustraciones juveniles.', help:'Confirma o ajusta el sistema visual.' },
+                { field:'composicion', question:'🧱 ETAPA 6.2 – Composición: Espacios, equilibrio texto/imagen.', help:'Define distribución de tarjetas.' },
+                { field:'densidad', question:'🧠 ETAPA 6.3 – Densidad: Máximo 3-5 ideas por bloque.', help:'Control de carga cognitiva.' },
+                { field:'auditoria', question:'🧪 ETAPA 6.5 – Auditoría: ¿Cumple 16:9, Poppins, paleta, no infantil?', help:'Responde sí o indica ajustes.' },
+                { field:'restricciones', question:'🚨 ETAPA 7 – Restricciones: No modificar, no resumir, no agregar.', help:'Confirma las reglas PNFT.' },
+                { field:'json', question:'🧾 ETAPA 8 – JSON: ¿Quieres generar JSON estructurado?', help:'Responde sí o no.' },
             ];
 
+            // ========== FUNCIONES ==========
             function saveState() {
+                localStorage.setItem('pnft_mode', state.mode);
                 localStorage.setItem('pnft_gemini_key', state.apiKey);
-                localStorage.setItem('pnft_answers', JSON.stringify(state.answers));
                 localStorage.setItem('pnft_step', state.step);
                 localStorage.setItem('pnft_document', state.documentText);
+                localStorage.setItem('pnft_answers', JSON.stringify(state.answers));
             }
 
             function toast(msg) {
@@ -247,14 +189,17 @@
                 clearTimeout(t._t); t._t = setTimeout(() => t.classList.remove('show'), 2500);
             }
 
-            function updateStepIndicator() {
-                const container = document.getElementById('stepIndicator');
-                container.innerHTML = steps.map((s, i) => {
+            function updateUI() {
+                document.getElementById('stepIndicator').innerHTML = steps.map((s,i) => {
                     let cls = 'step-dot';
                     if (i < state.step) cls += ' completed';
                     else if (i === state.step) cls += ' active';
                     return `<span class="${cls}" title="${s.question}">${i+1}</span>`;
                 }).join('');
+                const modeOptions = document.querySelectorAll('.mode-option');
+                modeOptions.forEach(opt => {
+                    opt.classList.toggle('active', opt.dataset.mode === state.mode);
+                });
             }
 
             function addMessage(role, text, extraHTML = '') {
@@ -266,47 +211,118 @@
                 panel.scrollTop = panel.scrollHeight;
             }
 
+            function showStep(index) {
+                if (index >= steps.length) {
+                    addMessage('assistant','✅ ¡Etapas completas! Pulsa <strong>Generar Infografía</strong>.');
+                    document.getElementById('btnSend').textContent = '🖼️ Generar Infografía';
+                    document.getElementById('btnSend').dataset.action = 'generate';
+                    document.getElementById('btnSkipStep').style.display = 'none';
+                    document.getElementById('btnAnalyze').style.display = 'none';
+                    return;
+                }
+                const step = steps[index];
+                addMessage('assistant', `<strong>${step.question}</strong><br><span style="font-size:0.8rem;color:var(--gris-texto);">${step.help||''}</span>`);
+                document.getElementById('btnSend').textContent = '➤';
+                document.getElementById('btnSend').dataset.action = 'answer';
+                document.getElementById('btnSkipStep').style.display = 'inline-flex';
+                // Mostrar botón de análisis solo si hay documento y estamos en una etapa que pueda ser analizada
+                const showAnalyze = (index > 0 && state.documentText && !state.analysisInProgress);
+                document.getElementById('btnAnalyze').style.display = showAnalyze ? 'inline-flex' : 'none';
+            }
+
+            // Construir el prompt maestro completo
+            function buildMasterPrompt() {
+                let p = `Actúa como arquitecto de información, diseñador editorial y especialista en infografías educativas.\n\n`;
+                p += `Genera una infografía profesional PNFT siguiendo estrictamente este proceso:\n\n`;
+                p += `📎 DOCUMENTO FUENTE:\n${state.documentText}\n\n`;
+                for (let key in state.answers) {
+                    p += `📌 ${key}: ${state.answers[key]}\n`;
+                }
+                p += `\n🖼️ ETAPA 9 – INFOGRAFÍA FINAL:\n`;
+                p += `Formato 16:9, paleta PNFT (#09B7AE, #0BD2CE, #014D6B, #0B6284, #62BDF3, #063B7F, #45258F, #9ED16F, #C9C9C9), tipografía Poppins, iconos 3D semi realistas, estilo educativo profesional secundaria. No infantil, no comercial. Respetar fielmente el contenido original sin modificarlo, resumirlo o agregar nada.`;
+                return p;
+            }
+
+            // Llamada a Gemini
+            async function callGemini(prompt) {
+                if (!state.apiKey || !state.apiKey.startsWith('AIza')) throw new Error('Clave Gemini no configurada.');
+                const res = await fetch(`https://generativelanguage.googleapis.com/v1beta/models/gemini-2.0-flash:generateContent?key=${state.apiKey}`, {
+                    method:'POST',
+                    headers:{'Content-Type':'application/json'},
+                    body: JSON.stringify({
+                        contents:[{parts:[{text:prompt}]}],
+                        generationConfig:{temperature:0.4, maxOutputTokens:2500}
+                    })
+                });
+                if (!res.ok) {
+                    const err = await res.json().catch(()=>({}));
+                    throw new Error(err.error?.message || 'Error ' + res.status);
+                }
+                const data = await res.json();
+                return data.candidates[0].content.parts[0].text;
+            }
+
+            // Función de análisis (solo se llama con el botón "Analizar con IA")
+            async function performAnalysis() {
+                if (state.analysisInProgress) return;
+                state.analysisInProgress = true;
+                const step = steps[state.step];
+                const analysisPrompt = `Analiza el siguiente documento curricular y responde ÚNICAMENTE con un JSON que contenga la información solicitada para la etapa "${step.field}".\n\nDocumento:\n${state.documentText}\n\nFormato JSON esperado (ejemplo): {"temas_principales": ["..."], ...}`;
+                addMessage('assistant', '⏳ Analizando con IA...');
+                try {
+                    let result;
+                    if (state.mode === 'gemini' && state.apiKey) {
+                        result = await callGemini(analysisPrompt);
+                    } else {
+                        // Modo ChatGPT: copiar prompt y esperar respuesta manual
+                        navigator.clipboard.writeText(analysisPrompt);
+                        toast('📋 Prompt copiado. Pégalo en ChatGPT y luego pega aquí la respuesta JSON.');
+                        result = await new Promise(resolve => {
+                            const input = document.getElementById('userInput');
+                            input.placeholder = 'Pega aquí el JSON de la IA...';
+                            input.focus();
+                            const origHandler = document.getElementById('btnSend').onclick;
+                            document.getElementById('btnSend').onclick = () => {
+                                resolve(input.value.trim());
+                                input.placeholder = 'Escribe aquí...';
+                                document.getElementById('btnSend').onclick = origHandler;
+                            };
+                        });
+                    }
+                    // Intentar parsear JSON
+                    const jsonData = JSON.parse(result.replace(/```json|```/g, ''));
+                    // Mostrar sugerencias
+                    showSuggestionCards(jsonData, step.field);
+                } catch (e) {
+                    addMessage('assistant', `❌ Error: ${e.message}. Responde manualmente.`);
+                }
+                state.analysisInProgress = false;
+            }
+
             function showSuggestionCards(jsonData, field) {
-                // Convierte el JSON en tarjetas de sugerencias editables
                 const container = document.getElementById('chatPanel');
                 const cardDiv = document.createElement('div');
                 cardDiv.className = 'message assistant';
                 let html = '<div class="avatar">🤖</div><div class="bubble"><strong>Sugerencias de la IA:</strong><br>';
-
-                if (field === 'comprension') {
-                    html += `<strong>Temas principales:</strong> ${jsonData.temas_principales.join(', ')}<br>`;
-                    html += `<strong>Secundarios:</strong> ${jsonData.temas_secundarios.join(', ')}<br>`;
-                    html += `<strong>Primero:</strong> ${jsonData.informacion_clave.primero}<br>`;
-                    html += `<strong>Recordar:</strong> ${jsonData.informacion_clave.recordar}<br>`;
-                } else if (field === 'jerarquia') {
-                    jsonData.jerarquia.forEach(item => {
-                        html += `<div class="suggestion-card"><span class="content">${item.seccion} (Peso ${item.peso})</span><span>${item.justificacion}</span></div>`;
-                    });
-                } else {
-                    // Genérico: mostrar como texto
-                    html += `<pre style="font-size:0.8rem;">${JSON.stringify(jsonData, null, 2)}</pre>`;
-                }
-
+                html += `<pre style="font-size:0.8rem;">${JSON.stringify(jsonData, null, 2)}</pre>`;
                 html += `<div style="margin-top:0.8rem;display:flex;gap:0.5rem;">
-                    <button class="btn btn-sm accept-suggestion">✅ Usar esta sugerencia</button>
+                    <button class="btn btn-sm accept-suggestion">✅ Usar</button>
                     <button class="btn btn-outline btn-sm edit-suggestion">✏️ Editar</button>
                 </div></div>`;
                 cardDiv.innerHTML = html;
                 container.appendChild(cardDiv);
                 container.scrollTop = container.scrollHeight;
 
-                // Eventos
                 const acceptBtn = cardDiv.querySelector('.accept-suggestion');
                 const editBtn = cardDiv.querySelector('.edit-suggestion');
                 acceptBtn.addEventListener('click', () => {
                     state.answers[field] = JSON.stringify(jsonData);
                     state.step++;
-                    saveState(); updateStepIndicator();
+                    saveState(); updateUI();
                     cardDiv.remove();
-                    showQuestion(state.step);
+                    showStep(state.step);
                 });
                 editBtn.addEventListener('click', () => {
-                    // Mostrar textarea para editar
                     const textarea = document.createElement('textarea');
                     textarea.value = JSON.stringify(jsonData, null, 2);
                     textarea.rows = 4;
@@ -319,9 +335,9 @@
                             const newData = JSON.parse(textarea.value);
                             state.answers[field] = JSON.stringify(newData);
                             state.step++;
-                            saveState(); updateStepIndicator();
+                            saveState(); updateUI();
                             cardDiv.remove();
-                            showQuestion(state.step);
+                            showStep(state.step);
                         } catch (e) { toast('JSON inválido'); }
                     });
                     cardDiv.querySelector('.bubble').appendChild(saveBtn);
@@ -330,168 +346,104 @@
                 });
             }
 
-            async function performAnalysis(field) {
-                const step = steps[state.step];
-                if (!step.analysisPrompt) return;
-                const prompt = step.analysisPrompt + '\n\nDocumento:\n' + state.documentText + '\n\nAnálisis previo:\n' + JSON.stringify(state.answers);
-                addMessage('assistant', '⏳ Analizando documento...');
-                try {
-                    let result;
-                    if (state.engine === 'gemini' && state.apiKey) {
-                        const res = await fetch(`https://generativelanguage.googleapis.com/v1beta/models/gemini-2.0-flash:generateContent?key=${state.apiKey}`, {
-                            method:'POST',
-                            headers:{'Content-Type':'application/json'},
-                            body: JSON.stringify({
-                                contents:[{parts:[{text:prompt}]}],
-                                generationConfig:{temperature:0.2, maxOutputTokens:2000}
-                            })
-                        });
-                        if (!res.ok) throw new Error((await res.json()).error?.message || 'Error');
-                        const data = await res.json();
-                        result = data.candidates[0].content.parts[0].text;
-                    } else {
-                        navigator.clipboard.writeText(prompt);
-                        toast('Prompt copiado. Pega la respuesta JSON aquí.');
-                        result = await new Promise(resolve => {
-                            const input = document.getElementById('userInput');
-                            input.placeholder = 'Pega aquí el JSON de la IA...';
-                            input.focus();
-                            const origHandler = document.getElementById('btnSend').onclick;
-                            document.getElementById('btnSend').onclick = () => {
-                                resolve(input.value.trim());
-                                input.placeholder = 'Escribe tu respuesta...';
-                                document.getElementById('btnSend').onclick = origHandler;
-                            };
-                        });
-                    }
-                    // Limpiar mensaje "analizando"
-                    const msgs = document.querySelectorAll('.bubble');
-                    msgs[msgs.length-1].parentElement.remove();
-                    // Parsear JSON
-                    const jsonData = JSON.parse(result.replace(/```json|```/g, ''));
-                    showSuggestionCards(jsonData, field);
-                    state.waitingForSuggestion = true;
-                } catch (e) {
-                    toast('Error: ' + e.message);
-                    // Si falla, permitir entrada manual
-                    showQuestion(state.step);
-                }
-            }
-
-            function showQuestion(index) {
-                if (index >= steps.length) {
-                    addMessage('assistant','✅ ¡Completaste todas las etapas!<br>Ahora puedo generar la infografía con la IA.<br>Pulsa <strong>"Generar Infografía"</strong>.');
-                    document.getElementById('btnSend').textContent = '🖼️ Generar Infografía';
-                    document.getElementById('btnSend').dataset.action = 'generate';
-                    document.getElementById('btnSkipStep').style.display = 'none';
-                    return;
-                }
-                const step = steps[index];
-                addMessage('assistant', `<strong>${step.question}</strong><br><span style="font-size:0.8rem;">${step.help||''}</span>`);
-                document.getElementById('btnSend').textContent = '➤';
-                document.getElementById('btnSend').dataset.action = 'answer';
-                document.getElementById('btnSkipStep').style.display = 'inline-flex';
-
-                // Si la etapa tiene análisis automático, ejecutarlo
-                if (step.analysisPrompt && state.documentText && !state.answers[step.field]) {
-                    performAnalysis(step.field);
-                }
-            }
-
-            function buildMasterPrompt() {
-                let p = `Actúa como arquitecto de información, diseñador editorial y especialista en infografías educativas.\n`;
-                p += `Genera una infografía profesional PNFT siguiendo estrictamente este proceso:\n\n`;
-                p += `📎 DOCUMENTO FUENTE:\n${state.documentText}\n\n`;
-                for (let key in state.answers) {
-                    p += `📌 ${key}: ${state.answers[key]}\n`;
-                }
-                p += `\n🖼️ ETAPA 9 – INFOGRAFÍA FINAL:\nGenera la infografía final con fidelidad 100%, formato 16:9, paleta PNFT, Poppins, iconos 3D, estilo educativo profesional secundaria.`;
-                return p;
-            }
-
-            async function generateInfographic() {
-                const masterPrompt = buildMasterPrompt();
-                addMessage('assistant', '⏳ Generando infografía...');
-                try {
-                    let result;
-                    if (state.engine === 'gemini' && state.apiKey) {
-                        result = await callGemini(masterPrompt);
-                    } else {
-                        navigator.clipboard.writeText(masterPrompt);
-                        result = '📋 Prompt maestro copiado. Pégalo en ChatGPT o Gemini.';
-                    }
-                    addMessage('assistant', '🎉 ¡Infografía lista!\n\n' + result);
-                    document.getElementById('btnSend').textContent = '🔄 Nueva infografía';
-                    document.getElementById('btnSend').dataset.action = 'reset';
-                } catch (e) {
-                    addMessage('assistant', '❌ Error: ' + e.message);
-                    navigator.clipboard.writeText(masterPrompt);
-                }
-            }
-
-            async function callGemini(prompt) {
-                const res = await fetch(`https://generativelanguage.googleapis.com/v1beta/models/gemini-2.0-flash:generateContent?key=${state.apiKey}`, {
-                    method:'POST',
-                    headers:{'Content-Type':'application/json'},
-                    body: JSON.stringify({
-                        contents:[{parts:[{text:prompt}]}],
-                        generationConfig:{temperature:0.4, maxOutputTokens:3000}
-                    })
-                });
-                if (!res.ok) throw new Error((await res.json()).error?.message);
-                const data = await res.json();
-                return data.candidates[0].content.parts[0].text;
-            }
-
+            // Manejar envío de texto
             async function handleSend() {
                 const input = document.getElementById('userInput');
                 const text = input.value.trim();
                 const action = document.getElementById('btnSend').dataset.action;
 
-                if (action === 'generate') { await generateInfographic(); return; }
+                if (action === 'generate') {
+                    const master = buildMasterPrompt();
+                    if (state.mode === 'gemini' && state.apiKey) {
+                        addMessage('assistant', '⏳ Generando infografía...');
+                        try {
+                            const result = await callGemini(master);
+                            addMessage('assistant', '🎉 ¡Infografía lista!\n\n' + result);
+                        } catch (e) {
+                            addMessage('assistant', '❌ ' + e.message);
+                        }
+                    } else {
+                        navigator.clipboard.writeText(master);
+                        addMessage('assistant', '📋 Prompt maestro copiado. Pégalo en ChatGPT para obtener la infografía.');
+                    }
+                    document.getElementById('btnSend').textContent = '🔄 Reiniciar';
+                    document.getElementById('btnSend').dataset.action = 'reset';
+                    return;
+                }
+
                 if (action === 'reset') {
                     state.step = 0; state.answers = {}; state.documentText = '';
                     document.getElementById('chatPanel').innerHTML = '';
-                    document.getElementById('btnSend').dataset.action = 'answer';
                     document.getElementById('btnSend').textContent = '➤';
-                    showQuestion(0); updateStepIndicator(); saveState();
+                    document.getElementById('btnSend').dataset.action = 'answer';
+                    showStep(0); updateUI(); saveState();
                     return;
                 }
+
                 if (!text) return;
 
-                if (state.step < steps.length && !state.waitingForSuggestion) {
-                    const field = steps[state.step].field;
-                    if (field === 'document') {
-                        state.documentText = text;
-                        addMessage('user', '📄 Documento cargado (' + text.length + ' caracteres)');
-                        addMessage('assistant', '✅ Documento guardado. Iniciando análisis...');
-                        state.step++;
-                        saveState(); updateStepIndicator();
-                        showQuestion(state.step);
-                    } else {
-                        // Respuesta manual
-                        addMessage('user', text);
-                        state.answers[field] = text;
-                        state.step++;
-                        saveState(); updateStepIndicator();
-                        showQuestion(state.step);
-                    }
+                // Procesar respuesta manual
+                const field = steps[state.step].field;
+                if (field === 'document') {
+                    state.documentText = text;
+                    addMessage('user', '📄 Documento guardado (' + text.length + ' caracteres)');
+                } else {
+                    state.answers[field] = text;
+                    addMessage('user', text);
                 }
+                state.step++;
+                saveState(); updateUI();
                 input.value = '';
-                state.waitingForSuggestion = false;
+                showStep(state.step);
             }
 
+            // Event Listeners
             document.getElementById('btnSend').addEventListener('click', handleSend);
             document.getElementById('userInput').addEventListener('keydown', (e) => {
                 if (e.key === 'Enter' && !e.shiftKey) { e.preventDefault(); handleSend(); }
             });
             document.getElementById('btnSkipStep').addEventListener('click', () => {
-                if (state.step < steps.length) {
-                    state.answers[steps[state.step].field] = 'No especificado';
-                    state.step++; updateStepIndicator();
-                    showQuestion(state.step);
+                const field = steps[state.step].field;
+                state.answers[field] = 'No especificado';
+                state.step++;
+                saveState(); updateUI();
+                showStep(state.step);
+            });
+            document.getElementById('btnAnalyze').addEventListener('click', performAnalysis);
+
+            // Cambio de modo
+            document.querySelectorAll('.mode-option').forEach(opt => {
+                opt.addEventListener('click', () => {
+                    state.mode = opt.dataset.mode;
+                    saveState(); updateUI();
+                    toast('Modo: ' + (state.mode === 'gemini' ? 'Gemini (gratis)' : 'ChatGPT (copiar prompt)'));
+                });
+            });
+
+            // Modal API Key
+            document.getElementById('btnApiKey').addEventListener('click', () => {
+                document.getElementById('apiKeyInput').value = state.apiKey;
+                document.getElementById('modalApi').style.display = 'flex';
+            });
+            document.getElementById('btnCancelApi').addEventListener('click', () => document.getElementById('modalApi').style.display = 'none');
+            document.getElementById('btnSaveApi').addEventListener('click', () => {
+                state.apiKey = document.getElementById('apiKeyInput').value.trim();
+                saveState();
+                document.getElementById('modalApi').style.display = 'none';
+                toast('Clave guardada');
+            });
+
+            document.getElementById('btnReset').addEventListener('click', () => {
+                if (confirm('¿Reiniciar todo?')) {
+                    state.step=0; state.answers={}; state.documentText='';
+                    document.getElementById('chatPanel').innerHTML = '';
+                    document.getElementById('btnSend').textContent = '➤';
+                    document.getElementById('btnSend').dataset.action = 'answer';
+                    showStep(0); updateUI(); saveState();
                 }
             });
+
+            // Carga de archivos
             document.getElementById('btnUploadFile').addEventListener('click', () => document.getElementById('fileInput').click());
             document.getElementById('fileInput').addEventListener('change', async (e) => {
                 const file = e.target.files[0]; if (!file) return;
@@ -513,31 +465,11 @@
                     } else if (ext === 'pptx') {
                         const buf = await file.arrayBuffer();
                         const json = pptx2json(buf);
-                        json.slides.forEach(s => { s.texts.forEach(t => text += t+'\n'); });
+                        json.slides.forEach(s => s.texts.forEach(t => text += t+'\n'));
                     } else throw new Error('Formato no soportado');
                     document.getElementById('userInput').value = text;
-                    toast('✅ Texto extraído. Envíalo ahora.');
+                    toast('✅ Texto extraído. Envíalo.');
                 } catch (err) { toast('❌ '+err.message); }
-            });
-
-            document.getElementById('btnApiKey').addEventListener('click', () => {
-                document.getElementById('apiKeyInput').value = state.apiKey;
-                document.getElementById('modalApi').style.display = 'flex';
-            });
-            document.getElementById('btnCancelApi').addEventListener('click', () => document.getElementById('modalApi').style.display = 'none');
-            document.getElementById('btnSaveApi').addEventListener('click', () => {
-                state.apiKey = document.getElementById('apiKeyInput').value.trim();
-                saveState(); document.getElementById('modalApi').style.display = 'none';
-                toast('🔑 Clave guardada');
-            });
-            document.getElementById('btnReset').addEventListener('click', () => {
-                if (confirm('¿Reiniciar?')) {
-                    state.step=0; state.answers={}; state.documentText='';
-                    document.getElementById('chatPanel').innerHTML = '';
-                    document.getElementById('btnSend').dataset.action = 'answer';
-                    document.getElementById('btnSend').textContent = '➤';
-                    showQuestion(0); updateStepIndicator(); saveState();
-                }
             });
 
             // Inicializar
@@ -546,19 +478,8 @@
             const savedAnswers = localStorage.getItem('pnft_answers');
             if (savedAnswers) state.answers = JSON.parse(savedAnswers);
             state.documentText = localStorage.getItem('pnft_document') || '';
-            updateStepIndicator();
-            if (state.step === 0) showQuestion(0);
-            else {
-                for (let i=0; i<state.step; i++) {
-                    const step = steps[i];
-                    if (step.field === 'document') {
-                        addMessage('user', '📄 Documento cargado');
-                    } else if (state.answers[step.field]) {
-                        addMessage('user', state.answers[step.field].substring(0, 100)+'...');
-                    }
-                }
-                showQuestion(state.step);
-            }
+            updateUI();
+            showStep(state.step);
         })();
     </script>
 </body>
