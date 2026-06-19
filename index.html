@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>PNFT Infografía Lab · Asistente Completo</title>
+    <title>PNFT Infografía Lab · Asistente Inteligente</title>
     <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@300;400;500;600;700;800&display=swap" rel="stylesheet">
     <script src="https://cdnjs.cloudflare.com/ajax/libs/pdf.js/3.11.174/pdf.min.js"></script>
     <script src="https://cdn.jsdelivr.net/npm/mammoth@1.6.0/mammoth.browser.min.js"></script>
@@ -51,10 +51,7 @@
             box-shadow:var(--sombra); display:flex; flex-direction:column; gap:1rem;
             max-height:65vh; overflow-y:auto;
         }
-        .message {
-            display:flex; gap:0.8rem; align-items:flex-start;
-            animation: fadeIn 0.3s ease;
-        }
+        .message { display:flex; gap:0.8rem; align-items:flex-start; animation: fadeIn 0.3s ease; }
         @keyframes fadeIn { from { opacity:0; transform:translateY(10px); } to { opacity:1; transform:translateY(0); } }
         .avatar {
             width:36px; height:36px; border-radius:50%; display:flex; align-items:center;
@@ -68,24 +65,22 @@
             border:1px solid var(--gris-neutro);
         }
         .user .bubble { background:var(--turquesa); color:#fff; border-color:var(--turquesa); }
-        .input-area {
-            display:flex; gap:0.6rem; margin-top:0.5rem;
+        .suggestion-card {
+            background:var(--blanco); border:1px solid var(--gris-neutro);
+            border-radius:12px; padding:0.8rem; margin:0.4rem 0;
+            display:flex; align-items:center; justify-content:space-between;
+            gap:0.8rem; flex-wrap:wrap;
         }
+        .suggestion-card .content { flex:1; font-size:0.85rem; }
+        .suggestion-card .actions { display:flex; gap:0.4rem; }
+        .input-area { display:flex; gap:0.6rem; margin-top:0.5rem; }
         textarea, input[type="text"] {
             font-family:var(--font); width:100%; padding:0.7rem 1rem;
             border-radius:14px; border:1.5px solid var(--gris-neutro);
             font-size:0.9rem; background:var(--blanco); resize:none;
         }
         textarea:focus, input:focus { border-color:var(--turquesa); outline:none; box-shadow:0 0 0 3px rgba(9,183,174,0.1); }
-        .file-upload-area {
-            border:2px dashed var(--gris-neutro); border-radius:14px;
-            padding:1.2rem; text-align:center; margin:0.8rem 0; background:var(--fondo);
-        }
-        .file-upload-area label { cursor:pointer; color:var(--turquesa); font-weight:600; }
-        .file-upload-area input[type="file"] { display:none; }
-        .progress-steps {
-            display:flex; gap:0.3rem; flex-wrap:wrap; margin:0.5rem 0;
-        }
+        .progress-steps { display:flex; gap:0.3rem; flex-wrap:wrap; margin:0.5rem 0; }
         .step-dot {
             width:28px; height:28px; border-radius:50%; background:var(--gris-claro);
             display:flex; align-items:center; justify-content:center;
@@ -108,7 +103,7 @@
     <header>
         <div class="logo">
             <div class="logo-icon">PNFT</div>
-            <span>Infografía Lab · Asistente Completo</span>
+            <span>Infografía Lab · Asistente Inteligente</span>
         </div>
         <div>
             <button class="btn btn-outline btn-sm" id="btnApiKey">🔑 Clave Gemini</button>
@@ -124,8 +119,7 @@
                 <div class="avatar">🤖</div>
                 <div class="bubble">
                     ¡Hola! Soy tu asistente para crear infografías curriculares PNFT.<br>
-                    Voy a guiarte paso a paso por todo el proceso.<br>
-                    <strong>Primero, pega tu documento</strong> (Word, PDF, PowerPoint) o <strong>carga un archivo</strong>.
+                    <strong>Pega tu documento</strong> (Word, PDF, PowerPoint) o <strong>carga un archivo</strong>.
                 </div>
             </div>
         </div>
@@ -151,7 +145,6 @@
             <button class="btn btn-outline" id="btnCancelApi">Cancelar</button>
         </div>
     </div>
-
     <div class="toast" id="toast"></div>
 
     <script>
@@ -162,24 +155,83 @@
                 step: 0,
                 documentText: '',
                 answers: {},
+                waitingForSuggestion: false,
             };
 
-            // Pasos basados en el Prompt Maestro PNFT completo
+            // Definición de etapas con prompts para análisis automático (piden JSON)
             const steps = [
-                { field:'document', question:'📄 Pega el documento curricular o carga un archivo (Word, PDF, PowerPoint).', help:'También puedes escribir el texto directamente.' },
-                { field:'temas_principales', question:'🧩 ETAPA 1 – Comprensión: ¿Cuáles son los temas principales y secundarios del documento?', help:'Ej: Tema principal: Pensamiento Computacional. Secundarios: Algoritmos, Descomposición.' },
-                { field:'informacion_clave', question:'👁️ ¿Qué información debe ver primero el lector y qué debe recordar después?', help:'Define la jerarquía visual inicial.' },
-                { field:'accion_contexto', question:'⚖️ ETAPA 2 – Pesos PNFT: ¿Qué contenido requiere acción (aplicar) y cuál solo contextualiza?', help:'Peso 5 = aplicar, Peso 1 = solo contexto.' },
-                { field:'arquitectura', question:'🏗️ ETAPA 3 – Arquitectura: ¿Prefieres tarjetas, columnas, línea de tiempo o diseño mixto?', help:'Describe cómo organizar la información.' },
-                { field:'wireframe', question:'🧱 ETAPA 4 – Wireframe: ¿Qué orden de lectura prefieres? (izquierda→derecha, arriba→abajo)', help:'También puedes indicar tamaños relativos de bloques.' },
-                { field:'reticula', question:'📐 ETAPA 5 – Retícula: ¿Usamos la estándar 12 columnas 16:9? ¿Alguna preferencia de porcentajes?', help:'Responde "estándar" o indica cambios.' },
-                { field:'colores', question:'🎨 ETAPA 5.5 – Color: Además de la paleta PNFT, ¿quieres destacar algún color para alguna sección?', help:'La paleta incluye turquesa, azul, verde, morado, gris.' },
-                { field:'estilo_visual', question:'🎨 ETAPA 6 – Estilo: Confirmamos tipografía Poppins, iconos 3D, ilustraciones juveniles académicas. ¿Alguna preferencia adicional?', help:'Responde "no" si estás de acuerdo.' },
-                { field:'composicion', question:'🧱 ETAPA 6.2 – Composición: ¿Prefieres tarjetas redondeadas, mucho espacio en blanco, alto contraste?', help:'Describe el balance visual deseado.' },
-                { field:'densidad', question:'🧠 ETAPA 6.3 – Densidad: ¿Máximo 3–5 ideas por bloque? ¿Cuál es la idea principal de cada sección?', help:'Control de carga cognitiva.' },
-                { field:'auditoria', question:'🧪 ETAPA 6.5 – Auditoría: ¿Cumplimos con 16:9, Poppins, paleta, iconos 3D, no infantil? (responde "sí" o indica ajustes)', help:'Checklist visual.' },
-                { field:'restricciones', question:'🚨 ETAPA 7 – Restricciones: Confirmamos no modificar, resumir ni agregar contenido. ¿Alguna restricción adicional?', help:'Responde "no" si estás de acuerdo.' },
-                { field:'json', question:'🧾 ETAPA 8 – JSON: ¿Quieres generar un JSON estructurado? (responde "sí" o "no")', help:'Si respondes sí, se incluirá en la infografía final.' },
+                {
+                    field: 'document',
+                    question: '📄 Pega el documento curricular o carga un archivo (Word, PDF, PowerPoint).',
+                    help: 'También puedes escribir el texto directamente.',
+                    analysisPrompt: null,
+                },
+                {
+                    field: 'comprension',
+                    question: '🧩 ETAPA 1 – Comprensión del contenido',
+                    help: 'La IA analizará el documento y te mostrará sugerencias.',
+                    analysisPrompt: 'Analiza el siguiente documento curricular. Devuelve UNICAMENTE un JSON con este formato: {"temas_principales": ["tema1", "tema2"], "temas_secundarios": ["sec1", "sec2"], "informacion_clave": {"primero": "lo que debe verse primero", "recordar": "lo que debe recordarse"}, "accion": "lo que requiere acción", "contexto": "lo que solo contextualiza"}. No incluyas texto adicional.',
+                },
+                {
+                    field: 'jerarquia',
+                    question: '⚖️ ETAPA 2 – Jerarquía y Pesos PNFT',
+                    help: 'Se clasificarán los contenidos según la escala PNFT.',
+                    analysisPrompt: 'Utiliza el análisis previo y el documento. Clasifica cada sección según la escala PNFT (1=contexto, 3=comprensión, 5=aplicación/recuerdo). Devuelve UNICAMENTE un JSON con el formato: {"jerarquia": [{"seccion": "nombre", "peso": 1 o 3 o 5, "justificacion": "razón"}]}. No incluyas texto adicional.',
+                },
+                {
+                    field: 'arquitectura',
+                    question: '🏗️ ETAPA 3 – Arquitectura de Información',
+                    help: 'Se generarán 3 propuestas con diagramas ASCII.',
+                    analysisPrompt: 'Basado en el documento y análisis previo, genera 3 propuestas de arquitectura visual. Devuelve UNICAMENTE un JSON con el formato: {"propuestas": [{"nombre": "Propuesta 1", "ventajas": "...", "desventajas": "...", "tipo_lectura": "...", "diagrama_ascii": "..."}]}. No incluyas texto adicional.',
+                },
+                {
+                    field: 'wireframe',
+                    question: '🧱 ETAPA 4 – Wireframe',
+                    help: 'Se convertirá la arquitectura seleccionada en wireframe.',
+                    analysisPrompt: 'Convierte la arquitectura seleccionada (primera propuesta) en wireframe. Devuelve UNICAMENTE un JSON con el formato: {"wireframe": "diagrama ascii", "orden_lectura": "...", "jerarquia_visual": "...", "tamano_bloques": "..."}. No incluyas texto adicional.',
+                },
+                {
+                    field: 'reticula_color',
+                    question: '📐 ETAPA 5 – Retícula + Sistema Cromático',
+                    help: 'Se definirá retícula y uso pedagógico del color.',
+                    analysisPrompt: 'Define la retícula PNFT estándar 12 columnas 16:9 y el sistema cromático. Paleta: #09B7AE, #0BD2CE, #014D6B, #0B6284, #62BDF3, #063B7F, #45258F, #9ED16F, #C9C9C9. Devuelve UNICAMENTE un JSON: {"reticula": "descripción", "codificacion_color": {"area1": "color", ...}}. No incluyas texto adicional.',
+                },
+                {
+                    field: 'sistema_visual',
+                    question: '🎨 ETAPA 6 – Sistema de Diseño Visual',
+                    help: 'Se confirmará tipografía, iconos 3D, ilustraciones.',
+                    analysisPrompt: 'Confirma el sistema visual PNFT: tipografía Poppins, iconos 3D semi realistas, ilustraciones adolescentes 16-18 años, estilo académico. Devuelve UNICAMENTE un JSON: {"confirmacion": "sí", "detalles": "..."}. No incluyas texto adicional.',
+                },
+                {
+                    field: 'composicion',
+                    question: '🧱 ETAPA 6.2 – Composición Visual',
+                    help: 'Se definirá distribución de bloques y espacios.',
+                    analysisPrompt: 'Define composición visual: distribución, espacios en blanco, equilibrio texto/imagen. Devuelve UNICAMENTE un JSON: {"composicion": "descripción", "lectura_rapida": "≤10s por bloque"}. No incluyas texto adicional.',
+                },
+                {
+                    field: 'densidad',
+                    question: '🧠 ETAPA 6.3 – Densidad Cognitiva',
+                    help: 'Se controlará la carga de ideas por bloque.',
+                    analysisPrompt: 'Para cada bloque, define máximo 3-5 ideas, idea principal, secundarias y nivel de complejidad. Devuelve UNICAMENTE un JSON: {"bloques": [{"nombre": "bloque1", "ideas": ["idea1"], "principal": "...", "complejidad": "baja/media/alta"}]}. No incluyas texto adicional.',
+                },
+                {
+                    field: 'auditoria',
+                    question: '🧪 ETAPA 6.5 – Auditoría Visual',
+                    help: 'Se verificará cumplimiento de requisitos.',
+                    analysisPrompt: 'Verifica cumplimiento: 16:9, Poppins, paleta, iconos 3D, no infantil, etc. Devuelve UNICAMENTE un JSON: {"cumplimiento": [{"item": "...", "estado": "✅/❌"}]}. No incluyas texto adicional.',
+                },
+                {
+                    field: 'restricciones',
+                    question: '🚨 ETAPA 7 – Restricciones de Producción',
+                    help: 'Se confirmarán las prohibiciones y obligaciones.',
+                    analysisPrompt: 'Confirma las restricciones: no modificar, no resumir, no infantil, etc. Devuelve UNICAMENTE un JSON: {"confirmacion": "sí", "observaciones": "..."}. No incluyas texto adicional.',
+                },
+                {
+                    field: 'json_final',
+                    question: '🧾 ETAPA 8 – Generación de JSON',
+                    help: '¿Generar JSON final estructurado? (responde "sí" o "no")',
+                    analysisPrompt: null, // se maneja con respuesta directa
+                },
             ];
 
             function saveState() {
@@ -205,58 +257,179 @@
                 }).join('');
             }
 
-            function addMessage(role, text) {
+            function addMessage(role, text, extraHTML = '') {
                 const panel = document.getElementById('chatPanel');
                 const div = document.createElement('div');
                 div.className = `message ${role}`;
-                div.innerHTML = `<div class="avatar">${role==='assistant'?'🤖':'👤'}</div><div class="bubble">${text.replace(/\n/g,'<br>')}</div>`;
+                div.innerHTML = `<div class="avatar">${role==='assistant'?'🤖':'👤'}</div><div class="bubble">${text.replace(/\n/g,'<br>')}${extraHTML}</div>`;
                 panel.appendChild(div);
                 panel.scrollTop = panel.scrollHeight;
             }
 
+            function showSuggestionCards(jsonData, field) {
+                // Convierte el JSON en tarjetas de sugerencias editables
+                const container = document.getElementById('chatPanel');
+                const cardDiv = document.createElement('div');
+                cardDiv.className = 'message assistant';
+                let html = '<div class="avatar">🤖</div><div class="bubble"><strong>Sugerencias de la IA:</strong><br>';
+
+                if (field === 'comprension') {
+                    html += `<strong>Temas principales:</strong> ${jsonData.temas_principales.join(', ')}<br>`;
+                    html += `<strong>Secundarios:</strong> ${jsonData.temas_secundarios.join(', ')}<br>`;
+                    html += `<strong>Primero:</strong> ${jsonData.informacion_clave.primero}<br>`;
+                    html += `<strong>Recordar:</strong> ${jsonData.informacion_clave.recordar}<br>`;
+                } else if (field === 'jerarquia') {
+                    jsonData.jerarquia.forEach(item => {
+                        html += `<div class="suggestion-card"><span class="content">${item.seccion} (Peso ${item.peso})</span><span>${item.justificacion}</span></div>`;
+                    });
+                } else {
+                    // Genérico: mostrar como texto
+                    html += `<pre style="font-size:0.8rem;">${JSON.stringify(jsonData, null, 2)}</pre>`;
+                }
+
+                html += `<div style="margin-top:0.8rem;display:flex;gap:0.5rem;">
+                    <button class="btn btn-sm accept-suggestion">✅ Usar esta sugerencia</button>
+                    <button class="btn btn-outline btn-sm edit-suggestion">✏️ Editar</button>
+                </div></div>`;
+                cardDiv.innerHTML = html;
+                container.appendChild(cardDiv);
+                container.scrollTop = container.scrollHeight;
+
+                // Eventos
+                const acceptBtn = cardDiv.querySelector('.accept-suggestion');
+                const editBtn = cardDiv.querySelector('.edit-suggestion');
+                acceptBtn.addEventListener('click', () => {
+                    state.answers[field] = JSON.stringify(jsonData);
+                    state.step++;
+                    saveState(); updateStepIndicator();
+                    cardDiv.remove();
+                    showQuestion(state.step);
+                });
+                editBtn.addEventListener('click', () => {
+                    // Mostrar textarea para editar
+                    const textarea = document.createElement('textarea');
+                    textarea.value = JSON.stringify(jsonData, null, 2);
+                    textarea.rows = 4;
+                    cardDiv.querySelector('.bubble').appendChild(textarea);
+                    const saveBtn = document.createElement('button');
+                    saveBtn.textContent = 'Guardar cambios';
+                    saveBtn.className = 'btn btn-sm';
+                    saveBtn.addEventListener('click', () => {
+                        try {
+                            const newData = JSON.parse(textarea.value);
+                            state.answers[field] = JSON.stringify(newData);
+                            state.step++;
+                            saveState(); updateStepIndicator();
+                            cardDiv.remove();
+                            showQuestion(state.step);
+                        } catch (e) { toast('JSON inválido'); }
+                    });
+                    cardDiv.querySelector('.bubble').appendChild(saveBtn);
+                    acceptBtn.disabled = true;
+                    editBtn.disabled = true;
+                });
+            }
+
+            async function performAnalysis(field) {
+                const step = steps[state.step];
+                if (!step.analysisPrompt) return;
+                const prompt = step.analysisPrompt + '\n\nDocumento:\n' + state.documentText + '\n\nAnálisis previo:\n' + JSON.stringify(state.answers);
+                addMessage('assistant', '⏳ Analizando documento...');
+                try {
+                    let result;
+                    if (state.engine === 'gemini' && state.apiKey) {
+                        const res = await fetch(`https://generativelanguage.googleapis.com/v1beta/models/gemini-2.0-flash:generateContent?key=${state.apiKey}`, {
+                            method:'POST',
+                            headers:{'Content-Type':'application/json'},
+                            body: JSON.stringify({
+                                contents:[{parts:[{text:prompt}]}],
+                                generationConfig:{temperature:0.2, maxOutputTokens:2000}
+                            })
+                        });
+                        if (!res.ok) throw new Error((await res.json()).error?.message || 'Error');
+                        const data = await res.json();
+                        result = data.candidates[0].content.parts[0].text;
+                    } else {
+                        navigator.clipboard.writeText(prompt);
+                        toast('Prompt copiado. Pega la respuesta JSON aquí.');
+                        result = await new Promise(resolve => {
+                            const input = document.getElementById('userInput');
+                            input.placeholder = 'Pega aquí el JSON de la IA...';
+                            input.focus();
+                            const origHandler = document.getElementById('btnSend').onclick;
+                            document.getElementById('btnSend').onclick = () => {
+                                resolve(input.value.trim());
+                                input.placeholder = 'Escribe tu respuesta...';
+                                document.getElementById('btnSend').onclick = origHandler;
+                            };
+                        });
+                    }
+                    // Limpiar mensaje "analizando"
+                    const msgs = document.querySelectorAll('.bubble');
+                    msgs[msgs.length-1].parentElement.remove();
+                    // Parsear JSON
+                    const jsonData = JSON.parse(result.replace(/```json|```/g, ''));
+                    showSuggestionCards(jsonData, field);
+                    state.waitingForSuggestion = true;
+                } catch (e) {
+                    toast('Error: ' + e.message);
+                    // Si falla, permitir entrada manual
+                    showQuestion(state.step);
+                }
+            }
+
             function showQuestion(index) {
                 if (index >= steps.length) {
-                    addMessage('assistant','✅ ¡Completaste todas las etapas!<br>Ahora puedo generar la infografía con la IA.<br>Pulsa <strong>"Generar Infografía"</strong> o escribe "generar".');
+                    addMessage('assistant','✅ ¡Completaste todas las etapas!<br>Ahora puedo generar la infografía con la IA.<br>Pulsa <strong>"Generar Infografía"</strong>.');
                     document.getElementById('btnSend').textContent = '🖼️ Generar Infografía';
                     document.getElementById('btnSend').dataset.action = 'generate';
                     document.getElementById('btnSkipStep').style.display = 'none';
                     return;
                 }
                 const step = steps[index];
-                addMessage('assistant', `<strong>${step.question}</strong><br><span style="font-size:0.8rem;color:var(--gris-texto);">${step.help||''}</span>`);
+                addMessage('assistant', `<strong>${step.question}</strong><br><span style="font-size:0.8rem;">${step.help||''}</span>`);
                 document.getElementById('btnSend').textContent = '➤';
                 document.getElementById('btnSend').dataset.action = 'answer';
                 document.getElementById('btnSkipStep').style.display = 'inline-flex';
+
+                // Si la etapa tiene análisis automático, ejecutarlo
+                if (step.analysisPrompt && state.documentText && !state.answers[step.field]) {
+                    performAnalysis(step.field);
+                }
             }
 
             function buildMasterPrompt() {
                 let p = `Actúa como arquitecto de información, diseñador editorial y especialista en infografías educativas.\n`;
                 p += `Genera una infografía profesional PNFT siguiendo estrictamente este proceso:\n\n`;
                 p += `📎 DOCUMENTO FUENTE:\n${state.documentText}\n\n`;
-                p += `🧩 ETAPA 1 – COMPRENSIÓN:\n${state.answers['temas_principales']||''}\n`;
-                p += `Información que debe verse primero y recordarse: ${state.answers['informacion_clave']||''}\n\n`;
-                p += `⚖️ ETAPA 2 – JERARQUÍA Y PESOS:\n`;
-                p += `Acción/aplicar (peso 5): ${state.answers['accion_contexto']||''}\n\n`;
-                p += `🏗️ ETAPA 3 – ARQUITECTURA:\nPreferencia: ${state.answers['arquitectura']||'Tarjetas'}\n\n`;
-                p += `🧱 ETAPA 4 – WIREFRAME:\nOrden de lectura y flujo: ${state.answers['wireframe']||'Izquierda a derecha'}\n\n`;
-                p += `📐 ETAPA 5 – RETÍCULA:\n${state.answers['reticula']||'Estándar 12 columnas, 16:9'}\n\n`;
-                p += `🎨 ETAPA 5.5 – SISTEMA CROMÁTICO:\nPaleta PNFT: #09B7AE, #0BD2CE, #014D6B, #0B6284, #62BDF3, #063B7F, #45258F, #9ED16F, #C9C9C9\n`;
-                p += `Indicaciones adicionales: ${state.answers['colores']||'Ninguna'}\n\n`;
-                p += `🎨 ETAPA 6 – SISTEMA VISUAL:\nTipografía Poppins, iconos 3D, ilustraciones juveniles académicas. ${state.answers['estilo_visual']||''}\n\n`;
-                p += `🧱 ETAPA 6.2 – COMPOSICIÓN VISUAL:\n${state.answers['composicion']||'Tarjetas redondeadas, espacios amplios, alto contraste'}\n\n`;
-                p += `🧠 ETAPA 6.3 – DENSIDAD COGNITIVA:\n${state.answers['densidad']||'Máximo 4 ideas por bloque, idea principal destacada'}\n\n`;
-                p += `🧪 ETAPA 6.5 – AUDITORÍA VISUAL:\n${state.answers['auditoria']||'Cumple con todos los requisitos'}\n\n`;
-                p += `🚨 ETAPA 7 – RESTRICCIONES:\nNo modificar, resumir ni agregar contenido. ${state.answers['restricciones']||''}\n\n`;
-                if (state.answers['json'] && state.answers['json'].toLowerCase().includes('sí')) {
-                    p += `🧾 ETAPA 8 – JSON:\nGenerar también un JSON estructurado con la información.\n\n`;
+                for (let key in state.answers) {
+                    p += `📌 ${key}: ${state.answers[key]}\n`;
                 }
-                p += `🖼️ ETAPA 9 – INFOGRAFÍA FINAL:\nGenera la infografía final con fidelidad 100%, formato 16:9, paleta PNFT, Poppins, iconos 3D, estilo educativo profesional secundaria.\n`;
-                p += `Respeta todas las restricciones y la arquitectura definida.`;
+                p += `\n🖼️ ETAPA 9 – INFOGRAFÍA FINAL:\nGenera la infografía final con fidelidad 100%, formato 16:9, paleta PNFT, Poppins, iconos 3D, estilo educativo profesional secundaria.`;
                 return p;
             }
 
+            async function generateInfographic() {
+                const masterPrompt = buildMasterPrompt();
+                addMessage('assistant', '⏳ Generando infografía...');
+                try {
+                    let result;
+                    if (state.engine === 'gemini' && state.apiKey) {
+                        result = await callGemini(masterPrompt);
+                    } else {
+                        navigator.clipboard.writeText(masterPrompt);
+                        result = '📋 Prompt maestro copiado. Pégalo en ChatGPT o Gemini.';
+                    }
+                    addMessage('assistant', '🎉 ¡Infografía lista!\n\n' + result);
+                    document.getElementById('btnSend').textContent = '🔄 Nueva infografía';
+                    document.getElementById('btnSend').dataset.action = 'reset';
+                } catch (e) {
+                    addMessage('assistant', '❌ Error: ' + e.message);
+                    navigator.clipboard.writeText(masterPrompt);
+                }
+            }
+
             async function callGemini(prompt) {
-                if (!state.apiKey || !state.apiKey.startsWith('AIza')) throw new Error('Clave Gemini no configurada.');
                 const res = await fetch(`https://generativelanguage.googleapis.com/v1beta/models/gemini-2.0-flash:generateContent?key=${state.apiKey}`, {
                     method:'POST',
                     headers:{'Content-Type':'application/json'},
@@ -265,33 +438,9 @@
                         generationConfig:{temperature:0.4, maxOutputTokens:3000}
                     })
                 });
-                if (!res.ok) {
-                    const err = await res.json().catch(()=>({}));
-                    throw new Error(err.error?.message || 'Error '+res.status);
-                }
+                if (!res.ok) throw new Error((await res.json()).error?.message);
                 const data = await res.json();
                 return data.candidates[0].content.parts[0].text;
-            }
-
-            async function generateInfographic() {
-                const masterPrompt = buildMasterPrompt();
-                addMessage('assistant', '⏳ Generando infografía con IA...');
-                try {
-                    let result;
-                    if (state.engine === 'gemini') {
-                        result = await callGemini(masterPrompt);
-                    } else {
-                        navigator.clipboard.writeText(masterPrompt);
-                        result = '📋 Prompt maestro copiado. Pégalo en ChatGPT o Gemini.\n\n--- PROMPT ---\n' + masterPrompt;
-                    }
-                    addMessage('assistant', '🎉 ¡Infografía lista!\n\n' + result);
-                    document.getElementById('btnSend').textContent = '🔄 Nueva infografía';
-                    document.getElementById('btnSend').dataset.action = 'reset';
-                } catch (e) {
-                    addMessage('assistant', '❌ Error: ' + e.message + '\n\nPrompt copiado como respaldo.');
-                    navigator.clipboard.writeText(masterPrompt);
-                    toast('Prompt copiado');
-                }
             }
 
             async function handleSend() {
@@ -310,16 +459,26 @@
                 }
                 if (!text) return;
 
-                addMessage('user', text);
-                if (state.step < steps.length) {
+                if (state.step < steps.length && !state.waitingForSuggestion) {
                     const field = steps[state.step].field;
-                    if (field === 'document') state.documentText = text;
-                    else state.answers[field] = text;
-                    state.step++;
-                    saveState(); updateStepIndicator();
+                    if (field === 'document') {
+                        state.documentText = text;
+                        addMessage('user', '📄 Documento cargado (' + text.length + ' caracteres)');
+                        addMessage('assistant', '✅ Documento guardado. Iniciando análisis...');
+                        state.step++;
+                        saveState(); updateStepIndicator();
+                        showQuestion(state.step);
+                    } else {
+                        // Respuesta manual
+                        addMessage('user', text);
+                        state.answers[field] = text;
+                        state.step++;
+                        saveState(); updateStepIndicator();
+                        showQuestion(state.step);
+                    }
                 }
                 input.value = '';
-                showQuestion(state.step < steps.length ? state.step : state.step);
+                state.waitingForSuggestion = false;
             }
 
             document.getElementById('btnSend').addEventListener('click', handleSend);
@@ -330,7 +489,7 @@
                 if (state.step < steps.length) {
                     state.answers[steps[state.step].field] = 'No especificado';
                     state.step++; updateStepIndicator();
-                    showQuestion(state.step < steps.length ? state.step : state.step);
+                    showQuestion(state.step);
                 }
             });
             document.getElementById('btnUploadFile').addEventListener('click', () => document.getElementById('fileInput').click());
@@ -372,7 +531,7 @@
                 toast('🔑 Clave guardada');
             });
             document.getElementById('btnReset').addEventListener('click', () => {
-                if (confirm('¿Reiniciar toda la conversación?')) {
+                if (confirm('¿Reiniciar?')) {
                     state.step=0; state.answers={}; state.documentText='';
                     document.getElementById('chatPanel').innerHTML = '';
                     document.getElementById('btnSend').dataset.action = 'answer';
@@ -390,11 +549,13 @@
             updateStepIndicator();
             if (state.step === 0) showQuestion(0);
             else {
-                // Reconstruir mensajes previos
                 for (let i=0; i<state.step; i++) {
                     const step = steps[i];
-                    if (step.field === 'document') addMessage('user', state.documentText.substring(0,150)+'...');
-                    else addMessage('user', state.answers[step.field] || '');
+                    if (step.field === 'document') {
+                        addMessage('user', '📄 Documento cargado');
+                    } else if (state.answers[step.field]) {
+                        addMessage('user', state.answers[step.field].substring(0, 100)+'...');
+                    }
                 }
                 showQuestion(state.step);
             }
