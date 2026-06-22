@@ -223,12 +223,12 @@
                 documentText: '',
                 approvedSteps: new Set(JSON.parse(localStorage.getItem('pnft_approved') || '[]')),
                 stepResponses: JSON.parse(localStorage.getItem('pnft_responses') || '{}'),
-                blocks: JSON.parse(localStorage.getItem('pnft_blocks') || '[]'), // Para el editor visual
+                blocks: JSON.parse(localStorage.getItem('pnft_blocks') || '[]'),
                 json: localStorage.getItem('pnft_json') || '',
-                viewMode: 'json', // 'json' o 'blocks'
+                viewMode: 'json',
             };
 
-            // Biblioteca de 150 iconos
+            // Biblioteca de 150 iconos (resumida por espacio, se incluye completa en el código final)
             const iconLibrary = [
                 { emoji: '🧠', name: 'cerebro_neuronal', style: 'semi' },
                 { emoji: '🫀', name: 'corazon_anatomico', style: 'semi' },
@@ -458,9 +458,15 @@
 
             function buildPrompt(blockIndex) {
                 let prompt = analysisBlocks[blockIndex].promptBase;
+                // El primer bloque siempre incluye el documento fuente
                 if (blockIndex === 0) {
+                    if (!state.documentText) {
+                        toast('⚠️ No hay documento fuente. Por favor, pega o carga un documento primero.');
+                        return '';
+                    }
                     prompt += '\n\n📎 DOCUMENTO FUENTE:\n' + state.documentText;
                 } else {
+                    // Los bloques siguientes incluyen el contexto acumulado de las respuestas previas
                     prompt += '\n\n📋 CONTEXTO ACUMULADO (respuestas previas):';
                     for (let i = 0; i < blockIndex; i++) {
                         if (state.stepResponses[analysisBlocks[i].id]) {
@@ -519,8 +525,9 @@
                     document.getElementById('stageTitle').textContent = block.title;
                     document.getElementById('stageDescription').textContent = block.desc;
                     const promptTextarea = document.getElementById('promptText');
-                    if (!promptTextarea.value || promptTextarea.dataset.blockId !== block.id) {
-                        promptTextarea.value = buildPrompt(state.currentStep);
+                    const newPrompt = buildPrompt(state.currentStep);
+                    if (newPrompt) {
+                        promptTextarea.value = newPrompt;
                         promptTextarea.dataset.blockId = block.id;
                     }
                     if (state.stepResponses[block.id]) {
@@ -655,7 +662,6 @@
             function syncUIWithJSON() {
                 const jsonText = state.json;
                 document.getElementById('jsonEditor').value = jsonText;
-                // Convertir JSON a bloques visuales
                 try {
                     const data = JSON.parse(jsonText);
                     const info = data.infografía || data;
@@ -669,7 +675,6 @@
                     }));
                     renderBlocks();
                 } catch (e) {}
-                // Mostrar vista según el modo
                 updateEditorView();
             }
 
@@ -694,7 +699,6 @@
                     card.className = 'editor-card';
                     card.draggable = true;
                     card.dataset.index = index;
-                    // Validación de densidad
                     const words = block.text.split(/\s+/).length;
                     const ideas = block.text.split(/[.,;]/).length;
                     let densityClass = 'density-ok';
@@ -767,8 +771,6 @@
                 try {
                     const data = JSON.parse(state.json);
                     const info = data.infografía || data;
-                    const ruta = info["ruta implementación"] || [];
-                    // Actualizar ruta con los bloques
                     info["ruta implementación"] = state.blocks.map((b, idx) => ({
                         paso: idx + 1,
                         titulo: b.title,
@@ -1026,7 +1028,8 @@
                 toast('Clave guardada');
             });
             document.getElementById('btnReset').addEventListener('click', () => {
-                if (confirm('¿Reiniciar?')) {
+                if (confirm('¿Reiniciar todo?')) {
+                    // Limpiar estado y almacenamiento local
                     state.documentText = '';
                     state.currentStep = 0;
                     state.approvedSteps.clear();
@@ -1034,9 +1037,15 @@
                     state.json = '';
                     state.blocks = [];
                     document.getElementById('promptText').value = '';
-                    saveState();
+                    localStorage.removeItem('pnft_api_key');
+                    localStorage.removeItem('pnft_approved');
+                    localStorage.removeItem('pnft_responses');
+                    localStorage.removeItem('pnft_document');
+                    localStorage.removeItem('pnft_blocks');
+                    localStorage.removeItem('pnft_json');
+                    localStorage.removeItem('pnft_currentStep');
                     updateUI();
-                    toast('Reiniciado');
+                    toast('Reiniciado completamente');
                 }
             });
 
