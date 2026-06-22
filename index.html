@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>PNFT Infografía Lab · Editor JSON</title>
+    <title>PNFT Infografía Lab · Integración Completa</title>
     <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@300;400;500;600;700;800&display=swap" rel="stylesheet">
     <script src="https://cdnjs.cloudflare.com/ajax/libs/pdf.js/3.11.174/pdf.min.js"></script>
     <script src="https://cdn.jsdelivr.net/npm/mammoth@1.6.0/mammoth.browser.min.js"></script>
@@ -89,10 +89,22 @@
             background: #FFF3E0; border: 1px solid #FF9800; border-radius: 10px;
             padding: 1rem; margin-top: 1rem;
         }
+        .editor-card {
+            background: #fff; border: 2px dashed var(--gris-neutro); border-radius: 12px;
+            padding: 1rem; margin-bottom: 1rem;
+        }
+        .editor-card h4 { margin-bottom: 0.5rem; }
         .json-editor {
             background: #1e1e1e; color: #d4d4d4; font-family: monospace;
-            min-height: 400px;
+            min-height: 300px;
         }
+        .density-indicator {
+            display: inline-block; width: 12px; height: 12px; border-radius: 50%;
+            margin-left: 8px;
+        }
+        .density-ok { background: #4caf50; }
+        .density-warn { background: #ff9800; }
+        .density-bad { background: #f44336; }
         @media (max-width:800px) {
             .main-container { flex-direction:column; }
             .left-panel { width:100%; max-height:200px; }
@@ -103,7 +115,7 @@
     <header>
         <div class="logo">
             <div class="logo-icon">PNFT</div>
-            <span>Infografía Lab · JSON Maestro</span>
+            <span>Infografía Lab · Completa</span>
         </div>
         <div>
             <button class="btn btn-outline btn-sm" id="btnApiKey">🔑 Clave Gemini</button>
@@ -160,14 +172,25 @@
                 <div id="densityPanel" style="display:none;" class="density-panel"></div>
             </div>
 
-            <!-- Editor JSON (etapa 4) -->
-            <div class="card" id="jsonCard" style="display:none;">
-                <h3>🧾 JSON Maestro de la Infografía</h3>
-                <p>Edita el contenido libremente. Este JSON define toda la estructura de la infografía.</p>
-                <textarea id="jsonEditor" class="json-editor" rows="20"></textarea>
+            <!-- Editor combinado (JSON + visual) -->
+            <div class="card" id="editorCard" style="display:none;">
+                <h3>🧩 Editor de Estructura</h3>
+                <div class="flex-row" style="margin-bottom:1rem;">
+                    <button class="btn btn-sm btn-outline" id="btnToggleView">🔄 Cambiar vista (JSON / Bloques)</button>
+                    <button class="btn btn-sm btn-outline" id="btnAddBlock">➕ Agregar bloque</button>
+                </div>
+                <!-- Vista JSON -->
+                <div id="jsonView">
+                    <textarea id="jsonEditor" class="json-editor" rows="12"></textarea>
+                    <button class="btn btn-sm" id="btnUpdateFromJSON" style="margin-top:0.5rem;">✅ Actualizar bloques desde JSON</button>
+                </div>
+                <!-- Vista Bloques -->
+                <div id="blocksView" style="display:none;">
+                    <div id="blocksContainer"></div>
+                </div>
                 <div class="flex-row" style="margin-top:1rem;">
-                    <button class="btn btn-sm" id="btnPreviewFromJSON">👁️ Vista previa</button>
-                    <button class="btn btn-sm" id="btnBuildMasterFromJSON">🪄 Construir prompt maestro</button>
+                    <button class="btn btn-sm" id="btnPreviewHTML">👁️ Vista previa</button>
+                    <button class="btn btn-sm" id="btnBuildMasterPrompt">🪄 Construir prompt maestro</button>
                 </div>
             </div>
 
@@ -200,8 +223,164 @@
                 documentText: '',
                 approvedSteps: new Set(JSON.parse(localStorage.getItem('pnft_approved') || '[]')),
                 stepResponses: JSON.parse(localStorage.getItem('pnft_responses') || '{}'),
-                json: localStorage.getItem('pnft_json') || '', // texto JSON
+                blocks: JSON.parse(localStorage.getItem('pnft_blocks') || '[]'), // Para el editor visual
+                json: localStorage.getItem('pnft_json') || '',
+                viewMode: 'json', // 'json' o 'blocks'
             };
+
+            // Biblioteca de 150 iconos
+            const iconLibrary = [
+                { emoji: '🧠', name: 'cerebro_neuronal', style: 'semi' },
+                { emoji: '🫀', name: 'corazon_anatomico', style: 'semi' },
+                { emoji: '👁️', name: 'ojo_humano', style: 'semi' },
+                { emoji: '🦴', name: 'hueso_femur', style: 'semi' },
+                { emoji: '🌱', name: 'planta_crecimiento', style: 'semi' },
+                { emoji: '🌳', name: 'arbol_frondoso', style: 'semi' },
+                { emoji: '🍎', name: 'manzana_hoja', style: 'semi' },
+                { emoji: '📚', name: 'libro_abierto', style: 'semi' },
+                { emoji: '✏️', name: 'lapiz_madera', style: 'semi' },
+                { emoji: '📐', name: 'escuadra_metalica', style: 'semi' },
+                { emoji: '🧲', name: 'iman_herradura', style: 'semi' },
+                { emoji: '🔬', name: 'microscopio', style: 'semi' },
+                { emoji: '🧪', name: 'tubo_ensayo', style: 'semi' },
+                { emoji: '🌍', name: 'globo_terraqueo', style: 'semi' },
+                { emoji: '🗺️', name: 'mapa_enrollado', style: 'semi' },
+                { emoji: '🏛️', name: 'columna_dorica', style: 'semi' },
+                { emoji: '⚖️', name: 'balanza_justicia', style: 'semi' },
+                { emoji: '💡', name: 'bombilla_incandescente', style: 'semi' },
+                { emoji: '🔑', name: 'llave_antigua', style: 'semi' },
+                { emoji: '🧰', name: 'caja_herramientas', style: 'semi' },
+                { emoji: '🧭', name: 'brujula_nautica', style: 'semi' },
+                { emoji: '🪶', name: 'pluma_estilografica', style: 'semi' },
+                { emoji: '🎭', name: 'mascara_teatral', style: 'semi' },
+                { emoji: '🧩', name: 'pieza_rompecabezas', style: 'semi' },
+                { emoji: '🎓', name: 'birrete_academico', style: 'semi' },
+                { emoji: '📜', name: 'pergamino_antiguo', style: 'semi' },
+                { emoji: '🏺', name: 'anfora_griega', style: 'semi' },
+                { emoji: '🧮', name: 'abaco_madera', style: 'semi' },
+                { emoji: '⌛', name: 'reloj_arena', style: 'semi' },
+                { emoji: '📡', name: 'antena_parabolica', style: 'semi' },
+                { emoji: '🛰️', name: 'satelite_orbital', style: 'semi' },
+                { emoji: '🧬', name: 'helice_adn', style: 'semi' },
+                { emoji: '🔭', name: 'telescopio_refractor', style: 'semi' },
+                { emoji: '💊', name: 'capsula_medicamento', style: 'semi' },
+                { emoji: '🦷', name: 'diente_molar', style: 'semi' },
+                { emoji: '🧫', name: 'placa_petri', style: 'semi' },
+                { emoji: '🩺', name: 'estetoscopio', style: 'semi' },
+                { emoji: '🦴', name: 'esqueleto_humano', style: 'semi' },
+                { emoji: '🧠', name: 'cerebro_lobulo_frontal', style: 'semi' },
+                { emoji: '🫁', name: 'pulmones', style: 'semi' },
+                { emoji: '🖥️', name: 'monitor_pc', style: 'isometrico' },
+                { emoji: '📱', name: 'smartphone', style: 'isometrico' },
+                { emoji: '⌨️', name: 'teclado_mecanico', style: 'isometrico' },
+                { emoji: '🖱️', name: 'mouse_oficina', style: 'isometrico' },
+                { emoji: '💾', name: 'disco_duro', style: 'isometrico' },
+                { emoji: '🔌', name: 'cable_usb', style: 'isometrico' },
+                { emoji: '🎧', name: 'auriculares', style: 'isometrico' },
+                { emoji: '📷', name: 'camara_reflex', style: 'isometrico' },
+                { emoji: '🖨️', name: 'impresora', style: 'isometrico' },
+                { emoji: '📡', name: 'router_wifi', style: 'isometrico' },
+                { emoji: '🧱', name: 'servidor_rack', style: 'isometrico' },
+                { emoji: '💻', name: 'laptop_abierta', style: 'isometrico' },
+                { emoji: '🎮', name: 'control_videojuegos', style: 'isometrico' },
+                { emoji: '🖊️', name: 'lapiz_digital', style: 'isometrico' },
+                { emoji: '📟', name: 'reloj_inteligente', style: 'isometrico' },
+                { emoji: '📡', name: 'antena_telecom', style: 'isometrico' },
+                { emoji: '🛰️', name: 'drone_cuadricoptero', style: 'isometrico' },
+                { emoji: '🏭', name: 'fabrica_automatizada', style: 'isometrico' },
+                { emoji: '🚗', name: 'coche_electrico', style: 'isometrico' },
+                { emoji: '🚀', name: 'cohete_espacial', style: 'isometrico' },
+                { emoji: '🛸', name: 'nave_nodriza', style: 'isometrico' },
+                { emoji: '🏗️', name: 'grua_construccion', style: 'isometrico' },
+                { emoji: '🔩', name: 'tuerca_tornillo', style: 'isometrico' },
+                { emoji: '⚙️', name: 'engranaje_dentado', style: 'isometrico' },
+                { emoji: '🧰', name: 'maletin_herramientas', style: 'isometrico' },
+                { emoji: '📐', name: 'regla_compas', style: 'isometrico' },
+                { emoji: '📏', name: 'cinta_metrica', style: 'isometrico' },
+                { emoji: '💡', name: 'panel_solar', style: 'isometrico' },
+                { emoji: '🔋', name: 'bateria_recargable', style: 'isometrico' },
+                { emoji: '🌐', name: 'globo_nodos_red', style: 'isometrico' },
+                { emoji: '🖥️', name: 'servidor_enrack', style: 'isometrico' },
+                { emoji: '🎛️', name: 'mesa_mezclas', style: 'isometrico' },
+                { emoji: '🧲', name: 'electroiman', style: 'isometrico' },
+                { emoji: '📡', name: 'radar', style: 'isometrico' },
+                { emoji: '🧬', name: 'secuenciador_genetico', style: 'isometrico' },
+                { emoji: '🧪', name: 'reactor_quimico', style: 'isometrico' },
+                { emoji: '🏥', name: 'cama_hospitalaria', style: 'isometrico' },
+                { emoji: '🛠️', name: 'llave_inglesa', style: 'isometrico' },
+                { emoji: '📹', name: 'camara_seguridad', style: 'isometrico' },
+                { emoji: '🧭', name: 'brujula_digital', style: 'isometrico' },
+                { emoji: '🧠', name: 'interfaz_cerebro_maquina', style: 'futurista' },
+                { emoji: '🦾', name: 'brazo_bionico', style: 'futurista' },
+                { emoji: '👁️', name: 'implante_ocular', style: 'futurista' },
+                { emoji: '💉', name: 'nanorobots_vial', style: 'futurista' },
+                { emoji: '🧬', name: 'molecula_datos', style: 'futurista' },
+                { emoji: '🌌', name: 'agujero_gusano', style: 'futurista' },
+                { emoji: '🛸', name: 'caza_estelar', style: 'futurista' },
+                { emoji: '🛰️', name: 'estacion_espacial', style: 'futurista' },
+                { emoji: '🚀', name: 'propulsor_ionico', style: 'futurista' },
+                { emoji: '🕶️', name: 'gafas_ra', style: 'futurista' },
+                { emoji: '⌚', name: 'reloj_holografico', style: 'futurista' },
+                { emoji: '💻', name: 'tableta_transparente', style: 'futurista' },
+                { emoji: '🎮', name: 'guante_haptico', style: 'futurista' },
+                { emoji: '🔮', name: 'esfera_datos', style: 'futurista' },
+                { emoji: '📡', name: 'antena_cuantica', style: 'futurista' },
+                { emoji: '🧲', name: 'campo_magnetico', style: 'futurista' },
+                { emoji: '🧬', name: 'crisol_adn', style: 'futurista' },
+                { emoji: '🏙️', name: 'ciudad_flotante', style: 'futurista' },
+                { emoji: '🚁', name: 'vehiculo_aereo_personal', style: 'futurista' },
+                { emoji: '🛡️', name: 'escudo_energia', style: 'futurista' },
+                { emoji: '⚡', name: 'reactor_fusion', style: 'futurista' },
+                { emoji: '🌀', name: 'portal_dimensional', style: 'futurista' },
+                { emoji: '💠', name: 'cristal_memoria', style: 'futurista' },
+                { emoji: '🔳', name: 'cubo_datos', style: 'futurista' },
+                { emoji: '📊', name: 'dashboard_neural', style: 'futurista' },
+                { emoji: '🧪', name: 'sintetizador_molecular', style: 'futurista' },
+                { emoji: '🧬', name: 'capsula_genetica', style: 'futurista' },
+                { emoji: '🌐', name: 'red_neuronal_global', style: 'futurista' },
+                { emoji: '💢', name: 'exoesqueleto_militar', style: 'futurista' },
+                { emoji: '🛰️', name: 'dron_espia', style: 'futurista' },
+                { emoji: '🔋', name: 'celda_energia_infinita', style: 'futurista' },
+                { emoji: '🧠', name: 'nucleo_ia', style: 'futurista' },
+                { emoji: '📡', name: 'comunicador_cuantico', style: 'futurista' },
+                { emoji: '🕹️', name: 'consola_mando', style: 'futurista' },
+                { emoji: '🧬', name: 'biomodulo_regeneracion', style: 'futurista' },
+                { emoji: '👓', name: 'lentes_contacto_inteligentes', style: 'futurista' },
+                { emoji: '🎧', name: 'implante_coclear', style: 'futurista' },
+                { emoji: '🦿', name: 'protesis_deportiva', style: 'futurista' },
+                { emoji: '🧪', name: 'pildora_inteligente', style: 'futurista' },
+                { emoji: '🌟', name: 'nodo_estelar', style: 'futurista' },
+                { emoji: '📷', name: 'camara_dslr', style: 'fotorealista' },
+                { emoji: '🎻', name: 'violin_madera', style: 'fotorealista' },
+                { emoji: '🎺', name: 'trompeta_dorada', style: 'fotorealista' },
+                { emoji: '🖌️', name: 'pincel_pintura', style: 'fotorealista' },
+                { emoji: '⌚', name: 'reloj_mecanico', style: 'fotorealista' },
+                { emoji: '💎', name: 'diamante_tallado', style: 'fotorealista' },
+                { emoji: '🪙', name: 'monedas_oro', style: 'fotorealista' },
+                { emoji: '📖', name: 'biblia_cuero', style: 'fotorealista' },
+                { emoji: '🖋️', name: 'pluma_lujo', style: 'fotorealista' },
+                { emoji: '🧳', name: 'maleta_vintage', style: 'fotorealista' },
+                { emoji: '🔍', name: 'lupa_madera', style: 'fotorealista' },
+                { emoji: '📐', name: 'compas_dibujo', style: 'fotorealista' },
+                { emoji: '🎧', name: 'auriculares_estudio', style: 'fotorealista' },
+                { emoji: '💡', name: 'bombilla_edison', style: 'fotorealista' },
+                { emoji: '🧲', name: 'iman_neodimio', style: 'fotorealista' },
+                { emoji: '📡', name: 'microfono_condensador', style: 'fotorealista' },
+                { emoji: '🖥️', name: 'monitor_diseno', style: 'fotorealista' },
+                { emoji: '🎮', name: 'joystick_simulacion', style: 'fotorealista' },
+                { emoji: '🧪', name: 'matraz_erlenmeyer', style: 'fotorealista' },
+                { emoji: '🧬', name: 'modelo_adn_cristalino', style: 'fotorealista' },
+                { emoji: '🦷', name: 'implante_dental', style: 'fotorealista' },
+                { emoji: '🧠', name: 'protesis_cerebral', style: 'fotorealista' },
+                { emoji: '🫀', name: 'valvula_cardiaca', style: 'fotorealista' },
+                { emoji: '🔬', name: 'lente_microscopio_electronico', style: 'fotorealista' },
+                { emoji: '📡', name: 'antena_granja_satelites', style: 'fotorealista' },
+                { emoji: '🚁', name: 'helicoptero_rescate', style: 'fotorealista' },
+                { emoji: '🚗', name: 'motor_seccionado', style: 'fotorealista' },
+                { emoji: '🔧', name: 'llave_dinamometrica', style: 'fotorealista' },
+                { emoji: '🧰', name: 'estuche_cirugia_robotica', style: 'fotorealista' },
+                { emoji: '🎓', name: 'toga_academica', style: 'fotorealista' }
+            ];
 
             const analysisBlocks = [
                 {
@@ -224,7 +403,7 @@
                 }
             ];
 
-            // Funciones auxiliares
+            // ========== FUNCIONES ==========
             function toast(msg) {
                 const t = document.getElementById('toast');
                 t.textContent = msg; t.className = 'toast show';
@@ -235,6 +414,7 @@
                 localStorage.setItem('pnft_approved', JSON.stringify([...state.approvedSteps]));
                 localStorage.setItem('pnft_responses', JSON.stringify(state.stepResponses));
                 localStorage.setItem('pnft_document', state.documentText);
+                localStorage.setItem('pnft_blocks', JSON.stringify(state.blocks));
                 localStorage.setItem('pnft_json', state.json);
                 localStorage.setItem('pnft_currentStep', state.currentStep);
             }
@@ -244,6 +424,7 @@
                     currentStep: state.currentStep,
                     approvedSteps: [...state.approvedSteps],
                     stepResponses: state.stepResponses,
+                    blocks: state.blocks,
                     json: state.json,
                 };
                 const blob = new Blob([JSON.stringify(data, null, 2)], {type: 'application/json'});
@@ -264,6 +445,7 @@
                         state.approvedSteps = new Set(data.approvedSteps);
                         state.stepResponses = data.stepResponses;
                         state.currentStep = data.currentStep || 0;
+                        state.blocks = data.blocks || [];
                         state.json = data.json || '';
                         saveState();
                         document.getElementById('promptText').value = '';
@@ -294,7 +476,7 @@
                 list.innerHTML = '';
                 const stages = [
                     ...analysisBlocks.map((b, i) => ({...b, idx: i})),
-                    { id: 'json', title: '🧾 JSON Maestro', idx: 3 },
+                    { id: 'editor', title: '🧩 Editor de Estructura', idx: 3 },
                     { id: 'final', title: '🖼️ Prompt Final', idx: 4 }
                 ];
                 stages.forEach(stage => {
@@ -325,10 +507,10 @@
                 document.getElementById('standardsCard').style.display = state.documentText ? 'block' : 'none';
 
                 const stageCard = document.getElementById('stageCard');
-                const jsonCard = document.getElementById('jsonCard');
+                const editorCard = document.getElementById('editorCard');
                 const finalCard = document.getElementById('finalCard');
                 stageCard.style.display = 'none';
-                jsonCard.style.display = 'none';
+                editorCard.style.display = 'none';
                 finalCard.style.display = 'none';
 
                 if (state.currentStep < 3) {
@@ -349,12 +531,12 @@
                         document.getElementById('responseContainer').style.display = 'none';
                     }
                 } else if (state.currentStep === 3) {
-                    jsonCard.style.display = 'block';
+                    editorCard.style.display = 'block';
                     if (!state.json) {
                         state.json = buildInitialJSON();
                         saveState();
                     }
-                    document.getElementById('jsonEditor').value = state.json;
+                    syncUIWithJSON();
                 } else if (state.currentStep === 4) {
                     finalCard.style.display = 'block';
                 }
@@ -372,23 +554,20 @@
             function showDensityControl(responseText) {
                 const panel = document.getElementById('densityPanel');
                 panel.innerHTML = '<h4>🧠 Control de densidad cognitiva</h4>';
-                // ... (se mantiene el código original)
                 panel.style.display = 'block';
             }
 
-            // Construir el JSON inicial a partir de las respuestas de la IA
+            // Construir JSON inicial a partir de las respuestas de la IA
             function buildInitialJSON() {
                 const estructura = state.stepResponses['estructura'] || '';
                 const jerarquia = state.stepResponses['jerarquia'] || '';
                 const estilo = state.stepResponses['estilo'] || '';
                 const combined = estructura + '\n' + jerarquia + '\n' + estilo;
 
-                // Extraer título y subtítulo (pueden aparecer en estructura)
                 const titleMatch = combined.match(/título[:\s]*([^\n]+)/i);
                 const subMatch = combined.match(/subtítulo[:\s]*([^\n]+)/i);
                 const propositoMatch = combined.match(/propósito[:\s]*([^\n]+)/i);
 
-                // Extraer secciones como BLOQUE / SECCIÓN / TARJETA
                 const sectionRegex = /^(?:BLOQUE|TARJETA|SECCIÓN|PASO)\s*[A-Za-z0-9]*[:\-]?\s*(.*)/gmi;
                 const sections = [];
                 let match;
@@ -401,7 +580,6 @@
                     if (text) sections.push({ title: name, description: text });
                 }
 
-                // Si no se encontraron secciones, usar valores por defecto
                 if (sections.length === 0) {
                     sections.push({ title: 'Comprensión del enfoque curricular', description: 'Contenido extraído del documento' });
                     sections.push({ title: 'Valoración del contexto educativo', description: 'Contenido extraído del documento' });
@@ -411,27 +589,13 @@
                     sections.push({ title: 'Documentación del aprendizaje', description: 'Contenido extraído del documento' });
                 }
 
-                // Mapeo de iconos a emojis (aproximación básica)
-                const iconMap = {
-                    'curriculo_digital_3d': '🧠',
-                    'analisis_contexto_3d': '🌍',
-                    'diagnostico_digital_3d': '🔬',
-                    'decision_curricular_3d': '⚖️',
-                    'aprendizaje_retos_3d': '🛡️',
-                    'seguimiento_digital_3d': '📊',
-                };
-                function getIconEmoji(name) {
-                    return iconMap[name] || '🧠';
-                }
-
                 const rutaImplementacion = sections.map((s, idx) => ({
                     paso: idx + 1,
                     titulo: s.title,
-                    icono_3d: getIconEmoji(s.title.toLowerCase()),
+                    icono_3d: '🧠',
                     descripción: s.description
                 }));
 
-                // Crear JSON final
                 const json = {
                     infografía: {
                         titulo: titleMatch ? titleMatch[1].trim() : (state.documentText.split('\n')[0] || 'Infografía PNFT'),
@@ -487,9 +651,158 @@
                 return JSON.stringify(json, null, 2);
             }
 
-            // Vista previa desde el JSON
-            function openPreviewFromJSON() {
-                const jsonText = document.getElementById('jsonEditor').value;
+            // Sincronizar el JSON y los bloques visuales
+            function syncUIWithJSON() {
+                const jsonText = state.json;
+                document.getElementById('jsonEditor').value = jsonText;
+                // Convertir JSON a bloques visuales
+                try {
+                    const data = JSON.parse(jsonText);
+                    const info = data.infografía || data;
+                    const ruta = info["ruta implementación"] || [];
+                    state.blocks = ruta.map((item, idx) => ({
+                        id: Date.now() + idx,
+                        title: item.titulo,
+                        color: '#0B6284',
+                        icon: item.icono_3d || '🧠',
+                        text: item.descripción
+                    }));
+                    renderBlocks();
+                } catch (e) {}
+                // Mostrar vista según el modo
+                updateEditorView();
+            }
+
+            function updateEditorView() {
+                const jsonView = document.getElementById('jsonView');
+                const blocksView = document.getElementById('blocksView');
+                if (state.viewMode === 'json') {
+                    jsonView.style.display = 'block';
+                    blocksView.style.display = 'none';
+                } else {
+                    jsonView.style.display = 'none';
+                    blocksView.style.display = 'block';
+                    renderBlocks();
+                }
+            }
+
+            function renderBlocks() {
+                const container = document.getElementById('blocksContainer');
+                container.innerHTML = '';
+                state.blocks.forEach((block, index) => {
+                    const card = document.createElement('div');
+                    card.className = 'editor-card';
+                    card.draggable = true;
+                    card.dataset.index = index;
+                    // Validación de densidad
+                    const words = block.text.split(/\s+/).length;
+                    const ideas = block.text.split(/[.,;]/).length;
+                    let densityClass = 'density-ok';
+                    if (words > 60 || ideas > 5) densityClass = 'density-bad';
+                    else if (words > 40 || ideas > 4) densityClass = 'density-warn';
+                    card.innerHTML = `
+                        <div style="display:flex; justify-content:space-between; align-items:center;">
+                            <h4>${escapeHtml(block.title)} <span class="density-indicator ${densityClass}"></span></h4>
+                            <button class="btn btn-sm remove-block">🗑️</button>
+                        </div>
+                        <label>Texto:</label>
+                        <textarea rows="3" class="block-text">${escapeHtml(block.text)}</textarea>
+                        <div class="flex-row" style="margin-top:0.5rem;">
+                            <label>Color:</label>
+                            <select class="block-color">
+                                ${['#09B7AE','#0BD2CE','#014D6B','#0B6284','#62BDF3','#063B7F','#45258F','#9ED16F','#C9C9C9'].map(c => 
+                                    `<option value="${c}" ${block.color===c?'selected':''} style="background:${c};">${c}</option>`
+                                ).join('')}
+                            </select>
+                            <label>Icono:</label>
+                            <select class="block-icon">
+                                ${iconLibrary.map(ico => 
+                                    `<option value="${ico.emoji}" ${block.icon===ico.emoji?'selected':''}>${ico.emoji} ${ico.name} (${ico.style})</option>`
+                                ).join('')}
+                            </select>
+                        </div>
+                    `;
+                    card.querySelector('.block-text').addEventListener('input', (e) => {
+                        state.blocks[index].text = e.target.value;
+                        updateJSONFromBlocks();
+                        saveState();
+                    });
+                    card.querySelector('.block-color').addEventListener('change', (e) => {
+                        state.blocks[index].color = e.target.value;
+                        updateJSONFromBlocks();
+                        saveState();
+                    });
+                    card.querySelector('.block-icon').addEventListener('change', (e) => {
+                        state.blocks[index].icon = e.target.value;
+                        updateJSONFromBlocks();
+                        saveState();
+                    });
+                    card.querySelector('.remove-block').addEventListener('click', () => {
+                        state.blocks.splice(index, 1);
+                        updateJSONFromBlocks();
+                        saveState();
+                        renderBlocks();
+                    });
+                    card.addEventListener('dragstart', (e) => {
+                        e.dataTransfer.setData('text/plain', index);
+                        card.style.opacity = '0.4';
+                    });
+                    card.addEventListener('dragover', (e) => e.preventDefault());
+                    card.addEventListener('drop', (e) => {
+                        e.preventDefault();
+                        const fromIndex = parseInt(e.dataTransfer.getData('text/plain'));
+                        const toIndex = index;
+                        const moved = state.blocks.splice(fromIndex, 1)[0];
+                        state.blocks.splice(toIndex, 0, moved);
+                        updateJSONFromBlocks();
+                        saveState();
+                        renderBlocks();
+                    });
+                    card.addEventListener('dragend', () => card.style.opacity = '1');
+                    container.appendChild(card);
+                });
+            }
+
+            function updateJSONFromBlocks() {
+                try {
+                    const data = JSON.parse(state.json);
+                    const info = data.infografía || data;
+                    const ruta = info["ruta implementación"] || [];
+                    // Actualizar ruta con los bloques
+                    info["ruta implementación"] = state.blocks.map((b, idx) => ({
+                        paso: idx + 1,
+                        titulo: b.title,
+                        icono_3d: b.icon,
+                        descripción: b.text
+                    }));
+                    state.json = JSON.stringify(data, null, 2);
+                    document.getElementById('jsonEditor').value = state.json;
+                } catch (e) {}
+            }
+
+            function updateBlocksFromJSON() {
+                try {
+                    const data = JSON.parse(document.getElementById('jsonEditor').value);
+                    state.json = document.getElementById('jsonEditor').value;
+                    const info = data.infografía || data;
+                    const ruta = info["ruta implementación"] || [];
+                    state.blocks = ruta.map((item, idx) => ({
+                        id: Date.now() + idx,
+                        title: item.titulo,
+                        color: '#0B6284',
+                        icon: item.icono_3d || '🧠',
+                        text: item.descripción
+                    }));
+                    renderBlocks();
+                    saveState();
+                    toast('✅ Bloques actualizados desde JSON');
+                } catch (e) {
+                    toast('❌ JSON inválido');
+                }
+            }
+
+            function openPreview() {
+                const jsonText = state.json;
                 try {
                     const data = JSON.parse(jsonText);
                     const info = data.infografía || data;
@@ -529,13 +842,12 @@
                 }
             }
 
-            function buildMasterFromJSON() {
-                const jsonText = document.getElementById('jsonEditor').value;
+            function buildMasterPrompt() {
+                const jsonText = state.json;
                 try {
-                    const data = JSON.parse(jsonText);
+                    JSON.parse(jsonText);
                     state.json = jsonText;
                     saveState();
-                    // Construir prompt maestro
                     let prompt = '🧠 PROMPT MAESTRO PNFT\n\n';
                     prompt += '📎 DOCUMENTO FUENTE:\n' + state.documentText + '\n\n';
                     prompt += '✅ ESTRUCTURA FINAL (JSON):\n' + jsonText + '\n\n';
@@ -564,7 +876,11 @@
                 return data.candidates[0].content.parts[0].text;
             }
 
-            // Eventos
+            function escapeHtml(text) {
+                return text.replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;').replace(/"/g, '&quot;');
+            }
+
+            // ========== EVENTOS ==========
             document.getElementById('btnSaveDoc').addEventListener('click', () => {
                 const text = document.getElementById('docText').value.trim();
                 if (!text) return toast('Ingresa el documento');
@@ -573,6 +889,7 @@
                 state.approvedSteps.clear();
                 state.stepResponses = {};
                 state.json = '';
+                state.blocks = [];
                 saveState();
                 updateUI();
                 toast('Documento guardado');
@@ -643,8 +960,9 @@
                 if (state.currentStep < 2) {
                     state.currentStep++;
                 } else {
-                    state.currentStep = 3; // saltar al JSON
+                    state.currentStep = 3;
                     state.json = buildInitialJSON();
+                    state.blocks = [];
                 }
                 document.getElementById('promptText').value = '';
                 document.getElementById('densityPanel').style.display = 'none';
@@ -663,8 +981,29 @@
                 showDensityControl(document.getElementById('responseArea').textContent);
             });
 
-            document.getElementById('btnPreviewFromJSON').addEventListener('click', openPreviewFromJSON);
-            document.getElementById('btnBuildMasterFromJSON').addEventListener('click', buildMasterFromJSON);
+            // Editor
+            document.getElementById('btnToggleView').addEventListener('click', () => {
+                state.viewMode = state.viewMode === 'json' ? 'blocks' : 'json';
+                updateEditorView();
+            });
+
+            document.getElementById('btnAddBlock').addEventListener('click', () => {
+                state.blocks.push({
+                    id: Date.now(),
+                    title: 'Nuevo bloque',
+                    color: '#0B6284',
+                    icon: '🧠',
+                    text: 'Contenido del nuevo bloque'
+                });
+                updateJSONFromBlocks();
+                saveState();
+                renderBlocks();
+            });
+
+            document.getElementById('btnUpdateFromJSON').addEventListener('click', updateBlocksFromJSON);
+
+            document.getElementById('btnPreviewHTML').addEventListener('click', openPreview);
+            document.getElementById('btnBuildMasterPrompt').addEventListener('click', buildMasterPrompt);
             document.getElementById('btnCopyFinal').addEventListener('click', () => {
                 navigator.clipboard.writeText(document.getElementById('finalPrompt').value).then(() => toast('📋 Prompt final copiado'));
             });
@@ -693,6 +1032,7 @@
                     state.approvedSteps.clear();
                     state.stepResponses = {};
                     state.json = '';
+                    state.blocks = [];
                     document.getElementById('promptText').value = '';
                     saveState();
                     updateUI();
