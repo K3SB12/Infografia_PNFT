@@ -175,6 +175,7 @@
                 <div class="flex-row" style="margin-bottom:1rem;">
                     <button class="btn btn-sm btn-outline" id="btnToggleView">🔄 Cambiar vista (JSON / Bloques)</button>
                     <button class="btn btn-sm btn-outline" id="btnAddBlock">➕ Agregar bloque</button>
+                    <button class="btn btn-sm btn-outline" id="btnCleanDescriptions">🧹 Limpiar descripciones</button>
                 </div>
                 <div id="jsonView">
                     <textarea id="jsonEditor" class="json-editor" rows="12"></textarea>
@@ -554,7 +555,6 @@
                 panel.style.display = 'block';
             }
 
-            // Extraer secciones SOLO de la respuesta del Bloque 1
             function extractSectionsFromStructure() {
                 const estructura = state.stepResponses['estructura'] || '';
                 const headerRegex = /^(?:(?:PASO|BLOQUE|TARJETA|SECCIÓN)\s*[A-Za-z0-9]*[:\-]?|(?:\d+[\.\)]\s)|[-•]\s)(.*)$/gim;
@@ -587,7 +587,6 @@
                 return sections;
             }
 
-            // Construir JSON inicial utilizando solo el Bloque 1 para las secciones
             function buildInitialJSON() {
                 const estructura = state.stepResponses['estructura'] || '';
                 const jerarquia = state.stepResponses['jerarquia'] || '';
@@ -606,7 +605,6 @@
                     descripción: s.text
                 }));
 
-                // Usar jerarquía y estilo para enriquecer lineamientos (sin tocar las descripciones)
                 const paleta = {
                     turquesa_principal: '#09b7ae',
                     turquesa_secundario: '#0bd2ce',
@@ -618,11 +616,6 @@
                     verde: '#9ed16f',
                     gris: '#c9c9c9'
                 };
-                // Intentar extraer colores adicionales del bloque de jerarquía
-                const colorMatches = jerarquia.match(/#[0-9a-fA-F]{6}/g) || [];
-                if (colorMatches.length > 0) {
-                    // No sobrescribimos, solo enriquecemos si hay
-                }
 
                 const json = {
                     infografía: {
@@ -813,7 +806,42 @@
                 }
             }
 
-           function openPreview() {
+            // Función para limpiar descripciones
+            function cleanDescriptions() {
+                try {
+                    const data = JSON.parse(state.json);
+                    const ruta = data.infografía["ruta implementación"] || [];
+                    ruta.forEach(paso => {
+                        let desc = paso.descripción || '';
+                        // Eliminar marcas de columna [1–4], [5-8], etc.
+                        desc = desc.replace(/\[\d+[–\-]\d+\]\s*/g, '');
+                        // Eliminar líneas de función → FUNCIÓN: ...
+                        desc = desc.replace(/→ FUNCIÓN:.*$/gm, '');
+                        // Eliminar diagramas ASCII (líneas que contengan solo caracteres de diagrama)
+                        desc = desc.replace(/[│├└─┌┐┘└]+/g, '');
+                        // Eliminar líneas con ════
+                        desc = desc.replace(/[═]+/g, '');
+                        // Eliminar "FLUJO VISUAL RESUMIDO (MAPA)" y lo que sigue
+                        const flujoIndex = desc.indexOf('FLUJO VISUAL RESUMIDO');
+                        if (flujoIndex !== -1) desc = desc.substring(0, flujoIndex).trim();
+                        // Eliminar "CONSIDERACIÓN FINAL" y lo que sigue
+                        const consIndex = desc.indexOf('CONSIDERACIÓN FINAL');
+                        if (consIndex !== -1) desc = desc.substring(0, consIndex).trim();
+                        // Limpiar múltiples saltos de línea
+                        desc = desc.replace(/\n{3,}/g, '\n\n').trim();
+                        paso.descripción = desc;
+                    });
+                    state.json = JSON.stringify(data, null, 2);
+                    document.getElementById('jsonEditor').value = state.json;
+                    syncUIWithJSON();
+                    saveState();
+                    toast('🧹 Descripciones limpiadas');
+                } catch (e) {
+                    toast('❌ Error al limpiar descripciones');
+                }
+            }
+
+            function openPreview() {
                 const jsonText = state.json;
                 try {
                     const data = JSON.parse(jsonText);
@@ -829,7 +857,7 @@
                         verde: '#9ed16f',
                         gris: '#c9c9c9'
                     };
-            
+
                     const w = window.open('', 'pnft_preview', 'width=1200,height=800');
                     let html = `<!DOCTYPE html><html><head><meta charset="UTF-8"><title>Vista Previa PNFT</title>
                     <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@400;600;700&display=swap" rel="stylesheet">
@@ -929,49 +957,40 @@
                             <p>${info.subtitulo || ''}</p>
                         </div>
                         <div class="grid">`;
-            
-                    // Usar los bloques del editor (con colores e iconos personalizados) si existen
+
                     const blocksToRender = (state.blocks && state.blocks.length > 0) ? state.blocks : ruta.map(item => ({
                         title: item.titulo,
                         color: '#0B6284',
                         icon: item.icono_3d || '🧠',
                         text: item.descripción
                     }));
-            
+
                     blocksToRender.forEach(block => {
-                        // Intentar extraer sub‑bloques con marcas de columna [X–Y]
                         const subBlockRegex = /\[(\d+)[–\-](\d+)\]\s*([^\[]*)/g;
                         const subBlocks = [];
                         let match;
-                        let lastIndex = 0;
                         const text = block.text || '';
                         while ((match = subBlockRegex.exec(text)) !== null) {
                             const startCol = parseInt(match[1]);
                             const endCol = parseInt(match[2]);
                             const content = match[3].trim();
                             subBlocks.push({ startCol, endCol, content });
-                            lastIndex = match.index + match[0].length;
                         }
-                        // Si no se encontraron sub‑bloques, usar el texto completo en un solo bloque de 12 columnas
                         if (subBlocks.length === 0) {
                             subBlocks.push({ startCol: 1, endCol: 12, content: text });
                         }
-            
-                        // Calcular el ancho total de la tarjeta (puede ser 12 columnas o menos si los sub‑bloques no cubren todo)
-                        const cardColumns = 12; // siempre ocupará todo el ancho, los sub‑bloques se distribuyen dentro
-            
+
+                        const cardColumns = 12;
+
                         html += `<div class="card" style="background:${block.color || '#0B6284'}; grid-column: span ${cardColumns};">
                             <div class="icon">${block.icon || '🧠'}</div>
                             <h2>${block.title}</h2>`;
-            
-                        // Renderizar sub‑bloques dentro de la tarjeta
+
                         subBlocks.forEach(sub => {
                             const span = sub.endCol - sub.startCol + 1;
-                            // Limpiar el texto: convertir \r\n en <br>, y guiones en lista
                             let cleanContent = sub.content
                                 .replace(/\r\n/g, '<br>')
                                 .replace(/\n/g, '<br>');
-                            // Convertir viñetas que empiezan con "- " en elementos de lista
                             if (cleanContent.includes('<br>- ')) {
                                 const parts = cleanContent.split('<br>');
                                 let inList = false;
@@ -998,14 +1017,14 @@
                                 ${cleanContent}
                             </div>`;
                         });
-            
+
                         html += `</div>`;
                     });
-            
+
                     html += `</div><div class="footer">Documento generado con PNFT Infografía Lab</div></div>
                     <button class="btn-copy" onclick="navigator.clipboard.writeText(document.body.innerText)">📋 Copiar texto para Word</button>
                     </body></html>`;
-            
+
                     w.document.write(html);
                     w.document.close();
                 } catch (e) {
@@ -1169,6 +1188,8 @@
                 saveState();
                 renderBlocks();
             });
+
+            document.getElementById('btnCleanDescriptions').addEventListener('click', cleanDescriptions);
 
             document.getElementById('btnUpdateFromJSON').addEventListener('click', updateBlocksFromJSON);
 
