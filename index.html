@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>PNFT Infografía Lab · Control total</title>
+    <title>PNFT Infografía Lab · Contexto optimizado</title>
     <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@300;400;500;600;700;800&display=swap" rel="stylesheet">
     <script src="https://cdnjs.cloudflare.com/ajax/libs/pdf.js/3.11.174/pdf.min.js"></script>
     <script src="https://cdn.jsdelivr.net/npm/mammoth@1.6.0/mammoth.browser.min.js"></script>
@@ -94,7 +94,6 @@
             background: #fff; border: 1px solid #ddd; border-radius: 8px;
             padding: 0.8rem; margin: 0.5rem 0;
         }
-        .block-risk-item textarea { background: #fff; }
         .json-preview {
             background: #1e1e1e; color: #d4d4d4; border-radius: 10px;
             padding: 1rem; font-family: monospace; white-space: pre-wrap;
@@ -110,7 +109,7 @@
     <header>
         <div class="logo">
             <div class="logo-icon">PNFT</div>
-            <span>Infografía Lab · Control total</span>
+            <span>Infografía Lab · Contexto optimizado</span>
         </div>
         <div>
             <button class="btn btn-outline btn-sm" id="btnApiKey">🔑 Clave Gemini</button>
@@ -133,19 +132,16 @@
         </div>
 
         <div class="right-panel" id="rightPanel">
-            <!-- Documento inicial -->
             <div class="card" id="docCard" style="display:none;">
                 <h3>📄 Documento fuente</h3>
                 <textarea id="docText" rows="4" placeholder="Pega aquí el texto..."></textarea>
                 <button class="btn btn-sm" id="btnSaveDoc" style="margin-top:0.5rem;">Guardar documento</button>
             </div>
 
-            <!-- Estándares PNFT -->
             <div class="card" id="standardsCard" style="display:none;">
                 ✅ <strong>Estándares PNFT aplicados:</strong> 16:9, Poppins, iconos 3D, no infantil, paleta oficial, restricciones de no modificar/resumir/agregar.
             </div>
 
-            <!-- Bloque actual -->
             <div class="card" id="stageCard" style="display:none;">
                 <h3 id="stageTitle"></h3>
                 <p id="stageDescription"></p>
@@ -165,11 +161,9 @@
                         <button class="btn btn-outline btn-sm" id="btnRefineDensity" style="display:none;">🧠 Control de densidad</button>
                     </div>
                 </div>
-                <!-- Panel de control de densidad -->
                 <div id="densityPanel" style="display:none;" class="density-panel"></div>
             </div>
 
-            <!-- Vista previa JSON antes del final -->
             <div class="card" id="previewCard" style="display:none;">
                 <h3>🔍 Vista previa de la estructura</h3>
                 <p>Así quedará organizada la infografía. Puedes editar el JSON si lo deseas.</p>
@@ -179,7 +173,6 @@
                 </div>
             </div>
 
-            <!-- Generación final -->
             <div class="card" id="finalCard" style="display:none;">
                 <h3>🖼️ Generar infografía final</h3>
                 <p>Todos los bloques han sido aprobados. Prompt maestro completo listo para copiar.</p>
@@ -189,7 +182,6 @@
         </div>
     </div>
 
-    <!-- Modal API Key -->
     <div id="modalApi" style="display:none;position:fixed;inset:0;background:rgba(0,0,0,0.5);z-index:200;align-items:center;justify-content:center;">
         <div style="background:#fff;padding:2rem;border-radius:20px;max-width:400px;width:90%;">
             <h3>🔑 Clave Gemini (gratis)</h3>
@@ -209,7 +201,6 @@
                 documentText: '',
                 approvedSteps: new Set(JSON.parse(localStorage.getItem('pnft_approved') || '[]')),
                 stepResponses: JSON.parse(localStorage.getItem('pnft_responses') || '{}'),
-                densityAdjustments: {},
             };
 
             const blocks = [
@@ -235,11 +226,14 @@
 
             function buildPrompt(blockIndex) {
                 let prompt = blocks[blockIndex].promptBase;
-                prompt += '\n\n📎 DOCUMENTO FUENTE:\n' + state.documentText;
-                // Añadir respuestas de bloques anteriores como contexto
-                for (let i = 0; i < blockIndex; i++) {
-                    if (state.stepResponses[blocks[i].id]) {
-                        prompt += '\n\n📋 RESPUESTA DEL BLOQUE ANTERIOR (' + blocks[i].title + '):\n' + state.stepResponses[blocks[i].id];
+                if (blockIndex === 0) {
+                    prompt += '\n\n📎 DOCUMENTO FUENTE:\n' + state.documentText;
+                } else {
+                    prompt += '\n\n📋 CONTEXTO ACUMULADO (respuestas previas):';
+                    for (let i = 0; i < blockIndex; i++) {
+                        if (state.stepResponses[blocks[i].id]) {
+                            prompt += '\n\n✅ ' + blocks[i].title + ':\n' + state.stepResponses[blocks[i].id];
+                        }
                     }
                 }
                 return prompt;
@@ -347,20 +341,16 @@
                 }
             }
 
-            // Mostrar panel de control de densidad
             function showDensityControl(responseText) {
                 const panel = document.getElementById('densityPanel');
                 panel.innerHTML = '<h4>🧠 Control de densidad cognitiva</h4>';
-                // Buscar bloques con problemas (texto entre "BLOQUE" y "❌" o "⚠")
-                const blockRegex = /(?:BLOQUE|Tarjeta|Sección)\s*[\d\w]*[:\-]?\s*(.*?)(?:\n|$)/gi;
-                let match;
-                let found = false;
                 const lines = responseText.split('\n');
                 let currentBlock = null;
                 let currentText = '';
+                let found = false;
                 for (let line of lines) {
                     if (line.match(/^(BLOQUE|Tarjeta|Sección)/i)) {
-                        if (currentBlock && currentText.length > 200) { // asumimos saturación si el texto es largo
+                        if (currentBlock && currentText.length > 200) {
                             addBlockRisk(panel, currentBlock, currentText);
                             found = true;
                         }
@@ -375,7 +365,7 @@
                     found = true;
                 }
                 if (!found) {
-                    panel.innerHTML += '<p>No se detectaron bloques con riesgo de saturación. Puedes ajustar manualmente.</p>';
+                    panel.innerHTML += '<p>No se detectaron bloques con riesgo de saturación.</p>';
                 }
                 panel.style.display = 'block';
             }
@@ -405,7 +395,6 @@
                     const blockName = input.name.replace('action-', '');
                     adjustments[blockName] = input.value;
                 });
-                // Actualizar la respuesta con las decisiones (simplemente anexamos una nota)
                 const original = state.stepResponses[blocks[state.currentStep].id];
                 const note = '\n\n📌 AJUSTES DE DENSIDAD APLICADOS POR EL USUARIO:\n' + JSON.stringify(adjustments, null, 2);
                 state.stepResponses[blocks[state.currentStep].id] = original + note;
@@ -458,6 +447,10 @@
                 if (!res.ok) throw new Error((await res.json()).error?.message || 'Error');
                 const data = await res.json();
                 return data.candidates[0].content.parts[0].text;
+            }
+
+            function escapeHtml(text) {
+                return text.replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;').replace(/"/g, '&quot;');
             }
 
             // Event listeners
@@ -554,7 +547,6 @@
 
             document.getElementById('btnRefineDensity').addEventListener('click', () => {
                 showDensityControl(document.getElementById('responseArea').textContent);
-                // Agregar botón para aplicar ajustes
                 const panel = document.getElementById('densityPanel');
                 if (!panel.querySelector('.apply-density-btn')) {
                     const btn = document.createElement('button');
