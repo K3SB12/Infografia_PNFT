@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>PNFT Infografía Lab · Versión Final Corregida</title>
+    <title>PNFT Infografía Lab · Editor JSON</title>
     <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@300;400;500;600;700;800&display=swap" rel="stylesheet">
     <script src="https://cdnjs.cloudflare.com/ajax/libs/pdf.js/3.11.174/pdf.min.js"></script>
     <script src="https://cdn.jsdelivr.net/npm/mammoth@1.6.0/mammoth.browser.min.js"></script>
@@ -89,19 +89,16 @@
             background: #FFF3E0; border: 1px solid #FF9800; border-radius: 10px;
             padding: 1rem; margin-top: 1rem;
         }
-        .block-card {
-            background: #fff; border: 1px solid #ddd; border-radius: 8px;
-            padding: 0.8rem; margin: 0.5rem 0;
-        }
         .editor-card {
             background: #fff; border: 2px dashed var(--gris-neutro); border-radius: 12px;
             padding: 1rem; margin-bottom: 1rem;
         }
         .editor-card h4 { margin-bottom: 0.5rem; }
-        .json-preview {
-            background: #1e1e1e; color: #d4d4d4; border-radius: 10px;
-            padding: 1rem; font-family: monospace; white-space: pre-wrap;
-            max-height: 400px; overflow-y: auto;
+        .json-editor-container {
+            margin-top: 1rem;
+        }
+        .json-editor-container textarea {
+            background: #1e1e1e; color: #d4d4d4; font-family: monospace;
         }
         @media (max-width:800px) {
             .main-container { flex-direction:column; }
@@ -113,7 +110,7 @@
     <header>
         <div class="logo">
             <div class="logo-icon">PNFT</div>
-            <span>Infografía Lab · Versión Final Corregida</span>
+            <span>Infografía Lab · Editor JSON</span>
         </div>
         <div>
             <button class="btn btn-outline btn-sm" id="btnApiKey">🔑 Clave Gemini</button>
@@ -170,17 +167,23 @@
 
             <div class="card" id="editorCard" style="display:none;">
                 <h3>🧩 Etapa 4 – Editor de Estructura</h3>
-                <p>Arrastra para reordenar, edita textos, elige colores e iconos.</p>
+                <p>Organiza, edita y da estilo a cada bloque. Usa el JSON para editar todo el contenido de forma global.</p>
+                
                 <div id="blocksContainer"></div>
-                <button class="btn btn-sm" id="btnAddBlock">➕ Agregar bloque</button>
-                <button class="btn btn-sm btn-outline" id="btnSyncFromIA">🔄 Sincronizar con respuestas IA</button>
-                <button class="btn btn-sm btn-outline" id="btnShowJSON">🧾 Ver JSON de estructura</button>
+                <div class="flex-row" style="margin-top:0.5rem;">
+                    <button class="btn btn-sm" id="btnAddBlock">➕ Agregar bloque</button>
+                    <button class="btn btn-sm btn-outline" id="btnSyncFromIA">🔄 Sincronizar con IA</button>
+                    <button class="btn btn-sm btn-outline" id="btnToggleJSON">🧾 Editar JSON</button>
+                </div>
+
+                <div class="json-editor-container" id="jsonEditorContainer" style="display:none;">
+                    <textarea id="jsonEditor" rows="12"></textarea>
+                    <button class="btn btn-sm" id="btnUpdateFromJSON">✅ Actualizar desde JSON</button>
+                </div>
+
                 <div class="flex-row" style="margin-top:1rem;">
                     <button class="btn btn-sm" id="btnPreviewHTML">👁️ Vista previa HTML</button>
                     <button class="btn btn-sm" id="btnBuildMasterPrompt">🪄 Construir prompt maestro</button>
-                </div>
-                <div id="jsonPreviewContainer" style="display:none; margin-top:1rem;">
-                    <textarea id="jsonPreview" rows="8" class="json-preview" readonly></textarea>
                 </div>
             </div>
 
@@ -205,7 +208,6 @@
 
     <script>
         (function() {
-            // ========== ESTADO ==========
             const state = {
                 apiKey: localStorage.getItem('pnft_api_key') || '',
                 currentStep: 0,
@@ -215,7 +217,6 @@
                 blocks: JSON.parse(localStorage.getItem('pnft_blocks') || '[]'),
             };
 
-            // ========== BIBLIOTECA DE 150 ICONOS 3D ==========
             const iconLibrary = [
                 { emoji: '🧠', name: 'cerebro_neuronal', style: 'semi' },
                 { emoji: '🫀', name: 'corazon_anatomico', style: 'semi' },
@@ -369,7 +370,6 @@
                 { emoji: '🎓', name: 'toga_academica', style: 'fotorealista' }
             ];
 
-            // ========== BLOQUES DE ANÁLISIS ==========
             const blocks = [
                 {
                     id: 'estructura',
@@ -391,7 +391,6 @@
                 }
             ];
 
-            // ========== FUNCIONES UTILITARIAS ==========
             function toast(msg) {
                 const t = document.getElementById('toast');
                 t.textContent = msg; t.className = 'toast show';
@@ -529,7 +528,6 @@
                 }
             }
 
-            // ========== CONTROL DE DENSIDAD ==========
             function showDensityControl(responseText) {
                 const panel = document.getElementById('densityPanel');
                 panel.innerHTML = '<h4>🧠 Control de densidad cognitiva</h4>';
@@ -594,15 +592,11 @@
                 toast('Ajustes de densidad registrados');
             }
 
-            // ========== EDITOR DE ESTRUCTURA (ETAPA 4) ==========
             function extractBlocksFromIAResponses() {
-                // Busca en las respuestas de estructura, jerarquía y estilo para extraer bloques con contenido
                 const estructura = state.stepResponses['estructura'] || '';
                 const jerarquia = state.stepResponses['jerarquia'] || '';
                 const estilo = state.stepResponses['estilo'] || '';
                 const combined = estructura + '\n' + jerarquia + '\n' + estilo;
-                
-                // Buscar líneas que comiencen con BLOQUE, Tarjeta, Sección (con posible número o letra)
                 const sectionRegex = /^(?:BLOQUE|TARJETA|SECCIÓN)\s*[A-Za-z0-9]*[:\-]?\s*(.*)/gmi;
                 const sections = [];
                 let match;
@@ -610,30 +604,24 @@
                     sections.push({ name: match[1].trim(), index: match.index });
                 }
                 if (sections.length === 0) {
-                    // Si no encuentra, usar nombres por defecto
                     return [
-                        { title: 'Contexto', text: 'Contenido de contexto extraído del análisis' },
+                        { title: 'Contexto', text: 'Contenido de contexto' },
                         { title: 'Comprensión', text: 'Contenido de comprensión' },
                         { title: 'Aplicación', text: 'Contenido de aplicación' },
                         { title: 'Evaluación', text: 'Contenido de evaluación' }
                     ];
                 }
-                // Para cada sección, extraer el texto hasta la siguiente sección o hasta el final
-                const blocks = [];
+                const result = [];
                 for (let i = 0; i < sections.length; i++) {
                     const current = sections[i];
                     const start = current.index + current.name.length;
                     const end = (i < sections.length - 1) ? sections[i + 1].index : combined.length;
                     let text = combined.substring(start, end).trim();
-                    // Limpiar caracteres de diagrama ASCII y líneas vacías sobrantes
                     text = text.replace(/[│├└─]+/g, '').replace(/\n{3,}/g, '\n\n').trim();
                     if (!text) text = `Contenido de ${current.name}`;
-                    blocks.push({
-                        title: current.name,
-                        text: text
-                    });
+                    result.push({ title: current.name, text: text });
                 }
-                return blocks;
+                return result;
             }
 
             function initEditorBlocks() {
@@ -717,11 +705,11 @@
                 });
             }
 
-            function showJSONPreview() {
-                const container = document.getElementById('jsonPreviewContainer');
-                const textarea = document.getElementById('jsonPreview');
+            function showJSONEditor() {
+                const container = document.getElementById('jsonEditorContainer');
+                const textarea = document.getElementById('jsonEditor');
                 const json = state.blocks.map(b => ({
-                    nombre: b.title,
+                    titulo: b.title,
                     color: b.color,
                     icono: b.icon,
                     texto: b.text
@@ -730,7 +718,26 @@
                 container.style.display = 'block';
             }
 
-            // ========== VISTA PREVIA HTML ==========
+            function updateFromJSON() {
+                try {
+                    const newBlocks = JSON.parse(document.getElementById('jsonEditor').value);
+                    if (!Array.isArray(newBlocks)) throw new Error('Debe ser un array de bloques');
+                    state.blocks = newBlocks.map((b, idx) => ({
+                        id: Date.now() + idx,
+                        title: b.titulo || 'Sin título',
+                        color: b.color || '#09B7AE',
+                        icon: b.icono || '🧠',
+                        text: b.texto || ''
+                    }));
+                    saveState();
+                    renderEditor();
+                    document.getElementById('jsonEditorContainer').style.display = 'none';
+                    toast('✅ Bloques actualizados desde JSON');
+                } catch (e) {
+                    toast('❌ JSON inválido: ' + e.message);
+                }
+            }
+
             function openPreview() {
                 const w = window.open('', 'pnft_preview', 'width=1200,height=800');
                 let html = `<!DOCTYPE html><html><head><meta charset="UTF-8"><title>Vista Previa PNFT</title>
@@ -801,7 +808,7 @@
                 return data.candidates[0].content.parts[0].text;
             }
 
-            // ========== EVENTOS ==========
+            // Eventos generales
             document.getElementById('btnSaveDoc').addEventListener('click', () => {
                 const text = document.getElementById('docText').value.trim();
                 if (!text) return toast('Ingresa el documento');
@@ -899,6 +906,7 @@
                 showDensityControl(document.getElementById('responseArea').textContent);
             });
 
+            // Editor
             document.getElementById('btnAddBlock').addEventListener('click', () => {
                 state.blocks.push({
                     id: Date.now(),
@@ -918,7 +926,16 @@
                 toast('Bloques sincronizados con las respuestas de la IA');
             });
 
-            document.getElementById('btnShowJSON').addEventListener('click', showJSONPreview);
+            document.getElementById('btnToggleJSON').addEventListener('click', () => {
+                const container = document.getElementById('jsonEditorContainer');
+                if (container.style.display === 'none') {
+                    showJSONEditor();
+                } else {
+                    container.style.display = 'none';
+                }
+            });
+
+            document.getElementById('btnUpdateFromJSON').addEventListener('click', updateFromJSON);
 
             document.getElementById('btnPreviewHTML').addEventListener('click', openPreview);
             document.getElementById('btnBuildMasterPrompt').addEventListener('click', buildMasterPrompt);
@@ -957,7 +974,7 @@
                 }
             });
 
-            // Inicialización
+            // Inicializar
             if (state.documentText) {
                 document.getElementById('docText').value = state.documentText;
                 if (state.currentStep === undefined) state.currentStep = 0;
