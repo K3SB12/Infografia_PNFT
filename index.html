@@ -207,7 +207,7 @@
                 documentText: '',
                 approvedSteps: new Set(JSON.parse(localStorage.getItem('pnft_approved') || '[]')),
                 stepResponses: JSON.parse(localStorage.getItem('pnft_responses') || '{}'),
-                blocks: [], // para el editor
+                blocks: JSON.parse(localStorage.getItem('pnft_blocks') || '[]'),
             };
 
             // ========== BIBLIOTECA DE 150 ICONOS 3D ==========
@@ -398,6 +398,7 @@
                 localStorage.setItem('pnft_responses', JSON.stringify(state.stepResponses));
                 localStorage.setItem('pnft_document', state.documentText);
                 localStorage.setItem('pnft_blocks', JSON.stringify(state.blocks));
+                localStorage.setItem('pnft_currentStep', state.currentStep);
             }
             function exportProgress() {
                 const data = {
@@ -485,16 +486,22 @@
                 const editorCard = document.getElementById('editorCard');
                 const finalCard = document.getElementById('finalCard');
 
-                if (state.currentStep < 3) {
+                // Ocultar todo primero
+                stageCard.style.display = 'none';
+                editorCard.style.display = 'none';
+                finalCard.style.display = 'none';
+
+                if (state.documentText && state.currentStep < 3) {
+                    // Mostrar el bloque de análisis correspondiente
                     stageCard.style.display = 'block';
-                    editorCard.style.display = 'none';
-                    finalCard.style.display = 'none';
                     const block = blocks[state.currentStep];
                     document.getElementById('stageTitle').textContent = block.title;
                     document.getElementById('stageDescription').textContent = block.desc;
-                    if (!document.getElementById('promptText').value || document.getElementById('promptText').dataset.blockId !== block.id) {
-                        document.getElementById('promptText').value = buildPrompt(state.currentStep);
-                        document.getElementById('promptText').dataset.blockId = block.id;
+                    // Forzar la carga del prompt si el textarea está vacío o cambió el bloque
+                    const promptTextarea = document.getElementById('promptText');
+                    if (!promptTextarea.value || promptTextarea.dataset.blockId !== block.id) {
+                        promptTextarea.value = buildPrompt(state.currentStep);
+                        promptTextarea.dataset.blockId = block.id;
                     }
                     if (state.stepResponses[block.id]) {
                         document.getElementById('responseContainer').style.display = 'block';
@@ -503,21 +510,17 @@
                     } else {
                         document.getElementById('responseContainer').style.display = 'none';
                     }
-                } else if (state.currentStep === 3) {
-                    stageCard.style.display = 'none';
+                } else if (state.currentStep === 3 && state.approvedSteps.has('estilo')) {
                     editorCard.style.display = 'block';
-                    finalCard.style.display = 'none';
                     renderEditor();
-                } else {
-                    stageCard.style.display = 'none';
-                    editorCard.style.display = 'none';
+                } else if (state.currentStep >= 4) {
                     finalCard.style.display = 'block';
                 }
             }
 
             function checkDensityWarnings(responseText) {
                 const btn = document.getElementById('btnRefineDensity');
-                if (responseText.includes('densidad') || responseText.includes('⚠') || responseText.includes('❌')) {
+                if (responseText && (responseText.includes('densidad') || responseText.includes('⚠') || responseText.includes('❌'))) {
                     btn.style.display = 'inline-flex';
                 } else {
                     btn.style.display = 'none';
@@ -592,13 +595,9 @@
             // ========== EDITOR DE ESTRUCTURA (ETAPA 4) ==========
             function initEditorBlocks() {
                 if (state.blocks.length === 0) {
-                    // Crear bloques iniciales a partir de las respuestas aprobadas
                     const estructura = state.stepResponses['estructura'] || '';
-                    const jerarquia = state.stepResponses['jerarquia'] || '';
-                    const estilo = state.stepResponses['estilo'] || '';
-                    // Intentar extraer secciones (simplificado)
-                    const sections = [...estructura.matchAll(/(?:BLOQUE|Sección|Tarjeta)\s*[:\-]?\s*(.*)/gi)].map(m => m[1].trim()) ||
-                                    ['Contexto', 'Comprensión', 'Aplicación', 'Evaluación'];
+                    const sections = [...estructura.matchAll(/(?:BLOQUE|Sección|Tarjeta)\s*[:\-]?\s*(.*)/gi)].map(m => m[1].trim()).filter(Boolean);
+                    if (sections.length === 0) sections.push('Contexto', 'Comprensión', 'Aplicación', 'Evaluación');
                     state.blocks = sections.map((name, idx) => ({
                         id: Date.now() + idx,
                         title: name,
@@ -606,6 +605,7 @@
                         icon: iconLibrary[0].emoji,
                         text: `Contenido de ${name}`
                     }));
+                    saveState();
                 }
             }
             function renderEditor() {
@@ -639,7 +639,6 @@
                             </select>
                         </div>
                     `;
-                    // Eventos para actualizar estado al cambiar
                     card.querySelector('.block-text').addEventListener('input', (e) => {
                         state.blocks[index].text = e.target.value;
                         saveState();
@@ -657,7 +656,6 @@
                         saveState();
                         renderEditor();
                     });
-                    // Drag & drop básico
                     card.addEventListener('dragstart', (e) => {
                         e.dataTransfer.setData('text/plain', index);
                         card.style.opacity = '0.4';
@@ -724,11 +722,9 @@
                 });
                 final += '🖼️ GENERAR INFOGRAFÍA FINAL con fidelidad 100%, 16:9, paleta PNFT, Poppins, iconos 3D.';
                 document.getElementById('finalPrompt').value = final;
-                document.getElementById('finalCard').style.display = 'block';
-                document.getElementById('editorCard').style.display = 'none';
                 state.currentStep = 4;
-                updateUI();
                 saveState();
+                updateUI();
             }
 
             function escapeHtml(text) {
@@ -756,6 +752,9 @@
                 if (!text) return toast('Ingresa el documento');
                 state.documentText = text;
                 state.currentStep = 0;
+                state.approvedSteps.clear(); // reiniciar aprobaciones al cargar nuevo doc
+                state.stepResponses = {};
+                state.blocks = [];
                 saveState();
                 updateUI();
                 toast('Documento guardado');
@@ -894,12 +893,23 @@
                 }
             });
 
-            if (state.documentText) document.getElementById('docText').value = state.documentText;
+            // Inicialización
+            if (state.documentText) {
+                document.getElementById('docText').value = state.documentText;
+                // Si hay documento pero no hay paso guardado, empezar en 0
+                if (state.currentStep === undefined) state.currentStep = 0;
+            }
+            // Asegurar que los bloques del editor se inicialicen si hay respuestas previas
             if (state.blocks.length === 0 && state.stepResponses['estructura']) {
-                // inicializar bloques para el editor si ya hay respuestas previas
                 initEditorBlocks();
             }
             updateUI();
+            if (state.documentText && state.currentStep < 3) {
+                // Garantizar que el prompt se muestre incluso si updateUI tuvo algún fallo
+                const block = blocks[state.currentStep];
+                document.getElementById('promptText').value = buildPrompt(state.currentStep);
+                document.getElementById('promptText').dataset.blockId = block.id;
+            }
         })();
     </script>
 </body>
