@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>PNFT Infografía Lab · Control granular</title>
+    <title>PNFT Infografía Lab · Control total</title>
     <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@300;400;500;600;700;800&display=swap" rel="stylesheet">
     <script src="https://cdnjs.cloudflare.com/ajax/libs/pdf.js/3.11.174/pdf.min.js"></script>
     <script src="https://cdn.jsdelivr.net/npm/mammoth@1.6.0/mammoth.browser.min.js"></script>
@@ -85,20 +85,21 @@
             z-index:999; opacity:0; transition:0.3s;
         }
         .toast.show { opacity:1; }
-        .pnft-standards {
-            font-size:0.8rem; color:var(--gris-texto);
-            background:var(--gris-claro); padding:0.8rem; border-radius:10px;
-        }
-        .density-editor {
+        .density-panel {
             background: #FFF3E0; border: 1px solid #FF9800; border-radius: 10px;
             padding: 1rem; margin-top: 1rem;
         }
-        .density-editor h4 { color: #E65100; }
-        .idea-item {
-            display:flex; align-items:center; gap:0.5rem; margin:0.3rem 0;
+        .density-panel h4 { color: #E65100; }
+        .block-risk-item {
+            background: #fff; border: 1px solid #ddd; border-radius: 8px;
+            padding: 0.8rem; margin: 0.5rem 0;
         }
-        .idea-item input { flex:1; }
-        .idea-item button { background: #ff5252; color: #fff; border: none; border-radius: 4px; cursor: pointer; padding: 0.2rem 0.5rem; }
+        .block-risk-item textarea { background: #fff; }
+        .json-preview {
+            background: #1e1e1e; color: #d4d4d4; border-radius: 10px;
+            padding: 1rem; font-family: monospace; white-space: pre-wrap;
+            max-height: 400px; overflow-y: auto;
+        }
         @media (max-width:800px) {
             .main-container { flex-direction:column; }
             .left-panel { width:100%; max-height:200px; }
@@ -109,7 +110,7 @@
     <header>
         <div class="logo">
             <div class="logo-icon">PNFT</div>
-            <span>Infografía Lab · Control granular</span>
+            <span>Infografía Lab · Control total</span>
         </div>
         <div>
             <button class="btn btn-outline btn-sm" id="btnApiKey">🔑 Clave Gemini</button>
@@ -132,20 +133,23 @@
         </div>
 
         <div class="right-panel" id="rightPanel">
+            <!-- Documento inicial -->
             <div class="card" id="docCard" style="display:none;">
                 <h3>📄 Documento fuente</h3>
                 <textarea id="docText" rows="4" placeholder="Pega aquí el texto..."></textarea>
                 <button class="btn btn-sm" id="btnSaveDoc" style="margin-top:0.5rem;">Guardar documento</button>
             </div>
 
-            <div class="card pnft-standards" id="standardsCard" style="display:none;">
+            <!-- Estándares PNFT -->
+            <div class="card" id="standardsCard" style="display:none;">
                 ✅ <strong>Estándares PNFT aplicados:</strong> 16:9, Poppins, iconos 3D, no infantil, paleta oficial, restricciones de no modificar/resumir/agregar.
             </div>
 
+            <!-- Bloque actual -->
             <div class="card" id="stageCard" style="display:none;">
                 <h3 id="stageTitle"></h3>
-                <p id="stageDescription" style="font-size:0.9rem; color:var(--gris-texto); margin-bottom:0.5rem;"></p>
-                <label style="font-weight:600; font-size:0.85rem;">📝 Prompt (editable):</label>
+                <p id="stageDescription"></p>
+                <label>📝 Prompt (editable):</label>
                 <textarea id="promptText" rows="6"></textarea>
                 <div class="flex-row" style="margin-top:0.8rem;">
                     <button class="btn" id="btnSendToAI">🤖 Enviar a Gemini</button>
@@ -158,28 +162,34 @@
                     <div class="flex-row" style="margin-top:0.5rem;">
                         <button class="btn btn-sm" id="btnApprove">✅ Aprobar y continuar</button>
                         <button class="btn btn-outline btn-sm" id="btnRetry">🔄 Reenviar</button>
-                        <button class="btn btn-outline btn-sm" id="btnRefineDensity" style="display:none;">🧠 Revisar densidad</button>
+                        <button class="btn btn-outline btn-sm" id="btnRefineDensity" style="display:none;">🧠 Control de densidad</button>
                     </div>
                 </div>
-                <!-- Editor de densidad cognitiva (oculto hasta activarse) -->
-                <div id="densityEditor" style="display:none;" class="density-editor">
-                    <h4>🧠 Ajuste de densidad cognitiva</h4>
-                    <p>Selecciona las ideas que deben quedarse en cada bloque (máx. 5)</p>
-                    <div id="densityBlocks"></div>
-                    <button class="btn btn-sm" id="btnSaveDensity">💾 Guardar ajustes de densidad</button>
+                <!-- Panel de control de densidad -->
+                <div id="densityPanel" style="display:none;" class="density-panel"></div>
+            </div>
+
+            <!-- Vista previa JSON antes del final -->
+            <div class="card" id="previewCard" style="display:none;">
+                <h3>🔍 Vista previa de la estructura</h3>
+                <p>Así quedará organizada la infografía. Puedes editar el JSON si lo deseas.</p>
+                <textarea id="jsonPreview" rows="12" class="json-preview"></textarea>
+                <div class="flex-row" style="margin-top:0.8rem;">
+                    <button class="btn" id="btnBuildFinalFromPreview">🪄 Construir prompt maestro</button>
                 </div>
             </div>
 
+            <!-- Generación final -->
             <div class="card" id="finalCard" style="display:none;">
                 <h3>🖼️ Generar infografía final</h3>
-                <p>Todos los bloques han sido aprobados. Ahora puedes construir el prompt maestro completo.</p>
-                <button class="btn" id="btnBuildFinal">🪄 Construir prompt maestro</button>
-                <textarea id="finalPrompt" rows="6" style="margin-top:1rem;" readonly></textarea>
+                <p>Todos los bloques han sido aprobados. Prompt maestro completo listo para copiar.</p>
+                <textarea id="finalPrompt" rows="8" readonly></textarea>
                 <button class="btn btn-outline btn-sm" id="btnCopyFinal" style="margin-top:0.5rem;">📋 Copiar prompt final</button>
             </div>
         </div>
     </div>
 
+    <!-- Modal API Key -->
     <div id="modalApi" style="display:none;position:fixed;inset:0;background:rgba(0,0,0,0.5);z-index:200;align-items:center;justify-content:center;">
         <div style="background:#fff;padding:2rem;border-radius:20px;max-width:400px;width:90%;">
             <h3>🔑 Clave Gemini (gratis)</h3>
@@ -199,57 +209,41 @@
                 documentText: '',
                 approvedSteps: new Set(JSON.parse(localStorage.getItem('pnft_approved') || '[]')),
                 stepResponses: JSON.parse(localStorage.getItem('pnft_responses') || '{}'),
-                densityAdjusted: false,
+                densityAdjustments: {},
             };
 
             const blocks = [
                 {
                     id: 'estructura',
                     title: '🧩 Bloque 1 – Sistema de Estructura',
-                    desc: 'Define wireframe 16:9, distribución de bloques, flujo de lectura y organización PNFT en un solo mapa estructural.',
-                    prompt: `Actúa como arquitecto de información y diseñador editorial PNFT.
-
-                    Analiza el documento y define en UN SOLO BLOQUE COHERENTE:
-
-                    1. Wireframe base en formato 16:9 con 12 columnas.
-                    2. Distribución de bloques principales.
-                    3. Flujo de lectura (izquierda → derecha).
-                    4. Organización de secciones según la estructura curricular.
-
-                    Usa diagramas ASCII para representarlo.`
+                    desc: 'Define wireframe 16:9, distribución de bloques, flujo de lectura y organización PNFT.',
+                    promptBase: `Actúa como arquitecto de información PNFT. Analiza el documento y define en UN SOLO BLOQUE: 1) Wireframe 16:9 con 12 columnas. 2) Distribución de bloques principales. 3) Flujo de lectura (izquierda→derecha). 4) Organización de secciones según la estructura curricular. Usa diagramas ASCII.`
                 },
                 {
                     id: 'jerarquia',
                     title: '🎯 Bloque 2 – Sistema de Jerarquía Multicapa',
                     desc: 'Unifica jerarquía tipográfica, visual, cromática (paleta PNFT) e importancia pedagógica.',
-                    prompt: `Aplica el sistema de jerarquía PNFT unificando en un solo análisis:
-
-                    1. Jerarquía tipográfica (Poppins Bold, SemiBold, Regular).
-                    2. Jerarquía por tamaño y espaciado.
-                    3. Jerarquía cromática usando la paleta oficial:
-                       #09B7AE, #0BD2CE, #014D6B, #0B6284, #62BDF3, #063B7F, #45258F, #9ED16F, #C9C9C9
-                       (El color es codificación pedagógica, no decoración).
-                    4. Jerarquía de bloques según importancia pedagógica (Pesos PNFT: 1 contexto, 3 comprensión, 5 aplicación).
-
-                    Justifica cada decisión.`
+                    promptBase: `Aplica el sistema de jerarquía PNFT: 1) Jerarquía tipográfica (Poppins Bold, SemiBold, Regular). 2) Jerarquía por tamaño y espaciado. 3) Jerarquía cromática (paleta #09B7AE, #0BD2CE, #014D6B, #0B6284, #62BDF3, #063B7F, #45258F, #9ED16F, #C9C9C9). El color es codificación pedagógica. 4) Jerarquía de bloques según importancia pedagógica (Pesos PNFT: 1 contexto, 3 comprensión, 5 aplicación). Justifica cada decisión.`
                 },
                 {
                     id: 'estilo',
                     title: '🎨 Bloque 3 – Estilo Visual y Restricciones',
-                    desc: 'Define el estilo profesional, iconografía 3D, prohibiciones y legibilidad ≤10s.',
-                    prompt: `Aplica el sistema de estilo y restricciones PNFT:
-
-                    1. ESTILO: Educativo, académico, profesional, moderno, secundaria. No infantil, no comercial.
-                    2. TIPOGRAFÍA: Poppins (Bold títulos, SemiBold subtítulos, Regular contenido).
-                    3. ICONOGRAFÍA: Solo 3D semi realista (cerebro, bloques, robot, escudo). Prohibido flat, emojis, clipart, caricaturas.
-                    4. ILUSTRACIONES: Adolescentes 16-18 años, vestimenta casual institucional.
-                    5. COMPOSICIÓN: Tarjetas redondeadas, alto contraste, equilibrio texto/imagen, lectura ≤10s por bloque.
-                    6. DENSIDAD COGNITIVA: Máximo 3-5 ideas por bloque. Evitar saturación.
-                    7. RESTRICCIONES: No modificar, resumir, reinterpretar ni agregar contenido. Fidelidad 100% al documento original.
-
-                    Verifica el cumplimiento con una tabla.`
+                    desc: 'Define estilo, tipografía, iconografía, composición, densidad cognitiva y restricciones.',
+                    promptBase: `Aplica el sistema de estilo y restricciones PNFT: 1) ESTILO: Educativo, académico, profesional, moderno, secundaria. No infantil, no comercial. 2) TIPOGRAFÍA: Poppins (Bold, SemiBold, Regular). 3) ICONOGRAFÍA: Solo 3D semi realista (cerebro, bloques, robot, escudo). Prohibido flat, emojis, clipart. 4) ILUSTRACIONES: Adolescentes 16-18 años, vestimenta casual institucional. 5) COMPOSICIÓN: Tarjetas redondeadas, alto contraste, lectura ≤10s por bloque. 6) DENSIDAD COGNITIVA: Máximo 3-5 ideas por bloque. Evitar saturación. 7) RESTRICCIONES: No modificar, resumir, reinterpretar ni agregar contenido. Fidelidad 100%. Verifica con tabla.`
                 }
             ];
+
+            function buildPrompt(blockIndex) {
+                let prompt = blocks[blockIndex].promptBase;
+                prompt += '\n\n📎 DOCUMENTO FUENTE:\n' + state.documentText;
+                // Añadir respuestas de bloques anteriores como contexto
+                for (let i = 0; i < blockIndex; i++) {
+                    if (state.stepResponses[blocks[i].id]) {
+                        prompt += '\n\n📋 RESPUESTA DEL BLOQUE ANTERIOR (' + blocks[i].title + '):\n' + state.stepResponses[blocks[i].id];
+                    }
+                }
+                return prompt;
+            }
 
             function toast(msg) {
                 const t = document.getElementById('toast');
@@ -276,7 +270,7 @@
                 a.href = URL.createObjectURL(blob);
                 a.download = 'pnft_progreso.json';
                 a.click();
-                toast('💾 Progreso guardado como JSON');
+                toast('💾 Progreso guardado');
             }
 
             function loadProgressFromFile(file) {
@@ -285,7 +279,7 @@
                     try {
                         const data = JSON.parse(e.target.result);
                         if (!data.documentText || !data.stepResponses || !data.approvedSteps) throw new Error('Formato inválido');
-                        if (!confirm('¿Cargar este progreso? Se reemplazará el trabajo actual.')) return;
+                        if (!confirm('¿Cargar progreso? Se reemplazará el actual.')) return;
                         state.documentText = data.documentText;
                         state.approvedSteps = new Set(data.approvedSteps);
                         state.stepResponses = data.stepResponses;
@@ -294,7 +288,7 @@
                         document.getElementById('promptText').value = '';
                         updateUI();
                         toast('📥 Progreso cargado');
-                    } catch (err) { toast('❌ Error al cargar el JSON'); }
+                    } catch (err) { toast('❌ Error al cargar'); }
                 };
                 reader.readAsText(file);
             }
@@ -322,12 +316,13 @@
 
                 if (state.documentText && state.currentStep < blocks.length) {
                     document.getElementById('stageCard').style.display = 'block';
+                    document.getElementById('previewCard').style.display = 'none';
                     document.getElementById('finalCard').style.display = 'none';
                     const block = blocks[state.currentStep];
                     document.getElementById('stageTitle').textContent = block.title;
                     document.getElementById('stageDescription').textContent = block.desc;
                     if (!document.getElementById('promptText').value || document.getElementById('promptText').dataset.blockId !== block.id) {
-                        document.getElementById('promptText').value = block.prompt + '\n\n📎 DOCUMENTO:\n' + state.documentText;
+                        document.getElementById('promptText').value = buildPrompt(state.currentStep);
                         document.getElementById('promptText').dataset.blockId = block.id;
                     }
                     if (state.stepResponses[block.id]) {
@@ -336,140 +331,118 @@
                         checkDensityWarnings(state.stepResponses[block.id]);
                     } else {
                         document.getElementById('responseContainer').style.display = 'none';
-                        document.getElementById('btnRefineDensity').style.display = 'none';
                     }
                 } else if (state.currentStep >= blocks.length) {
                     document.getElementById('stageCard').style.display = 'none';
-                    document.getElementById('finalCard').style.display = 'block';
+                    showJsonPreview();
                 }
             }
 
             function checkDensityWarnings(responseText) {
-                // Activa el botón de densidad si hay advertencias de densidad en la respuesta
                 const btn = document.getElementById('btnRefineDensity');
-                if (responseText.includes('densidad') || responseText.includes('⚠')) {
+                if (responseText.includes('densidad') || responseText.includes('⚠') || responseText.includes('❌')) {
                     btn.style.display = 'inline-flex';
                 } else {
                     btn.style.display = 'none';
                 }
             }
 
-            function extractDensityBlocks(responseText) {
-                // Extrae bloques con más de 5 ideas de la respuesta (muy básico, busca listas largas)
-                const blocksWithIssues = [];
+            // Mostrar panel de control de densidad
+            function showDensityControl(responseText) {
+                const panel = document.getElementById('densityPanel');
+                panel.innerHTML = '<h4>🧠 Control de densidad cognitiva</h4>';
+                // Buscar bloques con problemas (texto entre "BLOQUE" y "❌" o "⚠")
+                const blockRegex = /(?:BLOQUE|Tarjeta|Sección)\s*[\d\w]*[:\-]?\s*(.*?)(?:\n|$)/gi;
+                let match;
+                let found = false;
                 const lines = responseText.split('\n');
                 let currentBlock = null;
-                let ideaCount = 0;
-                lines.forEach(line => {
-                    if (line.includes('BLOQUE') || line.includes('Tarjeta') || line.includes('Sección')) {
-                        if (currentBlock && ideaCount > 5) {
-                            currentBlock.ideas = currentBlock.ideas.slice(0, ideaCount);
-                            blocksWithIssues.push(currentBlock);
+                let currentText = '';
+                for (let line of lines) {
+                    if (line.match(/^(BLOQUE|Tarjeta|Sección)/i)) {
+                        if (currentBlock && currentText.length > 200) { // asumimos saturación si el texto es largo
+                            addBlockRisk(panel, currentBlock, currentText);
+                            found = true;
                         }
-                        currentBlock = { title: line.trim(), ideas: [] };
-                        ideaCount = 0;
-                    } else if (line.trim().startsWith('-') || line.trim().startsWith('•')) {
-                        if (currentBlock) {
-                            currentBlock.ideas.push(line.replace(/^[-•]\s*/, '').trim());
-                            ideaCount++;
-                        }
+                        currentBlock = line.trim();
+                        currentText = '';
+                    } else {
+                        currentText += line + '\n';
                     }
-                });
-                if (currentBlock && ideaCount > 5) {
-                    currentBlock.ideas = currentBlock.ideas.slice(0, ideaCount);
-                    blocksWithIssues.push(currentBlock);
                 }
-                return blocksWithIssues.length > 0 ? blocksWithIssues : null;
-            }
-
-            function showDensityEditor(responseText) {
-                const blocksWithIssues = extractDensityBlocks(responseText);
-                if (!blocksWithIssues) {
-                    toast('No se detectaron bloques con sobrecarga de ideas.');
-                    return;
+                if (currentBlock && currentText.length > 200) {
+                    addBlockRisk(panel, currentBlock, currentText);
+                    found = true;
                 }
-                const container = document.getElementById('densityBlocks');
-                container.innerHTML = '';
-                blocksWithIssues.forEach((block, idx) => {
-                    const div = document.createElement('div');
-                    div.innerHTML = `<strong>${block.title}</strong>`;
-                    block.ideas.forEach((idea, i) => {
-                        const ideaDiv = document.createElement('div');
-                        ideaDiv.className = 'idea-item';
-                        ideaDiv.innerHTML = `
-                            <input type="text" value="${escapeHtml(idea)}" data-block="${idx}" data-index="${i}">
-                            <button class="remove-idea">X</button>
-                        `;
-                        div.appendChild(ideaDiv);
-                    });
-                    const addBtn = document.createElement('button');
-                    addBtn.textContent = '+ Agregar idea';
-                    addBtn.className = 'btn btn-sm btn-outline';
-                    addBtn.addEventListener('click', () => {
-                        const newIdea = document.createElement('div');
-                        newIdea.className = 'idea-item';
-                        newIdea.innerHTML = `
-                            <input type="text" placeholder="Nueva idea" data-block="${idx}" data-index="${block.ideas.length}">
-                            <button class="remove-idea">X</button>
-                        `;
-                        div.appendChild(newIdea);
-                        block.ideas.push('');
-                    });
-                    div.appendChild(addBtn);
-                    container.appendChild(div);
-                });
-                document.getElementById('densityEditor').style.display = 'block';
-                // Eventos para eliminar idea
-                container.addEventListener('click', (e) => {
-                    if (e.target.classList.contains('remove-idea')) {
-                        e.target.parentElement.remove();
-                    }
-                });
-                // Guardar estado temporal
-                state._densityBlocks = blocksWithIssues;
+                if (!found) {
+                    panel.innerHTML += '<p>No se detectaron bloques con riesgo de saturación. Puedes ajustar manualmente.</p>';
+                }
+                panel.style.display = 'block';
             }
 
-            function saveDensityAdjustments() {
-                const blocksWithIssues = state._densityBlocks;
-                if (!blocksWithIssues) return;
-                // Recoger las ideas editadas
-                const inputs = document.querySelectorAll('#densityBlocks input');
-                inputs.forEach(input => {
-                    const blockIdx = parseInt(input.dataset.block);
-                    const ideaIdx = parseInt(input.dataset.index);
-                    if (blocksWithIssues[blockIdx] && ideaIdx < blocksWithIssues[blockIdx].ideas.length) {
-                        blocksWithIssues[blockIdx].ideas[ideaIdx] = input.value;
-                    }
-                });
-                // Reconstruir la respuesta de la IA con los ajustes (solo reemplazamos la sección de densidad)
-                const originalResponse = state.stepResponses[blocks[state.currentStep].id];
-                // Buscamos el bloque problemático y reemplazamos sus ideas
-                let newResponse = originalResponse;
-                blocksWithIssues.forEach(block => {
-                    const escapedTitle = escapeRegExp(block.title);
-                    const regex = new RegExp(`(${escapedTitle}[\\s\\S]*?)(?=\\n\\n|$)`, 'g');
-                    newResponse = newResponse.replace(regex, (match) => {
-                        const lines = match.split('\n');
-                        const newLines = lines.map(line => {
-                            if (line.trim().startsWith('-') || line.trim().startsWith('•')) return '';
-                            else return line;
-                        }).filter(l => l !== '');
-                        newLines.push(...block.ideas.map(idea => `- ${idea}`));
-                        return newLines.join('\n');
-                    });
-                });
-                state.stepResponses[blocks[state.currentStep].id] = newResponse;
-                document.getElementById('responseArea').textContent = newResponse;
-                document.getElementById('densityEditor').style.display = 'none';
-                toast('✅ Ajustes de densidad guardados en la respuesta');
-                state._densityBlocks = null;
+            function addBlockRisk(panel, blockName, text) {
+                const div = document.createElement('div');
+                div.className = 'block-risk-item';
+                div.innerHTML = `
+                    <strong>${escapeHtml(blockName)}</strong>
+                    <p style="font-size:0.8rem;">Texto original (causante de saturación):</p>
+                    <textarea rows="3" readonly>${escapeHtml(text.trim())}</textarea>
+                    <div style="margin-top:0.5rem;">
+                        <label><input type="radio" name="action-${blockName}" value="split"> Dividir en subtarjetas</label>
+                        <label><input type="radio" name="action-${blockName}" value="expand"> Ampliar espacio visual</label>
+                        <label><input type="radio" name="action-${blockName}" value="simplify"> Simplificar (necesita confirmación)</label>
+                        <label><input type="radio" name="action-${blockName}" value="keep" checked> Mantener como está</label>
+                    </div>
+                `;
+                panel.appendChild(div);
             }
 
-            function escapeHtml(text) {
-                return text.replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;').replace(/"/g, '&quot;');
+            function applyDensityControl() {
+                const panel = document.getElementById('densityPanel');
+                const actions = panel.querySelectorAll('input[type="radio"]:checked');
+                let adjustments = {};
+                actions.forEach(input => {
+                    const blockName = input.name.replace('action-', '');
+                    adjustments[blockName] = input.value;
+                });
+                // Actualizar la respuesta con las decisiones (simplemente anexamos una nota)
+                const original = state.stepResponses[blocks[state.currentStep].id];
+                const note = '\n\n📌 AJUSTES DE DENSIDAD APLICADOS POR EL USUARIO:\n' + JSON.stringify(adjustments, null, 2);
+                state.stepResponses[blocks[state.currentStep].id] = original + note;
+                document.getElementById('responseArea').textContent = original + note;
+                panel.style.display = 'none';
+                toast('Ajustes de densidad registrados. Puedes aprobar el bloque.');
             }
-            function escapeRegExp(string) {
-                return string.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
+
+            function showJsonPreview() {
+                const previewCard = document.getElementById('previewCard');
+                previewCard.style.display = 'block';
+                const json = {
+                    documento: state.documentText.substring(0, 100) + '...',
+                    bloques: blocks.map(block => ({
+                        id: block.id,
+                        titulo: block.title,
+                        respuesta: state.stepResponses[block.id] || '(pendiente)'
+                    }))
+                };
+                document.getElementById('jsonPreview').value = JSON.stringify(json, null, 2);
+            }
+
+            function buildFinalPromptFromPreview() {
+                const jsonText = document.getElementById('jsonPreview').value;
+                try {
+                    const json = JSON.parse(jsonText);
+                    let final = '🧠 PROMPT MAESTRO PNFT OPTIMIZADO\n\n📎 DOCUMENTO:\n' + state.documentText + '\n\n';
+                    json.bloques.forEach(bloque => {
+                        final += `✅ ${bloque.titulo}:\n${bloque.respuesta}\n\n`;
+                    });
+                    final += '🖼️ GENERACIÓN DE INFOGRAFÍA FINAL:\nFidelidad 100%, 16:9, paleta PNFT, Poppins, iconos 3D, profesional.';
+                    document.getElementById('finalPrompt').value = final;
+                    document.getElementById('previewCard').style.display = 'none';
+                    document.getElementById('finalCard').style.display = 'block';
+                } catch (e) {
+                    toast('❌ El JSON no es válido. Corrígelo antes de continuar.');
+                }
             }
 
             async function sendToGemini(prompt) {
@@ -487,6 +460,7 @@
                 return data.candidates[0].content.parts[0].text;
             }
 
+            // Event listeners
             document.getElementById('btnSaveDoc').addEventListener('click', () => {
                 const text = document.getElementById('docText').value.trim();
                 if (!text) return toast('Ingresa el documento');
@@ -528,7 +502,7 @@
             document.getElementById('btnSendToAI').addEventListener('click', async () => {
                 if (!state.apiKey) return toast('Configura tu clave Gemini');
                 const prompt = document.getElementById('promptText').value;
-                if (!prompt.trim()) return toast('El prompt está vacío');
+                if (!prompt.trim()) return toast('Prompt vacío');
                 try {
                     const response = await sendToGemini(prompt);
                     document.getElementById('responseArea').textContent = response;
@@ -565,7 +539,7 @@
                     state.currentStep = blocks.length;
                 }
                 document.getElementById('promptText').value = '';
-                document.getElementById('densityEditor').style.display = 'none';
+                document.getElementById('densityPanel').style.display = 'none';
                 saveState();
                 updateUI();
                 toast('✅ Bloque aprobado');
@@ -574,27 +548,24 @@
             document.getElementById('btnRetry').addEventListener('click', () => {
                 document.getElementById('responseContainer').style.display = 'none';
                 document.getElementById('responseArea').textContent = '';
-                document.getElementById('densityEditor').style.display = 'none';
+                document.getElementById('densityPanel').style.display = 'none';
                 document.getElementById('btnRefineDensity').style.display = 'none';
             });
 
             document.getElementById('btnRefineDensity').addEventListener('click', () => {
-                const response = document.getElementById('responseArea').textContent;
-                showDensityEditor(response);
+                showDensityControl(document.getElementById('responseArea').textContent);
+                // Agregar botón para aplicar ajustes
+                const panel = document.getElementById('densityPanel');
+                if (!panel.querySelector('.apply-density-btn')) {
+                    const btn = document.createElement('button');
+                    btn.className = 'btn btn-sm apply-density-btn';
+                    btn.textContent = '💾 Aplicar ajustes de densidad';
+                    btn.addEventListener('click', applyDensityControl);
+                    panel.appendChild(btn);
+                }
             });
 
-            document.getElementById('btnSaveDensity').addEventListener('click', saveDensityAdjustments);
-
-            document.getElementById('btnBuildFinal').addEventListener('click', () => {
-                let final = '🧠 PROMPT MAESTRO PNFT OPTIMIZADO\n\n📎 DOCUMENTO:\n' + state.documentText + '\n';
-                blocks.forEach(block => {
-                    if (state.stepResponses[block.id]) {
-                        final += `✅ ${block.title}:\n${state.stepResponses[block.id]}\n\n`;
-                    }
-                });
-                final += '🖼️ GENERACIÓN DE INFOGRAFÍA FINAL:\nFidelidad 100%, 16:9, paleta PNFT, Poppins, iconos 3D, profesional.';
-                document.getElementById('finalPrompt').value = final;
-            });
+            document.getElementById('btnBuildFinalFromPreview').addEventListener('click', buildFinalPromptFromPreview);
 
             document.getElementById('btnCopyFinal').addEventListener('click', () => {
                 navigator.clipboard.writeText(document.getElementById('finalPrompt').value).then(() => toast('📋 Prompt final copiado'));
@@ -618,7 +589,7 @@
                 toast('Clave guardada');
             });
             document.getElementById('btnReset').addEventListener('click', () => {
-                if (confirm('¿Reiniciar?')) {
+                if (confirm('¿Reiniciar todo?')) {
                     state.documentText = '';
                     state.currentStep = 0;
                     state.approvedSteps.clear();
