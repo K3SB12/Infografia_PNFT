@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>PNFT Infografía Lab · Extracción Limpia</title>
+    <title>PNFT Infografía Lab · Extracción Dinámica</title>
     <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@300;400;500;600;700;800&display=swap" rel="stylesheet">
     <script src="https://cdnjs.cloudflare.com/ajax/libs/pdf.js/3.11.174/pdf.min.js"></script>
     <script src="https://cdn.jsdelivr.net/npm/mammoth@1.6.0/mammoth.browser.min.js"></script>
@@ -115,7 +115,7 @@
     <header>
         <div class="logo">
             <div class="logo-icon">PNFT</div>
-            <span>Infografía Lab · Extracción Limpia</span>
+            <span>Infografía Lab · Extracción Dinámica</span>
         </div>
         <div>
             <button class="btn btn-outline btn-sm" id="btnApiKey">🔑 Clave Gemini</button>
@@ -392,7 +392,7 @@
                     id: 'estilo',
                     title: '🎨 Bloque 3 – Estilo Visual y Restricciones',
                     desc: 'Define estilo, tipografía, iconografía, composición, densidad cognitiva y restricciones.',
-                    promptBase: `Aplica el sistema de estilo y restricciones PNFT: 1) ESTILO: Educativo, académico, profesional, moderno, secundaria. No infantil, no comercial. 2) TIPOGRAFÍA: Poppins (Bold, SemiBold, Regular). 3) ICONOGRAFÍA: Solo 3D semi realista (cerebro, bloques, robot, escudo). Prohibido flat, emojis, clipart. 4) ILUSTRACIONES: Adolescentes 16-18 años,diferentes etnias, vestimenta casual institucional. 5) COMPOSICIÓN: Tarjetas redondeadas, alto contraste, lectura ≤10s por bloque. 6) DENSIDAD COGNITIVA: Máximo 3-5 ideas por bloque. Evitar saturación. 7) RESTRICCIONES: No modificar, resumir, reinterpretar ni agregar contenido. Fidelidad 100%. Verifica con tabla. Para cada sección, escribe "SECCIÓN X: Título" y luego el contenido detallado.`
+                    promptBase: `Aplica el sistema de estilo y restricciones PNFT: 1) ESTILO: Educativo, académico, profesional, moderno, secundaria. No infantil, no comercial. 2) TIPOGRAFÍA: Poppins (Bold, SemiBold, Regular). 3) ICONOGRAFÍA: Solo 3D semi realista (cerebro, bloques, robot, escudo). Prohibido flat, emojis, clipart. 4) ILUSTRACIONES: Adolescentes 16-18 años, vestimenta casual institucional. 5) COMPOSICIÓN: Tarjetas redondeadas, alto contraste, lectura ≤10s por bloque. 6) DENSIDAD COGNITIVA: Máximo 3-5 ideas por bloque. Evitar saturación. 7) RESTRICCIONES: No modificar, resumir, reinterpretar ni agregar contenido. Fidelidad 100%. Verifica con tabla. Para cada sección, escribe "SECCIÓN X: Título" y luego el contenido detallado.`
                 }
             ];
 
@@ -587,10 +587,68 @@
                 return sections;
             }
 
-            function buildInitialJSON() {
-                const estructura = state.stepResponses['estructura'] || '';
+            // Nueva función para extraer dinámicamente los campos complementarios
+            function extractDynamicFields() {
                 const jerarquia = state.stepResponses['jerarquia'] || '';
                 const estilo = state.stepResponses['estilo'] || '';
+                const combined = jerarquia + '\n' + estilo;
+
+                // Aspectos clave: buscar líneas que contengan "aspecto", "clave", "pilar", "principio"
+                const aspectoRegex = /(?:aspecto|clave|pilar|principio)\s*[:\-]?\s*(.*)/gi;
+                const aspectos_clave = [];
+                let match;
+                while ((match = aspectoRegex.exec(combined)) !== null) {
+                    const desc = match[1].trim();
+                    if (desc && !aspectos_clave.some(a => a.descripción === desc)) {
+                        aspectos_clave.push({ titulo: desc.charAt(0).toUpperCase() + desc.slice(1), icono_3d: '🔍', descripción: desc });
+                    }
+                }
+                if (aspectos_clave.length === 0) {
+                    aspectos_clave.push({ titulo: '(Completar manualmente)', icono_3d: '🔍', descripción: '(Completar manualmente)' });
+                }
+
+                // Ejes transversales: buscar "eje", "transversal", "ciudadanía", "emprendimiento"
+                const ejeRegex = /(?:eje|transversal)\s*[:\-]?\s*(.*)/gi;
+                const ejes_transversales = [];
+                while ((match = ejeRegex.exec(combined)) !== null) {
+                    const nombre = match[1].trim();
+                    if (nombre && !ejes_transversales.some(e => e.nombre === nombre)) {
+                        ejes_transversales.push({ nombre });
+                    }
+                }
+                if (ejes_transversales.length === 0) {
+                    ejes_transversales.push({ nombre: '(Completar manualmente)' });
+                }
+
+                // Recomendaciones: buscar ítems que sigan a "recomendación", "sugerencia", "orientación"
+                const recRegex = /(?:recomendación|sugerencia|orientación)\s*[:\-]?\s*(.*)/gi;
+                const recomendaciones = [];
+                while ((match = recRegex.exec(combined)) !== null) {
+                    const rec = match[1].trim();
+                    if (rec && !recomendaciones.includes(rec)) {
+                        recomendaciones.push(rec);
+                    }
+                }
+                if (recomendaciones.length === 0) {
+                    recomendaciones.push('(Completar manualmente)');
+                }
+
+                // Mensaje clave: buscar "mensaje", "conclusión", "idea fuerza"
+                const msgRegex = /(?:mensaje|conclusión|idea fuerza)\s*[:\-]?\s*(.*)/gi;
+                const mensajes = [];
+                while ((match = msgRegex.exec(combined)) !== null) {
+                    mensajes.push(match[1].trim());
+                }
+                const mensaje_clave = {
+                    izquierda: mensajes[0] || '(Completar manualmente)',
+                    centro_1: mensajes[1] || '(Completar manualmente)'
+                };
+
+                return { aspectos_clave, ejes_transversales, recomendaciones, mensaje_clave };
+            }
+
+            function buildInitialJSON() {
+                const estructura = state.stepResponses['estructura'] || '';
 
                 const titleMatch = estructura.match(/título[:\s]*([^\n]+)/i) || [];
                 const subMatch = estructura.match(/subtítulo[:\s]*([^\n]+)/i) || [];
@@ -604,6 +662,8 @@
                     icono_3d: '🧠',
                     descripción: s.text
                 }));
+
+                const dynamicFields = extractDynamicFields();
 
                 const paleta = {
                     turquesa_principal: '#09b7ae',
@@ -626,28 +686,10 @@
                             contenido: propositoMatch[1] ? propositoMatch[1].trim() : 'Brindar orientaciones que favorecen el acompañamiento docente...'
                         },
                         "ruta implementación": rutaImplementacion,
-                        aspectos_clave: [
-                            { titulo: 'Valoración diagnóstica', icono_3d: '🔍', descripción: 'Permite identificar el punto de partida del estudiantado.' },
-                            { titulo: 'Priorización de saberes', icono_3d: '🎯', descripción: 'Favorece la incorporación progresiva al currículo.' },
-                            { titulo: 'Contextualización', icono_3d: '🌐', descripción: 'Considera las particularidades de cada centro educativo.' },
-                            { titulo: 'Acompañamiento', icono_3d: '🤝', descripción: 'Fortalece la toma de decisiones pedagógicas.' }
-                        ],
-                        ejes_transversales: [
-                            { nombre: 'Ciudadanía y Ética digital' },
-                            { nombre: 'Emprendimiento e Innovación' }
-                        ],
-                        Recomendaciones: [
-                            'Partir de los resultados del diagnóstico.',
-                            'Utilizar el área de conocimiento Apropiación tecnológica y Digital.',
-                            'Integrar saberes conceptuales, procedimentales y actitudinales.',
-                            'Utilizar metodologías activas y ejes transversales.',
-                            'Documentar evidencias de aprendizaje.',
-                            'Contextualizar las decisiones pedagógicas.'
-                        ],
-                        mensaje_clave: {
-                            izquierda: 'La incorporación de la asignatura al PNFT debe entenderse como un proceso gradual.',
-                            centro_1: 'El asesor debe brindar acompañamiento al docente para fortalecer su práctica pedagógica.'
-                        },
+                        aspectos_clave: dynamicFields.aspectos_clave,
+                        ejes_transversales: dynamicFields.ejes_transversales,
+                        Recomendaciones: dynamicFields.recomendaciones,
+                        mensaje_clave: dynamicFields.mensaje_clave,
                         lineamientos_diseno: {
                             orientacion: 'horizontal',
                             tipografia: 'Poppins',
@@ -806,28 +848,20 @@
                 }
             }
 
-            // Función para limpiar descripciones
             function cleanDescriptions() {
                 try {
                     const data = JSON.parse(state.json);
                     const ruta = data.infografía["ruta implementación"] || [];
                     ruta.forEach(paso => {
                         let desc = paso.descripción || '';
-                        // Eliminar marcas de columna [1–4], [5-8], etc.
                         desc = desc.replace(/\[\d+[–\-]\d+\]\s*/g, '');
-                        // Eliminar líneas de función → FUNCIÓN: ...
                         desc = desc.replace(/→ FUNCIÓN:.*$/gm, '');
-                        // Eliminar diagramas ASCII (líneas que contengan solo caracteres de diagrama)
                         desc = desc.replace(/[│├└─┌┐┘└]+/g, '');
-                        // Eliminar líneas con ════
                         desc = desc.replace(/[═]+/g, '');
-                        // Eliminar "FLUJO VISUAL RESUMIDO (MAPA)" y lo que sigue
                         const flujoIndex = desc.indexOf('FLUJO VISUAL RESUMIDO');
                         if (flujoIndex !== -1) desc = desc.substring(0, flujoIndex).trim();
-                        // Eliminar "CONSIDERACIÓN FINAL" y lo que sigue
                         const consIndex = desc.indexOf('CONSIDERACIÓN FINAL');
                         if (consIndex !== -1) desc = desc.substring(0, consIndex).trim();
-                        // Limpiar múltiples saltos de línea
                         desc = desc.replace(/\n{3,}/g, '\n\n').trim();
                         paso.descripción = desc;
                     });
