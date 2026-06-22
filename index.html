@@ -3,11 +3,12 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>PNFT Infografía Lab · Extracción Dinámica</title>
+    <title>PNFT Infografía Lab · Completo</title>
     <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@300;400;500;600;700;800&display=swap" rel="stylesheet">
     <script src="https://cdnjs.cloudflare.com/ajax/libs/pdf.js/3.11.174/pdf.min.js"></script>
     <script src="https://cdn.jsdelivr.net/npm/mammoth@1.6.0/mammoth.browser.min.js"></script>
     <script src="https://unpkg.com/pptx2json@0.0.7/dist/pptx2json.min.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/tesseract.js@5/dist/tesseract.min.js"></script>
     <style>
         :root {
             --turquesa: #09B7AE; --azul-oscuro: #014D6B; --azul-inst: #063B7F;
@@ -105,6 +106,7 @@
         .density-ok { background: #4caf50; }
         .density-warn { background: #ff9800; }
         .density-bad { background: #f44336; }
+        .image-preview { max-width: 300px; max-height: 200px; margin: 10px 0; border-radius: 10px; }
         @media (max-width:800px) {
             .main-container { flex-direction:column; }
             .left-panel { width:100%; max-height:200px; }
@@ -115,7 +117,7 @@
     <header>
         <div class="logo">
             <div class="logo-icon">PNFT</div>
-            <span>Infografía Lab · Extracción Dinámica</span>
+            <span>Infografía Lab · Completo</span>
         </div>
         <div>
             <button class="btn btn-outline btn-sm" id="btnApiKey">🔑 Clave Gemini</button>
@@ -129,6 +131,8 @@
             <div style="padding:1rem; display:flex; flex-direction:column; gap:0.5rem;">
                 <button class="btn btn-outline btn-sm" id="btnUploadFile">📂 Cargar documento</button>
                 <input type="file" id="fileInput" accept=".docx,.pdf,.pptx,.txt" hidden>
+                <button class="btn btn-outline btn-sm" id="btnUploadImage">🖼️ Cargar imagen</button>
+                <input type="file" id="imageInput" accept="image/*" hidden>
                 <div style="display:flex; gap:0.5rem;">
                     <button class="btn btn-outline btn-sm" id="btnSaveProgress" style="flex:1;">💾 Guardar</button>
                     <button class="btn btn-outline btn-sm" id="btnLoadProgress" style="flex:1;">📥 Cargar</button>
@@ -141,7 +145,13 @@
             <div class="card" id="docCard" style="display:none;">
                 <h3>📄 Documento fuente</h3>
                 <textarea id="docText" rows="4" placeholder="Pega aquí el texto..."></textarea>
-                <button class="btn btn-sm" id="btnSaveDoc" style="margin-top:0.5rem;">Guardar documento</button>
+                <div class="flex-row" style="margin-top:0.5rem;">
+                    <button class="btn btn-sm" id="btnSaveDoc">Guardar documento</button>
+                    <button class="btn btn-sm btn-outline" id="btnOCR">🔍 Extraer texto (OCR gratuito)</button>
+                    <button class="btn btn-sm btn-outline" id="btnAnalyzeImage">🤖 Analizar con Gemini</button>
+                </div>
+                <img id="imagePreview" class="image-preview" style="display:none;" />
+                <p id="ocrStatus" style="font-size:0.85rem; color:var(--gris-texto); margin-top:0.5rem;"></p>
             </div>
 
             <div class="card" id="standardsCard" style="display:none;">
@@ -220,6 +230,7 @@
                 blocks: JSON.parse(localStorage.getItem('pnft_blocks') || '[]'),
                 json: localStorage.getItem('pnft_json') || '',
                 viewMode: 'json',
+                imageFile: null,
             };
 
             const iconLibrary = [
@@ -392,7 +403,7 @@
                     id: 'estilo',
                     title: '🎨 Bloque 3 – Estilo Visual y Restricciones',
                     desc: 'Define estilo, tipografía, iconografía, composición, densidad cognitiva y restricciones.',
-                    promptBase: `Aplica el sistema de estilo y restricciones PNFT: 1) ESTILO: Educativo, académico, profesional, moderno, secundaria. No infantil, no comercial. 2) TIPOGRAFÍA: Poppins (Bold, SemiBold, Regular). 3) ICONOGRAFÍA: Solo 3D semi realista (cerebro, bloques, robot, escudo). Prohibido flat, emojis, clipart. 4) ILUSTRACIONES: Adolescentes 16-18 años,co diferentes rasgos etnicos, vestimenta casual institucional. 5) COMPOSICIÓN: Tarjetas redondeadas, alto contraste, lectura ≤10s por bloque. 6) DENSIDAD COGNITIVA: Máximo 3-5 ideas por bloque. Evitar saturación. 7) RESTRICCIONES: No modificar, resumir, reinterpretar ni agregar contenido. Fidelidad 100%. Verifica con tabla. Para cada sección, escribe "SECCIÓN X: Título" y luego el contenido detallado.`
+                    promptBase: `Aplica el sistema de estilo y restricciones PNFT: 1) ESTILO: Educativo, académico, profesional, moderno, secundaria. No infantil, no comercial. 2) TIPOGRAFÍA: Poppins (Bold, SemiBold, Regular). 3) ICONOGRAFÍA: Solo 3D semi realista (cerebro, bloques, robot, escudo). Prohibido flat, emojis, clipart. 4) ILUSTRACIONES: Adolescentes 16-18 años, vestimenta casual institucional. 5) COMPOSICIÓN: Tarjetas redondeadas, alto contraste, lectura ≤10s por bloque. 6) DENSIDAD COGNITIVA: Máximo 3-5 ideas por bloque. Evitar saturación. 7) RESTRICCIONES: No modificar, resumir, reinterpretar ni agregar contenido. Fidelidad 100%. Verifica con tabla. Para cada sección, escribe "SECCIÓN X: Título" y luego el contenido detallado.`
                 }
             ];
 
@@ -587,13 +598,11 @@
                 return sections;
             }
 
-            // Nueva función para extraer dinámicamente los campos complementarios
             function extractDynamicFields() {
                 const jerarquia = state.stepResponses['jerarquia'] || '';
                 const estilo = state.stepResponses['estilo'] || '';
                 const combined = jerarquia + '\n' + estilo;
 
-                // Aspectos clave: buscar líneas que contengan "aspecto", "clave", "pilar", "principio"
                 const aspectoRegex = /(?:aspecto|clave|pilar|principio)\s*[:\-]?\s*(.*)/gi;
                 const aspectos_clave = [];
                 let match;
@@ -607,7 +616,6 @@
                     aspectos_clave.push({ titulo: '(Completar manualmente)', icono_3d: '🔍', descripción: '(Completar manualmente)' });
                 }
 
-                // Ejes transversales: buscar "eje", "transversal", "ciudadanía", "emprendimiento"
                 const ejeRegex = /(?:eje|transversal)\s*[:\-]?\s*(.*)/gi;
                 const ejes_transversales = [];
                 while ((match = ejeRegex.exec(combined)) !== null) {
@@ -620,7 +628,6 @@
                     ejes_transversales.push({ nombre: '(Completar manualmente)' });
                 }
 
-                // Recomendaciones: buscar ítems que sigan a "recomendación", "sugerencia", "orientación"
                 const recRegex = /(?:recomendación|sugerencia|orientación)\s*[:\-]?\s*(.*)/gi;
                 const recomendaciones = [];
                 while ((match = recRegex.exec(combined)) !== null) {
@@ -633,7 +640,6 @@
                     recomendaciones.push('(Completar manualmente)');
                 }
 
-                // Mensaje clave: buscar "mensaje", "conclusión", "idea fuerza"
                 const msgRegex = /(?:mensaje|conclusión|idea fuerza)\s*[:\-]?\s*(.*)/gi;
                 const mensajes = [];
                 while ((match = msgRegex.exec(combined)) !== null) {
@@ -1100,6 +1106,43 @@
                 return data.candidates[0].content.parts[0].text;
             }
 
+            // ========== OCR Y ANÁLISIS DE IMAGEN ==========
+            async function extractTextWithOCR(imageFile) {
+                const status = document.getElementById('ocrStatus');
+                status.textContent = '⏳ Iniciando OCR... (esto puede tardar unos segundos)';
+                const worker = await Tesseract.createWorker('spa');
+                const { data: { text } } = await worker.recognize(imageFile);
+                await worker.terminate();
+                status.textContent = '✅ Texto extraído correctamente';
+                return text;
+            }
+
+            async function analyzeImageWithGemini(imageFile) {
+                if (!state.apiKey) throw new Error('Clave Gemini no configurada');
+                const reader = new FileReader();
+                const imageDataUrl = await new Promise((resolve) => {
+                    reader.onload = () => resolve(reader.result);
+                    reader.readAsDataURL(imageFile);
+                });
+                const base64Data = imageDataUrl.split(',')[1];
+                const response = await fetch(`https://generativelanguage.googleapis.com/v1beta/models/gemini-1.5-flash:generateContent?key=${state.apiKey}`, {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({
+                        contents: [{
+                            parts: [
+                                { text: 'Analiza esta imagen de infografía y describe su estructura, secciones, colores, tipografía y cualquier texto visible. Devuelve un resumen detallado que pueda usarse para construir una nueva infografía.' },
+                                { inlineData: { mimeType: imageFile.type, data: base64Data } }
+                            ]
+                        }],
+                        generationConfig: { temperature: 0.4, maxOutputTokens: 2000 }
+                    })
+                });
+                if (!response.ok) throw new Error((await response.json()).error?.message || 'Error al analizar la imagen');
+                const data = await response.json();
+                return data.candidates[0].content.parts[0].text;
+            }
+
             function escapeHtml(text) {
                 return text.replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;').replace(/"/g, '&quot;');
             }
@@ -1145,6 +1188,49 @@
                     document.getElementById('docText').value = text;
                     toast('✅ Texto extraído');
                 } catch (err) { toast('❌ '+err.message); }
+            });
+
+            document.getElementById('btnUploadImage').addEventListener('click', () => document.getElementById('imageInput').click());
+            document.getElementById('imageInput').addEventListener('change', (e) => {
+                const file = e.target.files[0];
+                if (!file) return;
+                state.imageFile = file;
+                const reader = new FileReader();
+                reader.onload = (ev) => {
+                    const img = document.getElementById('imagePreview');
+                    img.src = ev.target.result;
+                    img.style.display = 'block';
+                };
+                reader.readAsDataURL(file);
+                toast('🖼️ Imagen cargada');
+            });
+
+            document.getElementById('btnOCR').addEventListener('click', async () => {
+                if (!state.imageFile) return toast('Primero carga una imagen con "Cargar imagen"');
+                try {
+                    const text = await extractTextWithOCR(state.imageFile);
+                    const docTextarea = document.getElementById('docText');
+                    const currentText = docTextarea.value.trim();
+                    docTextarea.value = currentText ? currentText + '\n\n--- TEXTO EXTRAÍDO DE LA IMAGEN ---\n' + text : text;
+                    toast('✅ Texto agregado al documento');
+                } catch (err) {
+                    document.getElementById('ocrStatus').textContent = '❌ Error: ' + err.message;
+                }
+            });
+
+            document.getElementById('btnAnalyzeImage').addEventListener('click', async () => {
+                if (!state.imageFile) return toast('Primero carga una imagen con "Cargar imagen"');
+                if (!state.apiKey) return toast('Configura tu clave Gemini para usar esta función');
+                try {
+                    toast('🤖 Analizando imagen con Gemini...');
+                    const description = await analyzeImageWithGemini(state.imageFile);
+                    const docTextarea = document.getElementById('docText');
+                    const currentText = docTextarea.value.trim();
+                    docTextarea.value = currentText ? currentText + '\n\n--- ANÁLISIS DE LA IMAGEN (Gemini) ---\n' + description : description;
+                    toast('✅ Descripción agregada al documento');
+                } catch (err) {
+                    toast('❌ Error: ' + err.message);
+                }
             });
 
             document.getElementById('btnSendToAI').addEventListener('click', async () => {
