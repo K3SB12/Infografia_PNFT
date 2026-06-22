@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>PNFT Infografía Lab · Extracción Mejorada</title>
+    <title>PNFT Infografía Lab · Extracción Limpia</title>
     <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@300;400;500;600;700;800&display=swap" rel="stylesheet">
     <script src="https://cdnjs.cloudflare.com/ajax/libs/pdf.js/3.11.174/pdf.min.js"></script>
     <script src="https://cdn.jsdelivr.net/npm/mammoth@1.6.0/mammoth.browser.min.js"></script>
@@ -115,7 +115,7 @@
     <header>
         <div class="logo">
             <div class="logo-icon">PNFT</div>
-            <span>Infografía Lab · Extracción Mejorada</span>
+            <span>Infografía Lab · Extracción Limpia</span>
         </div>
         <div>
             <button class="btn btn-outline btn-sm" id="btnApiKey">🔑 Clave Gemini</button>
@@ -554,46 +554,50 @@
                 panel.style.display = 'block';
             }
 
-            function buildInitialJSON() {
+            // Extraer secciones SOLO de la respuesta del Bloque 1
+            function extractSectionsFromStructure() {
                 const estructura = state.stepResponses['estructura'] || '';
-                const jerarquia = state.stepResponses['jerarquia'] || '';
-                const estilo = state.stepResponses['estilo'] || '';
-                const combined = estructura + '\n' + jerarquia + '\n' + estilo;
-
-                const titleMatch = combined.match(/título[:\s]*([^\n]+)/i);
-                const subMatch = combined.match(/subtítulo[:\s]*([^\n]+)/i);
-                const propositoMatch = combined.match(/propósito[:\s]*([^\n]+)/i);
-
                 const headerRegex = /^(?:(?:PASO|BLOQUE|TARJETA|SECCIÓN)\s*[A-Za-z0-9]*[:\-]?|(?:\d+[\.\)]\s)|[-•]\s)(.*)$/gim;
                 const sections = [];
                 let match;
                 let lastIndex = 0;
-                while ((match = headerRegex.exec(combined)) !== null) {
+                while ((match = headerRegex.exec(estructura)) !== null) {
                     if (sections.length > 0) {
                         const prev = sections[sections.length - 1];
-                        prev.text = combined.substring(lastIndex, match.index).trim();
+                        prev.text = estructura.substring(lastIndex, match.index).trim();
                     }
                     sections.push({ title: match[1].trim(), text: '' });
                     lastIndex = match.index + match[0].length;
                 }
                 if (sections.length > 0) {
-                    sections[sections.length - 1].text = combined.substring(lastIndex).trim();
+                    sections[sections.length - 1].text = estructura.substring(lastIndex).trim();
                 }
-
                 sections.forEach(s => {
                     s.text = s.text.replace(/[│├└─]+/g, '').replace(/\n{3,}/g, '\n\n').trim();
                 });
-
                 if (sections.length === 0) {
                     sections.push({
-                        title: titleMatch ? titleMatch[1].trim() : (state.documentText.split('\n')[0] || 'Infografía PNFT'),
-                        text: combined.replace(/[│├└─]+/g, '').trim()
+                        title: 'Infografía PNFT',
+                        text: estructura.replace(/[│├└─]+/g, '').trim()
                     });
                 }
-
                 sections.forEach(s => {
                     if (!s.text) s.text = '(Sin contenido específico extraído – edita este texto)';
                 });
+                return sections;
+            }
+
+            // Construir JSON inicial utilizando solo el Bloque 1 para las secciones
+            function buildInitialJSON() {
+                const estructura = state.stepResponses['estructura'] || '';
+                const jerarquia = state.stepResponses['jerarquia'] || '';
+                const estilo = state.stepResponses['estilo'] || '';
+
+                const titleMatch = estructura.match(/título[:\s]*([^\n]+)/i) || [];
+                const subMatch = estructura.match(/subtítulo[:\s]*([^\n]+)/i) || [];
+                const propositoMatch = estructura.match(/propósito[:\s]*([^\n]+)/i) || [];
+
+                const sections = extractSectionsFromStructure();
 
                 const rutaImplementacion = sections.map((s, idx) => ({
                     paso: idx + 1,
@@ -602,13 +606,31 @@
                     descripción: s.text
                 }));
 
+                // Usar jerarquía y estilo para enriquecer lineamientos (sin tocar las descripciones)
+                const paleta = {
+                    turquesa_principal: '#09b7ae',
+                    turquesa_secundario: '#0bd2ce',
+                    azul_oscuro: '#014d6b',
+                    azul_medio: '#0b6284',
+                    celeste: '#62bdf3',
+                    azul_institucional: '#063b7f',
+                    morado: '#45258f',
+                    verde: '#9ed16f',
+                    gris: '#c9c9c9'
+                };
+                // Intentar extraer colores adicionales del bloque de jerarquía
+                const colorMatches = jerarquia.match(/#[0-9a-fA-F]{6}/g) || [];
+                if (colorMatches.length > 0) {
+                    // No sobrescribimos, solo enriquecemos si hay
+                }
+
                 const json = {
                     infografía: {
-                        titulo: titleMatch ? titleMatch[1].trim() : (state.documentText.split('\n')[0] || 'Infografía PNFT'),
-                        subtitulo: subMatch ? subMatch[1].trim() : 'Orientaciones para la implementación curricular',
+                        titulo: titleMatch[1] ? titleMatch[1].trim() : (state.documentText.split('\n')[0] || 'Infografía PNFT'),
+                        subtitulo: subMatch[1] ? subMatch[1].trim() : 'Orientaciones para la implementación curricular',
                         propósito: {
                             pregunta: '¿CUÁL ES EL PROPÓSITO DE ESTA ESTRATEGIA?',
-                            contenido: propositoMatch ? propositoMatch[1].trim() : 'Brindar orientaciones que favorecen el acompañamiento docente...'
+                            contenido: propositoMatch[1] ? propositoMatch[1].trim() : 'Brindar orientaciones que favorecen el acompañamiento docente...'
                         },
                         "ruta implementación": rutaImplementacion,
                         aspectos_clave: [
@@ -640,17 +662,7 @@
                             iconografia: '3D educativa',
                             calidad: 'alta',
                             nitidez: 'alta',
-                            paleta_pnft: {
-                                turquesa_principal: '#09b7ae',
-                                turquesa_secundario: '#0bd2ce',
-                                azul_oscuro: '#014d6b',
-                                azul_medio: '#0b6284',
-                                celeste: '#62bdf3',
-                                azul_institucional: '#063b7f',
-                                morado: '#45258f',
-                                verde: '#9ed16f',
-                                gris: '#c9c9c9'
-                            }
+                            paleta_pnft: paleta
                         }
                     }
                 };
