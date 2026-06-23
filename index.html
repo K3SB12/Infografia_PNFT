@@ -4,7 +4,6 @@
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
   <title>Suite PNFT · Generador de Infografías Educativas</title>
-  <!-- Bibliotecas para extraer texto de documentos -->
   <script src="https://cdnjs.cloudflare.com/ajax/libs/pdf.js/2.16.105/pdf.min.js">
   </script>
   <script src="https://cdnjs.cloudflare.com/ajax/libs/mammoth/1.6.0/mammoth.browser.min.js">
@@ -549,6 +548,7 @@
       display: grid;
       gap: 12px;
       background: linear-gradient(90deg, rgba(98, 189, 243, .09), transparent), #f7fbfd;
+      overflow-y: auto;
     }
     .inf-section-title {
       text-align: center;
@@ -561,7 +561,6 @@
       display: grid;
       gap: 10px;
       align-items: stretch;
-      /* Ajuste dinámico: se calcula en JS */
     }
     .route-card {
       position: relative;
@@ -571,7 +570,7 @@
       background: #ffffff;
       border: 1px solid #d7e8ef;
       box-shadow: 0 10px 20px rgba(1, 77, 107, .08);
-      min-height: 170px;
+      min-height: 150px;
       display: grid;
       grid-template-rows: auto auto 1fr;
       gap: 7px;
@@ -828,7 +827,6 @@
       border-color: var(--turquesa);
       box-shadow: 0 0 0 4px rgba(9, 183, 174, .12);
     }
-    /* ===== Scroll para bloques ===== */
     .blocks-container-scroll {
       max-height: 600px;
       overflow-y: auto;
@@ -838,7 +836,6 @@
 </head>
 <body>
   <div class="app">
-    <!-- SIDEBAR -->
     <aside class="sidebar">
       <div class="brand">
         <div class="brand-logo">PNFT</div>
@@ -878,7 +875,6 @@
       </div>
     </aside>
 
-    <!-- MAIN -->
     <main class="main">
       <section class="topbar">
         <div class="hero">
@@ -1198,7 +1194,7 @@
         loadExample();
       }
 
-      // Eventos para guardar automáticamente
+      // Eventos para guardar automáticamente y actualizar vista previa
       document.getElementById('docTitle').addEventListener('input', () => { state.docTitle = document.getElementById(
           'docTitle').value;
         saveState();
@@ -1211,9 +1207,14 @@
         state.sourceText = e.target.value;
         saveState();
       });
-      document.querySelectorAll('#panel-2 select').forEach(el => {
-        el.addEventListener('change', () => { saveConfig();
-          saveState(); });
+      // Configuración: al cambiar cualquier select, guardar y actualizar vista previa
+      const configSelects = document.querySelectorAll('#panel-2 select');
+      configSelects.forEach(el => {
+        el.addEventListener('change', () => {
+          saveConfig();
+          saveState();
+          renderPreview(); // ← importante: actualiza wireframe al cambiar configuración
+        });
       });
 
       // Carga de archivos
@@ -1539,7 +1540,6 @@
         return;
       }
       state.blocks.splice(index, 1);
-      // Renumerar
       state.blocks = state.blocks.map((b, i) => ({ ...b, numero: i + 1 }));
       renderBlocks();
       renderPreview();
@@ -1549,11 +1549,9 @@
     function moveBlock(index, direction) {
       const newIndex = index + direction;
       if (newIndex < 0 || newIndex >= state.blocks.length) return;
-      // Intercambiar
       const temp = state.blocks[index];
       state.blocks[index] = state.blocks[newIndex];
       state.blocks[newIndex] = temp;
-      // Renumerar
       state.blocks = state.blocks.map((b, i) => ({ ...b, numero: i + 1 }));
       renderBlocks();
       renderPreview();
@@ -1561,31 +1559,110 @@
     }
 
     // ================================================================
-    //  VISTA PREVIA (wireframe)
+    //  VISTA PREVIA (wireframe) - ahora refleja el layout seleccionado
     // ================================================================
     function renderPreview() {
       saveConfig();
       const title = document.getElementById('docTitle').value || 'Orientaciones de Asesoría y Seguimiento';
       const date = document.getElementById('docDate').value || 'Junio 2026';
-      const numBlocks = state.blocks.length;
+      const layout = state.config.layout || 'Grid 2x3';
+      const blocks = state.blocks;
 
-      // Determinar número de columnas para la cuadrícula (máximo 6, sino auto)
-      let cols = 6;
-      if (numBlocks <= 2) cols = 2;
-      else if (numBlocks <= 3) cols = 3;
-      else if (numBlocks <= 4) cols = 4;
-      else if (numBlocks <= 6) cols = 6;
-      else cols = 6; // con más de 6 se usan 6 columnas y más filas
-
-      const cards = state.blocks.map(block => `
+      // Construir el HTML de los bloques según el layout
+      let cardsHTML = '';
+      const renderCard = (block) => `
         <article class="route-card">
           <div class="route-num">${escapeHTML(block.numero)}</div>
           <div class="route-icon" title="${escapeHTML(block.icono)}"></div>
           <h4>${escapeHTML(block.titulo)}</h4>
           <p>${escapeHTML(block.descripcion)}</p>
         </article>
-      `).join('');
+      `;
 
+      let gridStyle = '';
+      let bodyContent = '';
+
+      if (layout === 'Secuencial lineal') {
+        // Mostrar bloques en una sola columna con flechas
+        bodyContent = blocks.map((b, i) => `
+          ${renderCard(b)}
+          ${i < blocks.length - 1 ? '<div style="text-align:center;font-size:24px;color:var(--azul-claro);">↓</div>' : ''}
+        `).join('');
+        gridStyle = 'grid-template-columns: 1fr; max-width: 400px; margin:0 auto;';
+      } else if (layout === 'Grid 2x3') {
+        // Grid de 2 o 3 columnas según cantidad
+        let cols = 3;
+        if (blocks.length <= 2) cols = 2;
+        else if (blocks.length <= 4) cols = 2;
+        else cols = 3;
+        // Si hay más de 6, usamos 3 columnas y más filas
+        if (blocks.length > 6) cols = 3;
+        const rows = Math.ceil(blocks.length / cols);
+        let grid = '';
+        for (let r = 0; r < rows; r++) {
+          const rowBlocks = blocks.slice(r * cols, (r + 1) * cols);
+          grid += rowBlocks.map(b => renderCard(b)).join('');
+        }
+        bodyContent = grid;
+        gridStyle = `grid-template-columns: repeat(${cols}, 1fr);`;
+      } else if (layout === 'Tres columnas') {
+        // Dividir en 3 columnas: inicio, desarrollo, conclusión
+        const mid = Math.floor(blocks.length / 3);
+        const col1 = blocks.slice(0, mid);
+        const col2 = blocks.slice(mid, mid * 2);
+        const col3 = blocks.slice(mid * 2);
+        // Renderizar cada columna
+        const renderCol = (col, label) => `
+          <div style="display:flex;flex-direction:column;gap:10px;">
+            <div style="font-weight:800;color:var(--azul-oscuro);font-size:13px;text-align:center;">${label}</div>
+            ${col.map(b => renderCard(b)).join('')}
+          </div>
+        `;
+        bodyContent = `
+          ${renderCol(col1, 'Inicio')}
+          ${renderCol(col2, 'Desarrollo')}
+          ${renderCol(col3, 'Conclusión')}
+        `;
+        gridStyle = 'grid-template-columns: repeat(3, 1fr);';
+      } else if (layout === 'Flujo Z') {
+        // Flujo Z: fila superior, luego flecha, luego fila inferior (invertida)
+        const half = Math.ceil(blocks.length / 2);
+        const top = blocks.slice(0, half);
+        const bottom = blocks.slice(half);
+        // Mostrar top en orden, luego bottom en orden inverso para simular flujo Z
+        const topHTML = top.map(b => renderCard(b)).join('');
+        const bottomHTML = bottom.slice().reverse().map(b => renderCard(b)).join('');
+        bodyContent = `
+          <div style="display:grid;grid-template-columns: repeat(${Math.min(top.length, 4)}, 1fr); gap:10px;">${topHTML}</div>
+          <div style="text-align:center;font-size:24px;color:var(--azul-claro);">↓ → → → → → → → → → → → → → → → → → ↓</div>
+          <div style="display:grid;grid-template-columns: repeat(${Math.min(bottom.length, 4)}, 1fr); gap:10px;">${bottomHTML}</div>
+        `;
+        gridStyle = 'grid-template-columns: 1fr;';
+      } else if (layout === 'Pirámide') {
+        // Pirámide: 1 arriba, 2 abajo, 3 abajo, etc.
+        let pyramidHTML = '';
+        let index = 0;
+        let level = 1;
+        while (index < blocks.length) {
+          const levelBlocks = blocks.slice(index, index + level);
+          const cols = levelBlocks.length;
+          pyramidHTML += `
+            <div style="display:grid;grid-template-columns: repeat(${cols}, 1fr); gap:10px; max-width:${Math.min(cols * 200, 800)}px; margin:0 auto;">
+              ${levelBlocks.map(b => renderCard(b)).join('')}
+            </div>
+          `;
+          index += level;
+          level++;
+        }
+        bodyContent = pyramidHTML;
+        gridStyle = 'grid-template-columns: 1fr;';
+      } else {
+        // fallback: grid simple
+        bodyContent = blocks.map(b => renderCard(b)).join('');
+        gridStyle = 'grid-template-columns: repeat(3, 1fr);';
+      }
+
+      // Construir el wireframe completo
       document.getElementById('previewStage').innerHTML = `
         <section class="inf-header">
           <div class="inf-logo">PNFT</div>
@@ -1594,12 +1671,12 @@
         </section>
         <section class="inf-purpose">
           <strong>Propósito</strong>
-          <span>Organizar el documento fuente en una infografía educativa institucional, con arquitectura visual clara, fidelidad documental y estilo PNFT.</span>
+          <span>Organizar el documento fuente en una infografía educativa institucional, con arquitectura visual clara, fidelidad documental y estilo ${escapeHTML(state.config.estilo)}.</span>
         </section>
         <section class="inf-body">
-          <div class="inf-section-title">Ruta de Asesoría y Seguimiento</div>
-          <div class="route" style="grid-template-columns: repeat(${cols}, 1fr);">
-            ${cards}
+          <div class="inf-section-title">Ruta de Asesoría y Seguimiento (Layout: ${escapeHTML(layout)})</div>
+          <div class="route" style="${gridStyle}">
+            ${bodyContent}
           </div>
         </section>
         <section class="inf-footer">
@@ -1623,33 +1700,29 @@
     }
 
     // ================================================================
-    //  AUDITORÍA (sin límite de bloques)
+    //  AUDITORÍA
     // ================================================================
     function runAudit() {
       saveConfig();
       const checks = [];
-      // 1. Cantidad de bloques (solo advertencia si > 6)
       checks.push({
         ok: state.blocks.length <= 6,
         title: 'Cantidad de bloques principales',
         text: state.blocks.length <= 6 ? 'Cumple con el máximo recomendado de 6 bloques.' :
           'Hay más de 6 bloques. Se recomienda revisar la densidad visual, pero la herramienta permite esta cantidad.'
       });
-      // 2. Fidelidad
       checks.push({
         ok: state.config.fidelidad === '100',
         title: 'Fidelidad documental',
         text: state.config.fidelidad === '100' ? 'Fidelidad 100%: no resumir, no reinterpretar, no agregar.' :
           'La fidelidad no está en 100%. Verifica si el documento permite síntesis.'
       });
-      // 3. Densidad
       checks.push({
         ok: state.config.densidad === 'Media',
         title: 'Densidad cognitiva',
         text: state.config.densidad === 'Media' ? 'Densidad media adecuada para docentes y asesores.' :
           'Revisa que la densidad seleccionada corresponda a la audiencia.'
       });
-      // 4. Títulos y descripciones no vacíos
       const emptyTitles = state.blocks.some(b => !b.titulo.trim());
       const emptyDescs = state.blocks.some(b => !b.descripcion.trim());
       checks.push({
@@ -1658,7 +1731,6 @@
         text: (emptyTitles || emptyDescs) ? 'Hay bloques con título o descripción vacíos. Completa todos los campos.' :
           'Todos los bloques tienen título y descripción.'
       });
-      // 5. Iconos asignados
       const noIcon = state.blocks.some(b => !b.icono || b.icono === '');
       checks.push({
         ok: !noIcon,
@@ -1666,7 +1738,6 @@
         text: noIcon ? 'Hay bloques sin icono asignado. Asegúrate de que cada bloque tenga un icono conceptual.' :
           'Todos los bloques tienen un icono asignado.'
       });
-      // 6. Diversidad
       checks.push({
         ok: state.config.diversidad === 'Obligatoria',
         title: 'Diversidad e inclusión',
@@ -1674,7 +1745,6 @@
           'Se mantiene representación diversa cuando aparezcan personas.' :
           'La infografía evita personas; se priorizan objetos e iconos.'
       });
-      // 7. Longitud de descripciones (máx 200 caracteres)
       const longDesc = state.blocks.some(b => b.descripcion.length > 200);
       checks.push({
         ok: !longDesc,
