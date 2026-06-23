@@ -582,9 +582,6 @@
 
             function buildInitialJSON() {
                 const estructura = state.stepResponses['estructura'] || '';
-                const jerarquia = state.stepResponses['jerarquia'] || '';
-                const estilo = state.stepResponses['estilo'] || '';
-
                 const titleMatch = estructura.match(/título[:\s]*([^\n]+)/i) || [];
                 const subMatch = estructura.match(/subtítulo[:\s]*([^\n]+)/i) || [];
                 const propositoMatch = estructura.match(/propósito[:\s]*([^\n]+)/i) || [];
@@ -649,7 +646,6 @@
                 }
 
                 let html = '';
-                // Extraer recomendaciones de jerarquía
                 const tipografiaMatch = jerarquia.match(/Poppins\s*(Bold|SemiBold|Regular)/gi);
                 if (tipografiaMatch) {
                     html += `<p><strong>Tipografía sugerida:</strong> ${tipografiaMatch.join(', ')}</p>`;
@@ -658,7 +654,6 @@
                 if (colorMatches) {
                     html += `<p><strong>Colores detectados:</strong> ${colorMatches.join(', ')}</p>`;
                 }
-                // Extraer restricciones
                 if (estilo.includes('No modificar')) {
                     html += '<p><strong>⚠️ Restricción:</strong> No modificar, resumir ni reinterpretar el contenido.</p>';
                 }
@@ -681,7 +676,6 @@
                 }
                 state.fidelityWarnings = [];
                 state.blocks.forEach((block, idx) => {
-                    // Buscar si el texto del bloque aparece en el documento original
                     const words = block.text.split(/\s+/).filter(w => w.length > 4);
                     let foundCount = 0;
                     words.forEach(word => {
@@ -715,7 +709,6 @@
                     card.draggable = true;
                     card.dataset.index = index;
 
-                    // Validación de densidad
                     const words = block.text.split(/\s+/).length;
                     const ideas = block.text.split(/[.,;]/).length;
                     let densityClass = '';
@@ -733,7 +726,6 @@
                         densityLabel = 'Densidad óptima';
                     }
 
-                    // Verificar fidelidad
                     const warning = state.fidelityWarnings.find(w => w.blockIndex === index);
                     const fidelityAlert = warning ? `<div class="fidelity-alert">⚠️ Posible desviación del documento (${warning.ratio}% de coincidencia)</div>` : '';
 
@@ -836,6 +828,10 @@
                 html += `</div></div></body></html>`;
                 w.document.write(html);
                 w.document.close();
+            }
+
+            function escapeHtml(text) {
+                return text.replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;').replace(/"/g, '&quot;');
             }
 
             document.getElementById('btnAddBlock').addEventListener('click', () => {
