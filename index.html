@@ -423,6 +423,29 @@
       gap: 12px;
       margin-bottom: 12px;
     }
+    .block-head .order-controls {
+      display: flex;
+      gap: 6px;
+    }
+    .block-head .order-controls button {
+      background: #eef5f8;
+      border: 1px solid #d7e8ef;
+      border-radius: 30px;
+      width: 32px;
+      height: 32px;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-size: 16px;
+      cursor: pointer;
+      transition: .2s;
+      color: var(--azul-oscuro);
+    }
+    .block-head .order-controls button:hover {
+      background: var(--turquesa);
+      color: #fff;
+      border-color: var(--turquesa);
+    }
     .pill {
       display: inline-flex;
       align-items: center;
@@ -536,9 +559,9 @@
     }
     .route {
       display: grid;
-      grid-template-columns: repeat(6, 1fr);
       gap: 10px;
       align-items: stretch;
+      /* Ajuste dinámico: se calcula en JS */
     }
     .route-card {
       position: relative;
@@ -739,7 +762,7 @@
         padding: 10px 16px;
       }
       .route {
-        grid-template-columns: repeat(3, 1fr);
+        grid-template-columns: repeat(auto-fill, minmax(150px, 1fr));
       }
       .inf-footer {
         grid-template-columns: 1fr 1fr;
@@ -804,6 +827,12 @@
     .prompt-editable:focus {
       border-color: var(--turquesa);
       box-shadow: 0 0 0 4px rgba(9, 183, 174, .12);
+    }
+    /* ===== Scroll para bloques ===== */
+    .blocks-container-scroll {
+      max-height: 600px;
+      overflow-y: auto;
+      padding-right: 4px;
     }
   </style>
 </head>
@@ -1006,8 +1035,10 @@
         <div class="panel-grid">
           <div class="card">
             <h3>3. Arquitectura de información</h3>
-            <p class="lead">Revisa y edita los bloques principales. Evita títulos accidentales o fragmentos extraídos sin jerarquía.</p>
-            <div id="blocksContainer" class="blocks"></div>
+            <p class="lead">Revisa y edita los bloques principales. Puedes agregar, eliminar y reordenar libremente.</p>
+            <div class="blocks-container-scroll">
+              <div id="blocksContainer" class="blocks"></div>
+            </div>
             <div class="btn-row">
               <button class="btn btn-accent" onclick="addBlock()">➕ Agregar bloque</button>
               <button class="btn btn-primary" onclick="renderPreview()">Actualizar boceto</button>
@@ -1016,9 +1047,9 @@
           </div>
           <div class="card">
             <h3>Regla de arquitectura</h3>
-            <p class="lead">Los bloques deben derivarse de la estructura real del documento, no de frases sueltas extraídas automáticamente.</p>
+            <p class="lead">Los bloques deben derivarse de la estructura real del documento. No hay límite de cantidad, pero se recomienda mantener una densidad adecuada.</p>
             <div class="mini-note">
-              Recomendación PNFT: máximo 6 bloques principales, lectura izquierda a derecha, conectores visuales y una idea clave por bloque cuando la densidad sea media.
+              Recomendación PNFT: máximo 6 bloques principales, lectura izquierda a derecha, conectores visuales y una idea clave por bloque cuando la densidad sea media. Sin embargo, la herramienta te permite crear tantos como necesites.
             </div>
           </div>
         </div>
@@ -1140,13 +1171,11 @@
     //  INICIALIZACIÓN Y PERSISTENCIA
     // ================================================================
     document.addEventListener('DOMContentLoaded', () => {
-      // Cargar desde localStorage
       const saved = localStorage.getItem('pnft_suite_state');
       if (saved) {
         try {
           const parsed = JSON.parse(saved);
           Object.assign(state, parsed);
-          // Sincronizar UI
           document.getElementById('docTitle').value = state.docTitle || '';
           document.getElementById('docDate').value = state.docDate || '';
           document.getElementById('sourceText').value = state.sourceText || '';
@@ -1166,7 +1195,6 @@
           goStep(state.step || 1);
         } catch (e) { console.warn('Error al cargar estado', e); }
       } else {
-        // Cargar ejemplo por defecto
         loadExample();
       }
 
@@ -1208,7 +1236,6 @@
         btn.addEventListener('click', () => goStep(Number(btn.dataset.step)));
       });
 
-      // Inicializar paso
       goStep(state.step || 1);
     });
 
@@ -1317,7 +1344,7 @@
     }
 
     // ================================================================
-    //  ANÁLISIS DEL DOCUMENTO (detección robusta)
+    //  ANÁLISIS DEL DOCUMENTO
     // ================================================================
     function analyzeDocument() {
       const text = document.getElementById('sourceText').value.trim();
@@ -1331,10 +1358,9 @@
       state.docDate = date;
       state.sourceText = text;
 
-      // Detectar secciones: números, viñetas, títulos en mayúsculas, etc.
       const sections = extractSections(text);
       if (sections.length >= 3) {
-        state.blocks = sections.slice(0, 6).map((item, index) => ({
+        state.blocks = sections.slice(0, 12).map((item, index) => ({
           numero: index + 1,
           icono: suggestIcon(item.titulo),
           titulo: cleanTitle(item.titulo),
@@ -1365,15 +1391,10 @@
       let current = null;
       let buffer = [];
 
-      // Patrones: números (1., 2.), viñetas (•, -), mayúsculas, terminación en dos puntos
       const isHeading = (line) => {
-        // Números
-        if (/^[1-6][\.\)]\s+/.test(line)) return true;
-        // Viñetas
+        if (/^[1-9][\.\)]\s+/.test(line)) return true;
         if (/^[•\-]\s+/.test(line)) return true;
-        // Mayúsculas largas (título)
         if (line === line.toUpperCase() && line.length < 80 && line.length > 10) return true;
-        // Termina con dos puntos
         if (/[:。]\s*$/.test(line)) return true;
         return false;
       };
@@ -1384,12 +1405,11 @@
             sections.push({ titulo: current, content: buffer.join(' ') });
             buffer = [];
           }
-          current = line.replace(/^[•\-]\s+/, '').replace(/^[1-6][\.\)]\s+/, '').replace(/[:。]\s*$/, '').trim();
+          current = line.replace(/^[•\-]\s+/, '').replace(/^[1-9][\.\)]\s+/, '').replace(/[:。]\s*$/, '').trim();
         } else {
           if (current) {
             buffer.push(line);
           } else {
-            // Si no hay título, usar la primera línea como título
             if (!current) {
               current = line.substring(0, 50);
             } else {
@@ -1467,7 +1487,7 @@
     }
 
     // ================================================================
-    //  BLOQUES (renderizado, edición, add/remove)
+    //  BLOQUES (renderizado, edición, add/remove, orden)
     // ================================================================
     function renderBlocks() {
       const container = document.getElementById('blocksContainer');
@@ -1478,7 +1498,11 @@
         div.innerHTML = `
           <div class="block-head">
             <span class="pill">Bloque ${index + 1}</span>
-            <button class="btn btn-danger" style="padding:8px 11px;font-size:11px;" onclick="removeBlock(${index})">Eliminar</button>
+            <div class="order-controls">
+              <button onclick="moveBlock(${index}, -1)" title="Subir" ${index === 0 ? 'disabled style="opacity:0.4;"' : ''}>↑</button>
+              <button onclick="moveBlock(${index}, 1)" title="Bajar" ${index === state.blocks.length - 1 ? 'disabled style="opacity:0.4;"' : ''}>↓</button>
+              <button class="btn btn-danger" style="padding:4px 8px;font-size:11px;" onclick="removeBlock(${index})">✕</button>
+            </div>
           </div>
           <div class="block-fields">
             <div class="field"><label>Número</label><input value="${escapeHTML(block.numero)}" onchange="updateBlock(${index}, 'numero', this.value)"></div>
@@ -1498,10 +1522,6 @@
     }
 
     function addBlock() {
-      if (state.blocks.length >= 6) {
-        alert('Máximo 6 bloques permitidos.');
-        return;
-      }
       state.blocks.push({
         numero: state.blocks.length + 1,
         icono: 'Icono conceptual 3D',
@@ -1519,6 +1539,21 @@
         return;
       }
       state.blocks.splice(index, 1);
+      // Renumerar
+      state.blocks = state.blocks.map((b, i) => ({ ...b, numero: i + 1 }));
+      renderBlocks();
+      renderPreview();
+      saveState();
+    }
+
+    function moveBlock(index, direction) {
+      const newIndex = index + direction;
+      if (newIndex < 0 || newIndex >= state.blocks.length) return;
+      // Intercambiar
+      const temp = state.blocks[index];
+      state.blocks[index] = state.blocks[newIndex];
+      state.blocks[newIndex] = temp;
+      // Renumerar
       state.blocks = state.blocks.map((b, i) => ({ ...b, numero: i + 1 }));
       renderBlocks();
       renderPreview();
@@ -1532,6 +1567,16 @@
       saveConfig();
       const title = document.getElementById('docTitle').value || 'Orientaciones de Asesoría y Seguimiento';
       const date = document.getElementById('docDate').value || 'Junio 2026';
+      const numBlocks = state.blocks.length;
+
+      // Determinar número de columnas para la cuadrícula (máximo 6, sino auto)
+      let cols = 6;
+      if (numBlocks <= 2) cols = 2;
+      else if (numBlocks <= 3) cols = 3;
+      else if (numBlocks <= 4) cols = 4;
+      else if (numBlocks <= 6) cols = 6;
+      else cols = 6; // con más de 6 se usan 6 columnas y más filas
+
       const cards = state.blocks.map(block => `
         <article class="route-card">
           <div class="route-num">${escapeHTML(block.numero)}</div>
@@ -1553,7 +1598,9 @@
         </section>
         <section class="inf-body">
           <div class="inf-section-title">Ruta de Asesoría y Seguimiento</div>
-          <div class="route">${cards}</div>
+          <div class="route" style="grid-template-columns: repeat(${cols}, 1fr);">
+            ${cards}
+          </div>
         </section>
         <section class="inf-footer">
           <article class="foot-card"><h4>Factores clave</h4><ul><li>Tiempo efectivo</li><li>Recursos tecnológicos</li><li>Necesidades del contexto</li></ul></article>
@@ -1576,16 +1623,17 @@
     }
 
     // ================================================================
-    //  AUDITORÍA MEJORADA
+    //  AUDITORÍA (sin límite de bloques)
     // ================================================================
     function runAudit() {
       saveConfig();
       const checks = [];
-      // 1. Cantidad de bloques
+      // 1. Cantidad de bloques (solo advertencia si > 6)
       checks.push({
         ok: state.blocks.length <= 6,
         title: 'Cantidad de bloques principales',
-        text: state.blocks.length <= 6 ? 'Cumple con el máximo recomendado de 6 bloques.' : 'Hay más de 6 bloques. Podría saturar la lectura.'
+        text: state.blocks.length <= 6 ? 'Cumple con el máximo recomendado de 6 bloques.' :
+          'Hay más de 6 bloques. Se recomienda revisar la densidad visual, pero la herramienta permite esta cantidad.'
       });
       // 2. Fidelidad
       checks.push({
@@ -1705,7 +1753,7 @@ CONFIGURACIÓN
 ARQUITECTURA
 - Layout: ${project.arquitectura.layout}
 - Flujo de lectura: izquierda a derecha
-- Máximo 6 bloques principales
+- Número de bloques: ${project.arquitectura.bloques.length}
 - Usar tarjetas redondeadas, conectores visuales y jerarquía clara.
 
 BLOQUES DE CONTENIDO
