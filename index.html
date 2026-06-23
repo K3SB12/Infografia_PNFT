@@ -3,211 +3,185 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>PNFT Infografía Lab · Completo</title>
-    <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@300;400;500;600;700;800&display=swap" rel="stylesheet">
+    <title>PNFT Infografía Lab · Lienzo Visual</title>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
     <script src="https://cdnjs.cloudflare.com/ajax/libs/pdf.js/3.11.174/pdf.min.js"></script>
     <script src="https://cdn.jsdelivr.net/npm/mammoth@1.6.0/mammoth.browser.min.js"></script>
     <script src="https://cdn.jsdelivr.net/npm/pptx2json@0.0.7/dist/pptx2json.min.js"></script>
     <script src="https://cdn.jsdelivr.net/npm/tesseract.js@5/dist/tesseract.min.js"></script>
     <style>
         :root {
-            --turquesa: #09B7AE; --azul-oscuro: #014D6B; --azul-inst: #063B7F;
-            --verde: #9ED16F; --gris-neutro: #C9C9C9; --gris-claro: #E8ECF1;
-            --blanco: #FFFFFF; --gris-texto: #4A5568; --fondo: #F5F7FA;
-            --font: 'Poppins', sans-serif;
+            --bg: #F8FAFC; --surface: #FFFFFF; --border: #E2E8F0;
+            --text: #1E293B; --text-secondary: #64748B;
+            --primary: #09B7AE; --primary-hover: #089B92;
+            --shadow-sm: 0 1px 3px rgba(0,0,0,0.06), 0 1px 2px rgba(0,0,0,0.04);
+            --shadow-md: 0 4px 12px rgba(0,0,0,0.08);
+            --radius-lg: 20px; --radius: 12px;
         }
         * { margin:0; padding:0; box-sizing:border-box; }
         body {
-            font-family: var(--font); background: var(--fondo);
-            color: #1A1D23; min-height:100vh; display:flex; flex-direction:column;
+            font-family: 'Inter', system-ui, -apple-system, sans-serif;
+            background: var(--bg); color: var(--text);
+            min-height:100vh; display:flex; flex-direction:column;
         }
         header {
-            background: var(--blanco); padding:0.8rem 1.5rem;
+            background: var(--surface); padding:0.75rem 1.5rem;
             display:flex; align-items:center; justify-content:space-between;
-            flex-wrap:wrap; gap:0.8rem; box-shadow: 0 2px 8px rgba(0,0,0,0.05);
-            z-index:100;
+            flex-wrap:wrap; gap:0.75rem; box-shadow: var(--shadow-sm);
+            position:sticky; top:0; z-index:100;
         }
-        .logo { display:flex; align-items:center; gap:0.5rem; font-weight:700; color:var(--azul-oscuro); }
+        .logo { display:flex; align-items:center; gap:0.5rem; font-weight:700; font-size:1.1rem; color:#014D6B; }
         .logo-icon {
-            width:38px; height:38px; background:linear-gradient(135deg, var(--turquesa), var(--azul-inst));
+            width:34px; height:34px; background:linear-gradient(135deg, #09B7AE, #063B7F);
             border-radius:10px; display:flex; align-items:center; justify-content:center;
-            color:#fff; font-weight:800;
+            color:#fff; font-weight:800; font-size:0.9rem;
         }
         .btn {
-            font-family:var(--font); font-weight:600; font-size:0.85rem;
-            padding:0.5rem 1.2rem; border-radius:30px; border:none;
-            cursor:pointer; transition:0.25s; display:inline-flex; align-items:center; gap:0.4rem;
-            background:var(--turquesa); color:#fff; border:2px solid var(--turquesa);
+            font-family:inherit; font-weight:600; font-size:0.85rem;
+            padding:0.5rem 1rem; border-radius:30px; border:none;
+            cursor:pointer; transition:0.2s; display:inline-flex; align-items:center; gap:0.4rem;
+            background:var(--primary); color:#fff;
         }
-        .btn-outline { background:transparent; color:var(--turquesa); }
-        .btn-outline:hover { background:var(--turquesa); color:#fff; }
-        .btn:disabled { opacity:0.5; pointer-events:none; }
+        .btn:hover { background:var(--primary-hover); }
+        .btn-outline { background:transparent; color:var(--primary); border:1.5px solid var(--primary); }
+        .btn-outline:hover { background:var(--primary); color:#fff; }
+        .btn-sm { padding:0.4rem 0.8rem; font-size:0.8rem; }
         .main-container { display:flex; flex:1; overflow:hidden; }
-        .left-panel {
-            width:280px; background:var(--blanco); border-right:1px solid var(--gris-claro);
-            display:flex; flex-direction:column;
+        .toolbar {
+            width:260px; background:var(--surface); border-right:1px solid var(--border);
+            padding:1rem; display:flex; flex-direction:column; gap:1rem;
+            overflow-y:auto;
         }
-        .stages-list { flex:1; overflow-y:auto; padding:1rem; }
-        .stage-item {
-            display:flex; align-items:center; gap:0.5rem; padding:0.7rem 0.8rem;
-            border-radius:10px; cursor:pointer; margin-bottom:0.2rem;
-            font-size:0.85rem; color:var(--gris-texto); border:1px solid transparent;
+        .toolbar label { font-weight:600; font-size:0.8rem; color:var(--text-secondary); display:block; margin-bottom:0.3rem; }
+        select, input[type="text"], input[type="number"] {
+            width:100%; padding:0.5rem 0.75rem; border-radius:8px; border:1.5px solid var(--border);
+            font-family:inherit; font-size:0.85rem; background:var(--bg);
         }
-        .stage-item.active { background:rgba(9,183,174,0.08); color:var(--azul-oscuro); font-weight:600; border-color:var(--turquesa); }
-        .stage-item.completed { color:var(--verde); }
-        .stage-num {
-            width:26px; height:26px; border-radius:50%; background:var(--gris-claro);
-            display:flex; align-items:center; justify-content:center;
-            font-weight:700; font-size:0.7rem; flex-shrink:0;
+        select:focus, input:focus { outline:none; border-color:var(--primary); }
+        .canvas-area {
+            flex:1; padding:1.5rem; overflow-y:auto;
+            display:flex; flex-direction:column; align-items:center; gap:1.5rem;
         }
-        .stage-item.active .stage-num { background:var(--turquesa); color:#fff; }
-        .stage-item.completed .stage-num { background:var(--verde); color:#fff; }
-        .right-panel { flex:1; display:flex; flex-direction:column; padding:1.5rem; overflow-y:auto; }
-        .card {
-            background:var(--blanco); border-radius:16px; padding:1.5rem;
-            box-shadow: 0 4px 20px rgba(0,0,0,0.06); margin-bottom:1.5rem;
+        .canvas-settings {
+            display:flex; gap:1rem; flex-wrap:wrap; align-items:center;
+            background:var(--surface); padding:0.75rem 1rem; border-radius:var(--radius);
+            box-shadow: var(--shadow-sm);
         }
-        .card h3 { color:var(--azul-oscuro); margin-bottom:0.5rem; }
-        textarea {
-            width:100%; border:1.5px solid var(--gris-neutro); border-radius:10px;
-            padding:0.8rem; font-family:var(--font); font-size:0.9rem;
-            background:var(--fondo); resize:vertical;
+        .canvas {
+            background: var(--surface); border-radius: var(--radius-lg);
+            box-shadow: var(--shadow-md); padding:2rem;
+            display:flex; flex-direction:column; gap:1.5rem;
+            transition: all 0.3s;
         }
-        textarea:focus { outline:none; border-color:var(--turquesa); }
-        .response-area {
-            background:var(--fondo); border-radius:10px; padding:1rem;
-            max-height:300px; overflow-y:auto; font-size:0.9rem; white-space:pre-wrap;
-            border:1px solid var(--gris-neutro);
+        .block-card {
+            background: #fff; border:2px solid var(--border); border-radius:var(--radius);
+            padding:1rem; cursor:move; position:relative;
+            box-shadow: var(--shadow-sm); transition: box-shadow 0.2s;
         }
-        .flex-row { display:flex; gap:0.8rem; flex-wrap:wrap; align-items:center; }
+        .block-card:hover { box-shadow: var(--shadow-md); }
+        .block-card .block-header {
+            display:flex; align-items:center; justify-content:space-between;
+            margin-bottom:0.5rem;
+        }
+        .block-card .block-icon { font-size:2rem; }
+        .block-card textarea {
+            width:100%; border:1px solid var(--border); border-radius:8px;
+            padding:0.5rem; font-family:inherit; font-size:0.9rem;
+            resize:vertical; background:var(--bg);
+        }
+        .block-card .block-controls {
+            display:flex; gap:0.5rem; margin-top:0.5rem; flex-wrap:wrap;
+        }
         .toast {
-            position:fixed; bottom:2rem; right:2rem; background:var(--azul-inst);
+            position:fixed; bottom:2rem; right:2rem; background:#1E293B;
             color:#fff; padding:0.8rem 1.5rem; border-radius:30px; font-weight:600;
             z-index:999; opacity:0; transition:0.3s;
         }
         .toast.show { opacity:1; }
-        .density-panel {
-            background: #FFF3E0; border: 1px solid #FF9800; border-radius: 10px;
-            padding: 1rem; margin-top: 1rem;
+        .advanced-panel {
+            background:var(--surface); border-radius:var(--radius);
+            padding:1rem; margin-top:1rem; box-shadow: var(--shadow-sm);
         }
-        .editor-card {
-            background: #fff; border: 2px dashed var(--gris-neutro); border-radius: 12px;
-            padding: 1rem; margin-bottom: 1rem;
-        }
-        .editor-card h4 { margin-bottom: 0.5rem; }
-        .json-editor {
-            background: #1e1e1e; color: #d4d4d4; font-family: monospace;
-            min-height: 300px;
-        }
-        .density-indicator {
-            display: inline-block; width: 12px; height: 12px; border-radius: 50%;
-            margin-left: 8px;
-        }
-        .density-ok { background: #4caf50; }
-        .density-warn { background: #ff9800; }
-        .density-bad { background: #f44336; }
-        .image-preview { max-width: 300px; max-height: 200px; margin: 10px 0; border-radius: 10px; }
-        .original-response { display: none; }
         @media (max-width:800px) {
             .main-container { flex-direction:column; }
-            .left-panel { width:100%; max-height:200px; }
+            .toolbar { width:100%; flex-direction:row; flex-wrap:wrap; }
         }
     </style>
 </head>
 <body>
     <header>
-        <div class="logo">
-            <div class="logo-icon">PNFT</div>
-            <span>Infografía Lab · Completo</span>
-        </div>
-        <div>
-            <button class="btn btn-outline btn-sm" id="btnApiKey">🔑 Clave Gemini</button>
-            <button class="btn btn-sm" id="btnReset">↺ Reiniciar</button>
+        <div class="logo"><div class="logo-icon">P</div> Infografía Lab</div>
+        <div style="display:flex; gap:0.5rem; flex-wrap:wrap;">
+            <button class="btn btn-outline btn-sm" id="btnApiKey">🔑 Clave</button>
+            <button class="btn btn-sm" id="btnReset">↺ Nuevo</button>
         </div>
     </header>
 
     <div class="main-container">
-        <div class="left-panel">
-            <div class="stages-list" id="stagesList"></div>
-            <div style="padding:1rem; display:flex; flex-direction:column; gap:0.5rem;">
-                <button class="btn btn-outline btn-sm" id="btnUploadFile">📂 Cargar documento</button>
-                <input type="file" id="fileInput" accept=".docx,.pdf,.pptx,.txt" hidden>
-                <button class="btn btn-outline btn-sm" id="btnUploadImage">🖼️ Cargar imagen</button>
-                <input type="file" id="imageInput" accept="image/*" hidden>
-                <div style="display:flex; gap:0.5rem;">
-                    <button class="btn btn-outline btn-sm" id="btnSaveProgress" style="flex:1;">💾 Guardar</button>
-                    <button class="btn btn-outline btn-sm" id="btnLoadProgress" style="flex:1;">📥 Cargar</button>
-                </div>
-                <input type="file" id="loadJsonInput" accept=".json" hidden>
+        <aside class="toolbar" id="toolbar">
+            <div>
+                <label>📐 Orientación</label>
+                <select id="orientation">
+                    <option value="16:9" selected>16:9 (horizontal)</option>
+                    <option value="9:16">9:16 (vertical)</option>
+                    <option value="4:3">4:3</option>
+                    <option value="3:2">3:2</option>
+                    <option value="1:1">1:1 (cuadrado)</option>
+                    <option value="4:5">4:5</option>
+                </select>
             </div>
-        </div>
+            <div>
+                <label>🖥️ Resolución</label>
+                <select id="resolution">
+                    <option value="640x480">640 × 480</option>
+                    <option value="1280x720">1280 × 720</option>
+                    <option value="1920x1080" selected>1920 × 1080</option>
+                    <option value="2560x1440">2560 × 1440</option>
+                    <option value="3840x2160">3840 × 2160</option>
+                </select>
+            </div>
+            <div>
+                <label>🔤 Tipografía</label>
+                <select id="fontFamily">
+                    <option value="Poppins" selected>Poppins</option>
+                    <option value="Inter">Inter</option>
+                    <option value="Montserrat">Montserrat</option>
+                    <option value="Roboto">Roboto</option>
+                </select>
+            </div>
+            <div>
+                <label>📏 Tamaño base</label>
+                <input type="number" id="baseFontSize" value="16" min="12" max="24" step="1">
+            </div>
+            <div>
+                <label>🏷️ Título</label>
+                <input type="text" id="docTitle" placeholder="Título de la infografía">
+            </div>
+            <div>
+                <label>📝 Subtítulo</label>
+                <input type="text" id="docSubtitle" placeholder="Subtítulo opcional">
+            </div>
+            <button class="btn btn-sm" id="btnAddBlock">➕ Agregar bloque</button>
+            <button class="btn btn-outline btn-sm" id="btnLoadDocument">📂 Cargar documento</button>
+            <input type="file" id="fileInput" accept=".docx,.pdf,.pptx,.txt" hidden>
+            <button class="btn btn-sm" id="btnPreview">👁️ Previsualizar</button>
+            <button class="btn btn-sm" id="btnBuildPrompt">🪄 Generar prompt</button>
+            <details class="advanced-panel">
+                <summary style="cursor:pointer; font-weight:600;">⚙️ Modo avanzado</summary>
+                <div style="margin-top:0.5rem;">
+                    <label>JSON de estructura</label>
+                    <textarea id="jsonEditor" rows="6" style="font-family:monospace; font-size:0.8rem;"></textarea>
+                    <button class="btn btn-outline btn-sm" id="btnUpdateFromJSON" style="margin-top:0.5rem;">Actualizar desde JSON</button>
+                </div>
+            </details>
+        </aside>
 
-        <div class="right-panel" id="rightPanel">
-            <div class="card" id="docCard" style="display:none;">
-                <h3>📄 Documento fuente</h3>
-                <textarea id="docText" rows="4" placeholder="Pega aquí el texto..."></textarea>
-                <div class="flex-row" style="margin-top:0.5rem;">
-                    <button class="btn btn-sm" id="btnSaveDoc">Guardar documento</button>
-                    <button class="btn btn-sm btn-outline" id="btnOCR">🔍 Extraer texto (OCR gratuito)</button>
-                    <button class="btn btn-sm btn-outline" id="btnAnalyzeImage">🤖 Analizar con Gemini</button>
-                </div>
-                <img id="imagePreview" class="image-preview" style="display:none;" />
-                <p id="ocrStatus" style="font-size:0.85rem; color:var(--gris-texto); margin-top:0.5rem;"></p>
+        <div class="canvas-area">
+            <div class="canvas-settings">
+                <span style="font-weight:600;">Área de trabajo</span>
+                <span id="canvasSizeLabel" style="color:var(--text-secondary); font-size:0.85rem;"></span>
             </div>
-
-            <div class="card" id="standardsCard" style="display:none;">
-                ✅ <strong>Estándares PNFT aplicados:</strong> 16:9, Poppins, iconos 3D, no infantil, paleta oficial, restricciones de no modificar/resumir/agregar.
-            </div>
-
-            <div class="card" id="stageCard" style="display:none;">
-                <h3 id="stageTitle"></h3>
-                <p id="stageDescription"></p>
-                <label>📝 Prompt (editable):</label>
-                <textarea id="promptText" rows="6"></textarea>
-                <div class="flex-row" style="margin-top:0.8rem;">
-                    <button class="btn" id="btnSendToAI">🤖 Enviar a Gemini</button>
-                    <button class="btn btn-outline" id="btnCopyPrompt">📋 Copiar para ChatGPT</button>
-                    <button class="btn btn-outline" id="btnPasteResponse" style="display:none;">📥 Pegar respuesta</button>
-                </div>
-                <div id="responseContainer" style="margin-top:1rem; display:none;">
-                    <label>Respuesta de la IA (puedes editarla):</label>
-                    <textarea id="responseArea" rows="8"></textarea>
-                    <input type="hidden" id="originalResponse" />
-                    <div class="flex-row" style="margin-top:0.5rem;">
-                        <button class="btn btn-sm" id="btnApprove">✅ Aprobar y continuar</button>
-                        <button class="btn btn-outline btn-sm" id="btnRetry">🔄 Reenviar</button>
-                        <button class="btn btn-outline btn-sm" id="btnRestoreResponse">↩️ Restaurar original</button>
-                        <button class="btn btn-outline btn-sm" id="btnRefineDensity" style="display:none;">🧠 Control de densidad</button>
-                    </div>
-                </div>
-                <div id="densityPanel" style="display:none;" class="density-panel"></div>
-            </div>
-
-            <div class="card" id="editorCard" style="display:none;">
-                <h3>🧩 Editor de Estructura</h3>
-                <div class="flex-row" style="margin-bottom:1rem;">
-                    <button class="btn btn-sm btn-outline" id="btnToggleView">🔄 Cambiar vista (JSON / Bloques)</button>
-                    <button class="btn btn-sm btn-outline" id="btnAddBlock">➕ Agregar bloque</button>
-                    <button class="btn btn-sm btn-outline" id="btnCleanDescriptions">🧹 Limpiar descripciones</button>
-                </div>
-                <div id="jsonView">
-                    <textarea id="jsonEditor" class="json-editor" rows="12"></textarea>
-                    <button class="btn btn-sm" id="btnUpdateFromJSON" style="margin-top:0.5rem;">✅ Actualizar bloques desde JSON</button>
-                </div>
-                <div id="blocksView" style="display:none;">
-                    <div id="blocksContainer"></div>
-                </div>
-                <div class="flex-row" style="margin-top:1rem;">
-                    <button class="btn btn-sm" id="btnPreviewHTML">👁️ Vista previa</button>
-                    <button class="btn btn-sm" id="btnBuildMasterPrompt">🪄 Construir prompt maestro</button>
-                </div>
-            </div>
-
-            <div class="card" id="finalCard" style="display:none;">
-                <h3>🖼️ Prompt Maestro Final</h3>
-                <textarea id="finalPrompt" rows="8" readonly></textarea>
-                <button class="btn btn-outline btn-sm" id="btnCopyFinal" style="margin-top:0.5rem;">📋 Copiar prompt final</button>
-            </div>
+            <div class="canvas" id="canvas"></div>
         </div>
     </div>
 
@@ -215,7 +189,7 @@
         <div style="background:#fff;padding:2rem;border-radius:20px;max-width:400px;width:90%;">
             <h3>🔑 Clave Gemini (gratis)</h3>
             <p style="font-size:0.85rem;"><a href="https://aistudio.google.com/apikey" target="_blank">Obtener clave gratuita</a></p>
-            <input type="password" id="apiKeyInput" placeholder="AIza...">
+            <input type="password" id="apiKeyInput" placeholder="AIza..." style="width:100%;margin:0.5rem 0;">
             <button class="btn" id="btnSaveApi">Guardar</button>
             <button class="btn btn-outline" id="btnCancelApi">Cancelar</button>
         </div>
@@ -226,18 +200,24 @@
         (function() {
             const state = {
                 apiKey: localStorage.getItem('pnft_api_key') || '',
-                currentStep: 0,
                 documentText: '',
-                approvedSteps: new Set(JSON.parse(localStorage.getItem('pnft_approved') || '[]')),
+                blocks: [],
+                settings: {
+                    orientation: '16:9',
+                    resolution: '1920x1080',
+                    fontFamily: 'Poppins',
+                    baseFontSize: 16,
+                    title: '',
+                    subtitle: ''
+                },
                 stepResponses: JSON.parse(localStorage.getItem('pnft_responses') || '{}'),
-                blocks: JSON.parse(localStorage.getItem('pnft_blocks') || '[]'),
+                approvedSteps: new Set(JSON.parse(localStorage.getItem('pnft_approved') || '[]')),
                 json: localStorage.getItem('pnft_json') || '',
-                viewMode: 'json',
-                imageFile: null,
-                originalResponses: {} // Para restaurar respuestas originales
             };
 
+            // 🔥 BIBLIOTECA COMPLETA DE 150 ICONOS 3D
             const iconLibrary = [
+                // Semi realista (40)
                 { emoji: '🧠', name: 'cerebro_neuronal', style: 'semi' },
                 { emoji: '🫀', name: 'corazon_anatomico', style: 'semi' },
                 { emoji: '👁️', name: 'ojo_humano', style: 'semi' },
@@ -278,6 +258,7 @@
                 { emoji: '🦴', name: 'esqueleto_humano', style: 'semi' },
                 { emoji: '🧠', name: 'cerebro_lobulo_frontal', style: 'semi' },
                 { emoji: '🫁', name: 'pulmones', style: 'semi' },
+                // Isométrico tecnológico (40)
                 { emoji: '🖥️', name: 'monitor_pc', style: 'isometrico' },
                 { emoji: '📱', name: 'smartphone', style: 'isometrico' },
                 { emoji: '⌨️', name: 'teclado_mecanico', style: 'isometrico' },
@@ -318,6 +299,7 @@
                 { emoji: '🛠️', name: 'llave_inglesa', style: 'isometrico' },
                 { emoji: '📹', name: 'camara_seguridad', style: 'isometrico' },
                 { emoji: '🧭', name: 'brujula_digital', style: 'isometrico' },
+                // Futurista tecnológico (40)
                 { emoji: '🧠', name: 'interfaz_cerebro_maquina', style: 'futurista' },
                 { emoji: '🦾', name: 'brazo_bionico', style: 'futurista' },
                 { emoji: '👁️', name: 'implante_ocular', style: 'futurista' },
@@ -358,6 +340,7 @@
                 { emoji: '🦿', name: 'protesis_deportiva', style: 'futurista' },
                 { emoji: '🧪', name: 'pildora_inteligente', style: 'futurista' },
                 { emoji: '🌟', name: 'nodo_estelar', style: 'futurista' },
+                // Fotorrealista (30)
                 { emoji: '📷', name: 'camara_dslr', style: 'fotorealista' },
                 { emoji: '🎻', name: 'violin_madera', style: 'fotorealista' },
                 { emoji: '🎺', name: 'trompeta_dorada', style: 'fotorealista' },
@@ -411,66 +394,25 @@
                 }
             ];
 
-            // ========== FUNCIONES ==========
             function toast(msg) {
                 const t = document.getElementById('toast');
                 t.textContent = msg; t.className = 'toast show';
                 clearTimeout(t._t); t._t = setTimeout(() => t.classList.remove('show'), 2500);
             }
+
             function saveState() {
                 localStorage.setItem('pnft_api_key', state.apiKey);
-                localStorage.setItem('pnft_approved', JSON.stringify([...state.approvedSteps]));
-                localStorage.setItem('pnft_responses', JSON.stringify(state.stepResponses));
-                localStorage.setItem('pnft_document', state.documentText);
                 localStorage.setItem('pnft_blocks', JSON.stringify(state.blocks));
+                localStorage.setItem('pnft_settings', JSON.stringify(state.settings));
+                localStorage.setItem('pnft_document', state.documentText);
+                localStorage.setItem('pnft_responses', JSON.stringify(state.stepResponses));
+                localStorage.setItem('pnft_approved', JSON.stringify([...state.approvedSteps]));
                 localStorage.setItem('pnft_json', state.json);
-                localStorage.setItem('pnft_currentStep', state.currentStep);
-            }
-            function exportProgress() {
-                const data = {
-                    documentText: state.documentText,
-                    currentStep: state.currentStep,
-                    approvedSteps: [...state.approvedSteps],
-                    stepResponses: state.stepResponses,
-                    blocks: state.blocks,
-                    json: state.json,
-                };
-                const blob = new Blob([JSON.stringify(data, null, 2)], {type: 'application/json'});
-                const a = document.createElement('a');
-                a.href = URL.createObjectURL(blob);
-                a.download = 'pnft_progreso.json';
-                a.click();
-                toast('💾 Progreso guardado');
-            }
-            function loadProgressFromFile(file) {
-                const reader = new FileReader();
-                reader.onload = (e) => {
-                    try {
-                        const data = JSON.parse(e.target.result);
-                        if (!data.documentText || !data.stepResponses || !data.approvedSteps) throw new Error('Formato inválido');
-                        if (!confirm('¿Cargar progreso? Se reemplazará el actual.')) return;
-                        state.documentText = data.documentText;
-                        state.approvedSteps = new Set(data.approvedSteps);
-                        state.stepResponses = data.stepResponses;
-                        state.currentStep = data.currentStep || 0;
-                        state.blocks = data.blocks || [];
-                        state.json = data.json || '';
-                        saveState();
-                        document.getElementById('promptText').value = '';
-                        updateUI();
-                        toast('📥 Progreso cargado');
-                    } catch (err) { toast('❌ Error al cargar'); }
-                };
-                reader.readAsText(file);
             }
 
             function buildPrompt(blockIndex) {
                 let prompt = analysisBlocks[blockIndex].promptBase;
                 if (blockIndex === 0) {
-                    if (!state.documentText) {
-                        toast('⚠️ No hay documento fuente. Pega o carga un documento primero.');
-                        return '';
-                    }
                     prompt += '\n\n📎 DOCUMENTO FUENTE:\n' + state.documentText;
                 } else {
                     prompt += '\n\n📋 CONTEXTO ACUMULADO (respuestas previas):';
@@ -481,94 +423,6 @@
                     }
                 }
                 return prompt;
-            }
-
-            function updateUI() {
-                const list = document.getElementById('stagesList');
-                list.innerHTML = '';
-                const stages = [
-                    ...analysisBlocks.map((b, i) => ({...b, idx: i})),
-                    { id: 'editor', title: '🧩 Editor de Estructura', idx: 3 },
-                    { id: 'final', title: '🖼️ Prompt Final', idx: 4 }
-                ];
-                stages.forEach(stage => {
-                    const div = document.createElement('div');
-                    div.className = 'stage-item';
-                    if (stage.idx === state.currentStep) div.classList.add('active');
-                    if (stage.idx < 3 && state.approvedSteps.has(stage.id)) div.classList.add('completed');
-                    if (stage.idx === 3 && state.currentStep >= 3) div.classList.add('completed');
-                    div.innerHTML = `<span class="stage-num">${stage.idx+1}</span> ${stage.title}`;
-                    div.addEventListener('click', () => {
-                        if (state.documentText) {
-                            if (stage.idx < 3 && (stage.idx === 0 || state.approvedSteps.has(analysisBlocks[stage.idx-1].id))) {
-                                state.currentStep = stage.idx;
-                                updateUI();
-                            } else if (stage.idx === 3 && state.approvedSteps.has('estilo')) {
-                                state.currentStep = 3;
-                                updateUI();
-                            } else if (stage.idx === 4 && state.currentStep >= 3) {
-                                state.currentStep = 4;
-                                updateUI();
-                            }
-                        }
-                    });
-                    list.appendChild(div);
-                });
-
-                document.getElementById('docCard').style.display = state.documentText ? 'none' : 'block';
-                document.getElementById('standardsCard').style.display = state.documentText ? 'block' : 'none';
-
-                const stageCard = document.getElementById('stageCard');
-                const editorCard = document.getElementById('editorCard');
-                const finalCard = document.getElementById('finalCard');
-                stageCard.style.display = 'none';
-                editorCard.style.display = 'none';
-                finalCard.style.display = 'none';
-
-                if (state.currentStep < 3) {
-                    stageCard.style.display = 'block';
-                    const block = analysisBlocks[state.currentStep];
-                    document.getElementById('stageTitle').textContent = block.title;
-                    document.getElementById('stageDescription').textContent = block.desc;
-                    const promptTextarea = document.getElementById('promptText');
-                    const newPrompt = buildPrompt(state.currentStep);
-                    if (newPrompt) {
-                        promptTextarea.value = newPrompt;
-                        promptTextarea.dataset.blockId = block.id;
-                    }
-                    if (state.stepResponses[block.id]) {
-                        document.getElementById('responseContainer').style.display = 'block';
-                        document.getElementById('responseArea').value = state.stepResponses[block.id];
-                        document.getElementById('originalResponse').value = state.stepResponses[block.id];
-                        checkDensityWarnings(state.stepResponses[block.id]);
-                    } else {
-                        document.getElementById('responseContainer').style.display = 'none';
-                    }
-                } else if (state.currentStep === 3) {
-                    editorCard.style.display = 'block';
-                    if (!state.json) {
-                        state.json = buildInitialJSON();
-                        saveState();
-                    }
-                    syncUIWithJSON();
-                } else if (state.currentStep === 4) {
-                    finalCard.style.display = 'block';
-                }
-            }
-
-            function checkDensityWarnings(responseText) {
-                const btn = document.getElementById('btnRefineDensity');
-                if (responseText && (responseText.includes('densidad') || responseText.includes('⚠') || responseText.includes('❌'))) {
-                    btn.style.display = 'inline-flex';
-                } else {
-                    btn.style.display = 'none';
-                }
-            }
-
-            function showDensityControl(responseText) {
-                const panel = document.getElementById('densityPanel');
-                panel.innerHTML = '<h4>🧠 Control de densidad cognitiva</h4>';
-                panel.style.display = 'block';
             }
 
             function extractSectionsFromStructure() {
@@ -612,78 +466,19 @@
                 return sections;
             }
 
-            function extractDynamicFields() {
-                const jerarquia = state.stepResponses['jerarquia'] || '';
-                const estilo = state.stepResponses['estilo'] || '';
-                const combined = jerarquia + '\n' + estilo;
-
-                const aspectoRegex = /(?:aspecto|clave|pilar|principio)\s*[:\-]?\s*(.*)/gi;
-                const aspectos_clave = [];
-                let match;
-                while ((match = aspectoRegex.exec(combined)) !== null) {
-                    const desc = match[1].trim();
-                    if (desc && !aspectos_clave.some(a => a.descripción === desc)) {
-                        aspectos_clave.push({ titulo: desc.charAt(0).toUpperCase() + desc.slice(1), icono_3d: '🔍', descripción: desc });
-                    }
-                }
-                if (aspectos_clave.length === 0) {
-                    aspectos_clave.push({ titulo: '(Completar manualmente)', icono_3d: '🔍', descripción: '(Completar manualmente)' });
-                }
-
-                const ejeRegex = /(?:eje|transversal)\s*[:\-]?\s*(.*)/gi;
-                const ejes_transversales = [];
-                while ((match = ejeRegex.exec(combined)) !== null) {
-                    const nombre = match[1].trim();
-                    if (nombre && !ejes_transversales.some(e => e.nombre === nombre)) {
-                        ejes_transversales.push({ nombre });
-                    }
-                }
-                if (ejes_transversales.length === 0) {
-                    ejes_transversales.push({ nombre: '(Completar manualmente)' });
-                }
-
-                const recRegex = /(?:recomendación|sugerencia|orientación)\s*[:\-]?\s*(.*)/gi;
-                const recomendaciones = [];
-                while ((match = recRegex.exec(combined)) !== null) {
-                    const rec = match[1].trim();
-                    if (rec && !recomendaciones.includes(rec)) {
-                        recomendaciones.push(rec);
-                    }
-                }
-                if (recomendaciones.length === 0) {
-                    recomendaciones.push('(Completar manualmente)');
-                }
-
-                const msgRegex = /(?:mensaje|conclusión|idea fuerza)\s*[:\-]?\s*(.*)/gi;
-                const mensajes = [];
-                while ((match = msgRegex.exec(combined)) !== null) {
-                    mensajes.push(match[1].trim());
-                }
-                const mensaje_clave = {
-                    izquierda: mensajes[0] || '(Completar manualmente)',
-                    centro_1: mensajes[1] || '(Completar manualmente)'
-                };
-
-                return { aspectos_clave, ejes_transversales, recomendaciones, mensaje_clave };
-            }
-
             function buildInitialJSON() {
                 const estructura = state.stepResponses['estructura'] || '';
-
                 const titleMatch = estructura.match(/título[:\s]*([^\n]+)/i) || [];
                 const subMatch = estructura.match(/subtítulo[:\s]*([^\n]+)/i) || [];
                 const propositoMatch = estructura.match(/propósito[:\s]*([^\n]+)/i) || [];
 
                 const sections = extractSectionsFromStructure();
-
                 const rutaImplementacion = sections.map((s, idx) => ({
                     paso: idx + 1,
                     titulo: s.title,
                     icono_3d: '🧠',
                     descripción: s.text
                 }));
-
-                const dynamicFields = extractDynamicFields();
 
                 const paleta = {
                     turquesa_principal: '#09b7ae',
@@ -700,7 +495,7 @@
                 let rawTitle = titleMatch[1] ? titleMatch[1].trim() : (state.documentText.split('\n')[0] || 'Infografía PNFT');
                 rawTitle = rawTitle.replace(/[─│┌┐└┘├┤┬┴┼═]/g, '').replace(/\s{2,}/g, ' ').trim();
 
-                const json = {
+                return {
                     infografía: {
                         titulo: rawTitle,
                         subtitulo: subMatch[1] ? subMatch[1].trim() : 'Orientaciones para la implementación curricular',
@@ -709,10 +504,10 @@
                             contenido: propositoMatch[1] ? propositoMatch[1].trim() : 'Brindar orientaciones que favorecen el acompañamiento docente...'
                         },
                         "ruta implementación": rutaImplementacion,
-                        aspectos_clave: dynamicFields.aspectos_clave,
-                        ejes_transversales: dynamicFields.ejes_transversales,
-                        Recomendaciones: dynamicFields.recomendaciones,
-                        mensaje_clave: dynamicFields.mensaje_clave,
+                        aspectos_clave: [],
+                        ejes_transversales: [],
+                        Recomendaciones: [],
+                        mensaje_clave: {},
                         lineamientos_diseno: {
                             orientacion: 'horizontal',
                             tipografia: 'Poppins',
@@ -724,16 +519,51 @@
                         }
                     }
                 };
-                return JSON.stringify(json, null, 2);
             }
 
-            function syncUIWithJSON() {
-                const jsonText = state.json;
-                document.getElementById('jsonEditor').value = jsonText;
+            async function analyzeDocument() {
+                if (!state.documentText) {
+                    toast('Primero carga un documento');
+                    return;
+                }
+                toast('⏳ Analizando documento con IA...');
                 try {
-                    const data = JSON.parse(jsonText);
-                    const info = data.infografía || data;
-                    const ruta = info["ruta implementación"] || [];
+                    let response;
+                    if (state.apiKey) {
+                        const prompt = buildPrompt(0);
+                        const res = await fetch(`https://generativelanguage.googleapis.com/v1beta/models/gemini-2.0-flash:generateContent?key=${state.apiKey}`, {
+                            method:'POST',
+                            headers:{'Content-Type':'application/json'},
+                            body: JSON.stringify({
+                                contents:[{parts:[{text:prompt}]}],
+                                generationConfig:{temperature:0.4, maxOutputTokens:3000}
+                            })
+                        });
+                        if (!res.ok) throw new Error((await res.json()).error?.message);
+                        const data = await res.json();
+                        response = data.candidates[0].content.parts[0].text;
+                    } else {
+                        navigator.clipboard.writeText(buildPrompt(0));
+                        toast('Prompt copiado. Pega la respuesta de ChatGPT aquí.');
+                        response = await new Promise(resolve => {
+                            const input = document.createElement('textarea');
+                            input.placeholder = 'Pega aquí la respuesta de la IA...';
+                            input.style.cssText = 'position:fixed;top:50%;left:50%;transform:translate(-50%,-50%);z-index:9999;width:80%;height:200px;';
+                            document.body.appendChild(input);
+                            input.focus();
+                            input.addEventListener('blur', () => {
+                                resolve(input.value);
+                                document.body.removeChild(input);
+                            });
+                        });
+                    }
+                    state.stepResponses['estructura'] = response;
+                    state.approvedSteps.add('estructura');
+                    const json = buildInitialJSON();
+                    state.json = JSON.stringify(json, null, 2);
+                    document.getElementById('jsonEditor').value = state.json;
+                    // Convertir a bloques visuales
+                    const ruta = json.infografía["ruta implementación"] || [];
                     state.blocks = ruta.map((item, idx) => ({
                         id: Date.now() + idx,
                         title: item.titulo,
@@ -741,60 +571,42 @@
                         icon: item.icono_3d || '🧠',
                         text: item.descripción
                     }));
-                    renderBlocks();
-                } catch (e) {}
-                updateEditorView();
-            }
-
-            function updateEditorView() {
-                const jsonView = document.getElementById('jsonView');
-                const blocksView = document.getElementById('blocksView');
-                if (state.viewMode === 'json') {
-                    jsonView.style.display = 'block';
-                    blocksView.style.display = 'none';
-                } else {
-                    jsonView.style.display = 'none';
-                    blocksView.style.display = 'block';
-                    renderBlocks();
+                    renderCanvas();
+                    saveState();
+                    toast('✅ Documento analizado. Ya puedes editar los bloques.');
+                } catch (err) {
+                    toast('❌ Error: ' + err.message);
                 }
             }
 
-            function renderBlocks() {
-                const container = document.getElementById('blocksContainer');
-                container.innerHTML = '';
+            function renderCanvas() {
+                const canvas = document.getElementById('canvas');
+                canvas.innerHTML = '';
                 state.blocks.forEach((block, index) => {
                     const card = document.createElement('div');
-                    card.className = 'editor-card';
+                    card.className = 'block-card';
                     card.draggable = true;
                     card.dataset.index = index;
-                    const words = block.text.split(/\s+/).length;
-                    const ideas = block.text.split(/[.,;]/).length;
-                    let densityClass = 'density-ok';
-                    if (words > 60 || ideas > 5) densityClass = 'density-bad';
-                    else if (words > 40 || ideas > 4) densityClass = 'density-warn';
                     card.innerHTML = `
-                        <div style="display:flex; justify-content:space-between; align-items:center;">
-                            <h4>${escapeHtml(block.title)} <span class="density-indicator ${densityClass}"></span></h4>
+                        <div class="block-header">
+                            <span class="block-icon">${block.icon}</span>
                             <button class="btn btn-sm remove-block">🗑️</button>
                         </div>
-                        <label>Texto:</label>
-                        <textarea rows="3" class="block-text">${escapeHtml(block.text)}</textarea>
-                        <div class="flex-row" style="margin-top:0.5rem;">
-                            <label>Color:</label>
-                            <select class="block-color">
+                        <textarea rows="3">${escapeHtml(block.text)}</textarea>
+                        <div class="block-controls">
+                            <select class="block-color" style="width:auto;">
                                 ${['#09B7AE','#0BD2CE','#014D6B','#0B6284','#62BDF3','#063B7F','#45258F','#9ED16F','#C9C9C9'].map(c => 
-                                    `<option value="${c}" ${block.color===c?'selected':''} style="background:${c};">${c}</option>`
+                                    `<option value="${c}" ${block.color===c?'selected':''}>${c}</option>`
                                 ).join('')}
                             </select>
-                            <label>Icono:</label>
-                            <select class="block-icon">
+                            <select class="block-icon-select" style="width:auto;">
                                 ${iconLibrary.map(ico => 
                                     `<option value="${ico.emoji}" ${block.icon===ico.emoji?'selected':''}>${ico.emoji} ${ico.name} (${ico.style})</option>`
                                 ).join('')}
                             </select>
                         </div>
                     `;
-                    card.querySelector('.block-text').addEventListener('input', (e) => {
+                    card.querySelector('textarea').addEventListener('input', (e) => {
                         state.blocks[index].text = e.target.value;
                         updateJSONFromBlocks();
                         saveState();
@@ -804,34 +616,35 @@
                         updateJSONFromBlocks();
                         saveState();
                     });
-                    card.querySelector('.block-icon').addEventListener('change', (e) => {
+                    card.querySelector('.block-icon-select').addEventListener('change', (e) => {
                         state.blocks[index].icon = e.target.value;
                         updateJSONFromBlocks();
+                        renderCanvas();
                         saveState();
                     });
                     card.querySelector('.remove-block').addEventListener('click', () => {
                         state.blocks.splice(index, 1);
                         updateJSONFromBlocks();
                         saveState();
-                        renderBlocks();
+                        renderCanvas();
                     });
                     card.addEventListener('dragstart', (e) => {
                         e.dataTransfer.setData('text/plain', index);
-                        card.style.opacity = '0.4';
+                        card.style.opacity = '0.5';
                     });
                     card.addEventListener('dragover', (e) => e.preventDefault());
                     card.addEventListener('drop', (e) => {
                         e.preventDefault();
-                        const fromIndex = parseInt(e.dataTransfer.getData('text/plain'));
-                        const toIndex = index;
-                        const moved = state.blocks.splice(fromIndex, 1)[0];
-                        state.blocks.splice(toIndex, 0, moved);
+                        const from = parseInt(e.dataTransfer.getData('text/plain'));
+                        const to = index;
+                        const moved = state.blocks.splice(from, 1)[0];
+                        state.blocks.splice(to, 0, moved);
                         updateJSONFromBlocks();
                         saveState();
-                        renderBlocks();
+                        renderCanvas();
                     });
                     card.addEventListener('dragend', () => card.style.opacity = '1');
-                    container.appendChild(card);
+                    canvas.appendChild(card);
                 });
             }
 
@@ -850,342 +663,30 @@
                 } catch (e) {}
             }
 
-            function updateBlocksFromJSON() {
-                try {
-                    const data = JSON.parse(document.getElementById('jsonEditor').value);
-                    state.json = document.getElementById('jsonEditor').value;
-                    const info = data.infografía || data;
-                    const ruta = info["ruta implementación"] || [];
-                    state.blocks = ruta.map((item, idx) => ({
-                        id: Date.now() + idx,
-                        title: item.titulo,
-                        color: '#0B6284',
-                        icon: item.icono_3d || '🧠',
-                        text: item.descripción
-                    }));
-                    renderBlocks();
-                    saveState();
-                    toast('✅ Bloques actualizados desde JSON');
-                } catch (e) {
-                    toast('❌ JSON inválido');
-                }
+            function updateCanvasSize() {
+                const [w, h] = state.settings.resolution.split('x').map(Number);
+                const canvas = document.getElementById('canvas');
+                const maxWidth = Math.min(w, 1200);
+                const scale = maxWidth / w;
+                canvas.style.width = maxWidth + 'px';
+                canvas.style.minHeight = (h * scale) + 'px';
+                document.getElementById('canvasSizeLabel').textContent = `${w} × ${h} (escala aproximada)`;
             }
 
-            function cleanDescriptions() {
-                try {
-                    const data = JSON.parse(state.json);
-                    const ruta = data.infografía["ruta implementación"] || [];
-                    ruta.forEach(paso => {
-                        let desc = paso.descripción || '';
-                        desc = desc.replace(/\[\d+[–\-]\d+\]\s*/g, '');
-                        desc = desc.replace(/→ FUNCIÓN:.*$/gm, '');
-                        desc = desc.replace(/[│├└─┌┐┘└]+/g, '');
-                        desc = desc.replace(/[═]+/g, '');
-                        const flujoIndex = desc.indexOf('FLUJO VISUAL RESUMIDO');
-                        if (flujoIndex !== -1) desc = desc.substring(0, flujoIndex).trim();
-                        const consIndex = desc.indexOf('CONSIDERACIÓN FINAL');
-                        if (consIndex !== -1) desc = desc.substring(0, consIndex).trim();
-                        desc = desc.replace(/\n{3,}/g, '\n\n').trim();
-                        paso.descripción = desc;
-                    });
-                    state.json = JSON.stringify(data, null, 2);
-                    document.getElementById('jsonEditor').value = state.json;
-                    syncUIWithJSON();
-                    saveState();
-                    toast('🧹 Descripciones limpiadas');
-                } catch (e) {
-                    toast('❌ Error al limpiar descripciones');
-                }
-            }
-
-            function openPreview() {
-                const jsonText = state.json;
-                try {
-                    const data = JSON.parse(jsonText);
-                    const info = data.infografía || data;
-                    const ruta = info["ruta implementación"] || [];
-                    const paleta = (info.lineamientos_diseno && info.lineamientos_diseno.paleta_pnft) ? info.lineamientos_diseno.paleta_pnft : {
-                        turquesa_principal: '#09b7ae',
-                        azul_oscuro: '#014d6b',
-                        azul_medio: '#0b6284',
-                        celeste: '#62bdf3',
-                        azul_institucional: '#063b7f',
-                        morado: '#45258f',
-                        verde: '#9ed16f',
-                        gris: '#c9c9c9'
-                    };
-
-                    const w = window.open('', 'pnft_preview', 'width=1200,height=800');
-                    let html = `<!DOCTYPE html><html><head><meta charset="UTF-8"><title>Vista Previa PNFT</title>
-                    <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@400;600;700&display=swap" rel="stylesheet">
-                    <style>
-                        body {
-                            font-family: 'Poppins', sans-serif;
-                            background: #F5F7FA;
-                            margin: 0;
-                            padding: 20px;
-                        }
-                        .infografia {
-                            max-width: 1920px;
-                            margin: 0 auto;
-                            background: #fff;
-                            border-radius: 20px;
-                            overflow: hidden;
-                            box-shadow: 0 20px 60px rgba(0,0,0,0.2);
-                        }
-                        .header {
-                            background: ${paleta.azul_institucional || '#063B7F'};
-                            color: #fff;
-                            padding: 30px;
-                            text-align: center;
-                        }
-                        .header h1 {
-                            margin: 0;
-                            font-size: 2.5rem;
-                            font-weight: 700;
-                            font-family: 'Poppins', sans-serif;
-                        }
-                        .header p {
-                            margin: 10px 0 0;
-                            font-size: 1.2rem;
-                            font-weight: 400;
-                        }
-                        .grid {
-                            display: grid;
-                            grid-template-columns: repeat(12, 1fr);
-                            gap: 20px;
-                            padding: 30px;
-                        }
-                        .card {
-                            border-radius: 16px;
-                            padding: 20px;
-                            color: #fff;
-                            box-shadow: 0 8px 25px rgba(0,0,0,0.15);
-                            font-family: 'Poppins', sans-serif;
-                        }
-                        .card .icon {
-                            font-size: 3rem;
-                            margin-bottom: 10px;
-                        }
-                        .card h2 {
-                            margin: 0 0 10px;
-                            font-weight: 600;
-                            font-family: 'Poppins', sans-serif;
-                        }
-                        .card .sub-block {
-                            background: rgba(255,255,255,0.15);
-                            border-radius: 10px;
-                            padding: 10px;
-                            margin: 5px 0;
-                        }
-                        .card .sub-block ul {
-                            margin: 5px 0 0 20px;
-                            padding: 0;
-                        }
-                        .card .sub-block li {
-                            margin: 3px 0;
-                        }
-                        .footer {
-                            background: ${paleta.gris || '#C9C9C9'};
-                            padding: 20px;
-                            text-align: center;
-                            font-size: 0.9rem;
-                            color: #1A1D23;
-                            font-family: 'Poppins', sans-serif;
-                        }
-                        .btn-copy {
-                            position: fixed;
-                            bottom: 20px;
-                            right: 20px;
-                            background: ${paleta.turquesa_principal || '#09B7AE'};
-                            color: #fff;
-                            border: none;
-                            border-radius: 30px;
-                            padding: 10px 20px;
-                            font-weight: 600;
-                            cursor: pointer;
-                            font-family: 'Poppins', sans-serif;
-                            box-shadow: 0 4px 12px rgba(0,0,0,0.2);
-                        }
-                    </style></head><body>
-                    <div class="infografia">
-                        <div class="header">
-                            <h1>${info.titulo || 'Infografía PNFT'}</h1>
-                            <p>${info.subtitulo || ''}</p>
-                        </div>
-                        <div class="grid">`;
-
-                    const blocksToRender = (state.blocks && state.blocks.length > 0) ? state.blocks : ruta.map(item => ({
-                        title: item.titulo,
-                        color: '#0B6284',
-                        icon: item.icono_3d || '🧠',
-                        text: item.descripción
-                    }));
-
-                    blocksToRender.forEach(block => {
-                        const subBlockRegex = /\[(\d+)[–\-](\d+)\]\s*([^\[]*)/g;
-                        const subBlocks = [];
-                        let match;
-                        const text = block.text || '';
-                        while ((match = subBlockRegex.exec(text)) !== null) {
-                            const startCol = parseInt(match[1]);
-                            const endCol = parseInt(match[2]);
-                            const content = match[3].trim();
-                            subBlocks.push({ startCol, endCol, content });
-                        }
-                        if (subBlocks.length === 0) {
-                            subBlocks.push({ startCol: 1, endCol: 12, content: text });
-                        }
-
-                        const cardColumns = 12;
-
-                        html += `<div class="card" style="background:${block.color || '#0B6284'}; grid-column: span ${cardColumns};">
-                            <div class="icon">${block.icon || '🧠'}</div>
-                            <h2>${block.title}</h2>`;
-
-                        subBlocks.forEach(sub => {
-                            const span = sub.endCol - sub.startCol + 1;
-                            let cleanContent = sub.content
-                                .replace(/\r\n/g, '<br>')
-                                .replace(/\n/g, '<br>');
-                            if (cleanContent.includes('<br>- ')) {
-                                const parts = cleanContent.split('<br>');
-                                let inList = false;
-                                let formatted = '';
-                                for (let part of parts) {
-                                    if (part.startsWith('- ')) {
-                                        if (!inList) {
-                                            formatted += '<ul>';
-                                            inList = true;
-                                        }
-                                        formatted += `<li>${part.substring(2)}</li>`;
-                                    } else {
-                                        if (inList) {
-                                            formatted += '</ul>';
-                                            inList = false;
-                                        }
-                                        formatted += part + '<br>';
-                                    }
-                                }
-                                if (inList) formatted += '</ul>';
-                                cleanContent = formatted;
-                            }
-                            html += `<div class="sub-block" style="grid-column: span ${span};">
-                                ${cleanContent}
-                            </div>`;
-                        });
-
-                        html += `</div>`;
-                    });
-
-                    html += `</div><div class="footer">Documento generado con PNFT Infografía Lab</div></div>
-                    <button class="btn-copy" onclick="navigator.clipboard.writeText(document.body.innerText)">📋 Copiar texto para Word</button>
-                    </body></html>`;
-
-                    w.document.write(html);
-                    w.document.close();
-                } catch (e) {
-                    toast('❌ JSON inválido. Corrígelo antes de previsualizar.');
-                }
-            }
-
-            function buildMasterPrompt() {
-                const jsonText = state.json;
-                try {
-                    JSON.parse(jsonText);
-                    state.json = jsonText;
-                    saveState();
-                    let prompt = '🧠 PROMPT MAESTRO PNFT\n\n';
-                    prompt += '📎 DOCUMENTO FUENTE:\n' + state.documentText + '\n\n';
-                    prompt += '✅ ESTRUCTURA FINAL (JSON):\n' + jsonText + '\n\n';
-                    prompt += '🖼️ GENERAR INFOGRAFÍA FINAL con fidelidad 100%, formato 16:9, paleta PNFT, Poppins, iconos 3D, estilo educativo profesional secundaria.';
-                    document.getElementById('finalPrompt').value = prompt;
-                    state.currentStep = 4;
-                    saveState();
-                    updateUI();
-                } catch (e) {
-                    toast('❌ El JSON no es válido. Revísalo.');
-                }
-            }
-
-            async function sendToGemini(prompt) {
-                if (!state.apiKey) throw new Error('Clave Gemini no configurada');
-                const res = await fetch(`https://generativelanguage.googleapis.com/v1beta/models/gemini-2.0-flash:generateContent?key=${state.apiKey}`, {
-                    method:'POST',
-                    headers:{'Content-Type':'application/json'},
-                    body: JSON.stringify({
-                        contents:[{parts:[{text:prompt}]}],
-                        generationConfig:{temperature:0.4, maxOutputTokens:3000}
-                    })
+            document.getElementById('btnAddBlock').addEventListener('click', () => {
+                state.blocks.push({
+                    id: Date.now(),
+                    title: 'Nuevo bloque',
+                    color: '#09B7AE',
+                    icon: '🧠',
+                    text: 'Escribe aquí el contenido...'
                 });
-                if (!res.ok) throw new Error((await res.json()).error?.message || 'Error');
-                const data = await res.json();
-                return data.candidates[0].content.parts[0].text;
-            }
-
-            // ========== OCR Y ANÁLISIS DE IMAGEN ==========
-            async function extractTextWithOCR(imageFile) {
-                const status = document.getElementById('ocrStatus');
-                status.textContent = '⏳ Iniciando OCR... (esto puede tardar unos segundos)';
-                const worker = await Tesseract.createWorker('spa');
-                const { data: { text } } = await worker.recognize(imageFile);
-                await worker.terminate();
-                status.textContent = '✅ Texto extraído correctamente';
-                return text;
-            }
-
-            async function analyzeImageWithGemini(imageFile) {
-                if (!state.apiKey) throw new Error('Clave Gemini no configurada');
-                const reader = new FileReader();
-                const imageDataUrl = await new Promise((resolve) => {
-                    reader.onload = () => resolve(reader.result);
-                    reader.readAsDataURL(imageFile);
-                });
-                const base64Data = imageDataUrl.split(',')[1];
-                const response = await fetch(`https://generativelanguage.googleapis.com/v1beta/models/gemini-2.0-flash:generateContent?key=${state.apiKey}`, {
-                    method: 'POST',
-                    headers: { 'Content-Type': 'application/json' },
-                    body: JSON.stringify({
-                        contents: [{
-                            parts: [
-                                { text: 'Analiza esta imagen de infografía y describe su estructura, secciones, colores, tipografía y cualquier texto visible. Devuelve un resumen detallado que pueda usarse para construir una nueva infografía.' },
-                                { inlineData: { mimeType: imageFile.type, data: base64Data } }
-                            ]
-                        }],
-                        generationConfig: { temperature: 0.4, maxOutputTokens: 2000 }
-                    })
-                });
-                if (!response.ok) {
-                    const errData = await response.json().catch(() => ({}));
-                    if (errData.error?.message?.includes('not supported') || errData.error?.message?.includes('not found')) {
-                        throw new Error('Tu clave de API gratuita no permite análisis de imágenes. Usa el OCR gratuito o copia la imagen en ChatGPT.');
-                    }
-                    throw new Error(errData.error?.message || 'Error al analizar la imagen');
-                }
-                const data = await response.json();
-                return data.candidates[0].content.parts[0].text;
-            }
-
-            function escapeHtml(text) {
-                return text.replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;').replace(/"/g, '&quot;');
-            }
-
-            // ========== EVENTOS ==========
-            document.getElementById('btnSaveDoc').addEventListener('click', () => {
-                const text = document.getElementById('docText').value.trim();
-                if (!text) return toast('Ingresa el documento');
-                state.documentText = text;
-                state.currentStep = 0;
-                state.approvedSteps.clear();
-                state.stepResponses = {};
-                state.json = '';
-                state.blocks = [];
+                updateJSONFromBlocks();
                 saveState();
-                updateUI();
-                toast('Documento guardado');
+                renderCanvas();
             });
 
-            document.getElementById('btnUploadFile').addEventListener('click', () => document.getElementById('fileInput').click());
+            document.getElementById('btnLoadDocument').addEventListener('click', () => document.getElementById('fileInput').click());
             document.getElementById('fileInput').addEventListener('change', async (e) => {
                 const file = e.target.files[0]; if (!file) return;
                 toast('⏳ Extrayendo texto...');
@@ -1208,191 +709,126 @@
                         const json = pptx2json(buf);
                         json.slides.forEach(s => s.texts.forEach(t => text += t+'\n'));
                     } else throw new Error('Formato no soportado');
+                    state.documentText = text;
                     document.getElementById('docText').value = text;
-                    toast('✅ Texto extraído');
+                    toast('✅ Documento cargado. Usa "Analizar documento" para extraer las secciones.');
+                    saveState();
                 } catch (err) { toast('❌ '+err.message); }
             });
 
-            document.getElementById('btnUploadImage').addEventListener('click', () => document.getElementById('imageInput').click());
-            document.getElementById('imageInput').addEventListener('change', (e) => {
-                const file = e.target.files[0];
-                if (!file) return;
-                state.imageFile = file;
-                const reader = new FileReader();
-                reader.onload = (ev) => {
-                    const img = document.getElementById('imagePreview');
-                    img.src = ev.target.result;
-                    img.style.display = 'block';
-                };
-                reader.readAsDataURL(file);
-                toast('🖼️ Imagen cargada');
+            document.getElementById('btnAnalyze').addEventListener('click', analyzeDocument);
+
+            document.getElementById('orientation').addEventListener('change', (e) => {
+                state.settings.orientation = e.target.value;
+                saveState();
+            });
+            document.getElementById('resolution').addEventListener('change', (e) => {
+                state.settings.resolution = e.target.value;
+                updateCanvasSize();
+                saveState();
+            });
+            document.getElementById('fontFamily').addEventListener('change', (e) => {
+                state.settings.fontFamily = e.target.value;
+                saveState();
+            });
+            document.getElementById('baseFontSize').addEventListener('input', (e) => {
+                state.settings.baseFontSize = parseInt(e.target.value);
+                saveState();
+            });
+            document.getElementById('docTitle').addEventListener('input', (e) => {
+                state.settings.title = e.target.value;
+                saveState();
+            });
+            document.getElementById('docSubtitle').addEventListener('input', (e) => {
+                state.settings.subtitle = e.target.value;
+                saveState();
             });
 
-            document.getElementById('btnOCR').addEventListener('click', async () => {
-                if (!state.imageFile) return toast('Primero carga una imagen con "Cargar imagen"');
-                try {
-                    const text = await extractTextWithOCR(state.imageFile);
-                    const docTextarea = document.getElementById('docText');
-                    const currentText = docTextarea.value.trim();
-                    docTextarea.value = currentText ? currentText + '\n\n--- TEXTO EXTRAÍDO DE LA IMAGEN ---\n' + text : text;
-                    toast('✅ Texto agregado al documento');
-                } catch (err) {
-                    document.getElementById('ocrStatus').textContent = '❌ Error: ' + err.message;
-                }
-            });
-
-            document.getElementById('btnAnalyzeImage').addEventListener('click', async () => {
-                if (!state.imageFile) return toast('Primero carga una imagen con "Cargar imagen"');
-                if (!state.apiKey) return toast('Configura tu clave Gemini para usar esta función');
-                try {
-                    toast('🤖 Analizando imagen con Gemini...');
-                    const description = await analyzeImageWithGemini(state.imageFile);
-                    const docTextarea = document.getElementById('docText');
-                    const currentText = docTextarea.value.trim();
-                    docTextarea.value = currentText ? currentText + '\n\n--- ANÁLISIS DE LA IMAGEN (Gemini) ---\n' + description : description;
-                    toast('✅ Descripción agregada al documento');
-                } catch (err) {
-                    toast('❌ Error: ' + err.message);
-                }
-            });
-
-            document.getElementById('btnSendToAI').addEventListener('click', async () => {
-                if (!state.apiKey) return toast('Configura tu clave Gemini');
-                const prompt = document.getElementById('promptText').value;
-                if (!prompt.trim()) return toast('Prompt vacío');
-                try {
-                    const response = await sendToGemini(prompt);
-                    document.getElementById('responseArea').value = response;
-                    document.getElementById('originalResponse').value = response;
-                    document.getElementById('responseContainer').style.display = 'block';
-                    checkDensityWarnings(response);
-                } catch (err) { toast('❌ '+err.message); }
-            });
-
-            document.getElementById('btnCopyPrompt').addEventListener('click', () => {
-                navigator.clipboard.writeText(document.getElementById('promptText').value).then(() => {
-                    toast('📋 Prompt copiado');
-                    document.getElementById('btnPasteResponse').style.display = 'inline-flex';
+            document.getElementById('btnPreview').addEventListener('click', () => {
+                const w = window.open('', 'preview', 'width=1200,height=800');
+                const [rw, rh] = state.settings.resolution.split('x').map(Number);
+                let html = `<!DOCTYPE html><html><head><meta charset="UTF-8"><title>Vista previa</title>
+                <link href="https://fonts.googleapis.com/css2?family=${state.settings.fontFamily}:wght@400;600;700&display=swap" rel="stylesheet">
+                <style>
+                    body { font-family: '${state.settings.fontFamily}', sans-serif; background:#F5F7FA; margin:0; padding:20px; }
+                    .infografia { max-width:${rw}px; margin:0 auto; background:#fff; border-radius:20px; overflow:hidden; }
+                    .header { background:#063B7F; color:#fff; padding:30px; text-align:center; }
+                    .grid { display:flex; flex-wrap:wrap; gap:20px; padding:30px; }
+                    .card { border-radius:16px; padding:20px; color:#fff; flex:1 1 300px; }
+                    .card .icon { font-size:3rem; margin-bottom:10px; }
+                    .card h2 { margin:0 0 10px; }
+                </style></head><body>
+                <div class="infografia"><div class="header"><h1>${state.settings.title||'Infografía'}</h1><p>${state.settings.subtitle||''}</p></div>
+                <div class="grid">`;
+                state.blocks.forEach(b => {
+                    html += `<div class="card" style="background:${b.color};"><div class="icon">${b.icon}</div><h2>${b.text.split('\n')[0]}</h2><p>${b.text.replace(/\n/g,'<br>')}</p></div>`;
                 });
+                html += `</div></div></body></html>`;
+                w.document.write(html);
+                w.document.close();
             });
 
-            document.getElementById('btnPasteResponse').addEventListener('click', async () => {
-                try {
-                    const text = await navigator.clipboard.readText();
-                    document.getElementById('responseArea').value = text;
-                    document.getElementById('originalResponse').value = text;
-                    document.getElementById('responseContainer').style.display = 'block';
-                    checkDensityWarnings(text);
-                } catch { toast('No se pudo leer del portapapeles'); }
-            });
-
-            document.getElementById('btnRestoreResponse').addEventListener('click', () => {
-                const original = document.getElementById('originalResponse').value;
-                if (original) {
-                    document.getElementById('responseArea').value = original;
-                    toast('↩️ Respuesta original restaurada');
-                }
-            });
-
-            document.getElementById('btnApprove').addEventListener('click', () => {
-                const response = document.getElementById('responseArea').value.trim();
-                if (!response) return toast('No hay respuesta');
-                const blockId = analysisBlocks[state.currentStep].id;
-                state.stepResponses[blockId] = response;
-                state.approvedSteps.add(blockId);
-                if (state.currentStep < 2) {
-                    state.currentStep++;
-                } else {
-                    state.currentStep = 3;
-                    state.json = buildInitialJSON();
-                    state.blocks = [];
-                }
-                document.getElementById('promptText').value = '';
-                document.getElementById('densityPanel').style.display = 'none';
-                saveState();
-                updateUI();
-                toast('✅ Bloque aprobado');
-            });
-
-            document.getElementById('btnRetry').addEventListener('click', () => {
-                document.getElementById('responseContainer').style.display = 'none';
-                document.getElementById('responseArea').value = '';
-                document.getElementById('originalResponse').value = '';
-                document.getElementById('densityPanel').style.display = 'none';
-            });
-
-            document.getElementById('btnRefineDensity').addEventListener('click', () => {
-                showDensityControl(document.getElementById('responseArea').value);
-            });
-
-            document.getElementById('btnToggleView').addEventListener('click', () => {
-                state.viewMode = state.viewMode === 'json' ? 'blocks' : 'json';
-                updateEditorView();
-            });
-
-            document.getElementById('btnAddBlock').addEventListener('click', () => {
-                state.blocks.push({
-                    id: Date.now(),
-                    title: 'Nuevo bloque',
-                    color: '#0B6284',
-                    icon: '🧠',
-                    text: 'Contenido del nuevo bloque'
+            document.getElementById('btnBuildPrompt').addEventListener('click', () => {
+                let prompt = `Genera una infografía educativa PNFT con estos parámetros:\n\n`;
+                prompt += `Documento fuente: ${state.documentText}\n\n`;
+                prompt += `Orientación: ${state.settings.orientation}\n`;
+                prompt += `Resolución: ${state.settings.resolution}\n`;
+                prompt += `Tipografía: ${state.settings.fontFamily}, tamaño base ${state.settings.baseFontSize}px\n`;
+                prompt += `Título: ${state.settings.title}\nSubtítulo: ${state.settings.subtitle}\n\n`;
+                prompt += `Bloques:\n`;
+                state.blocks.forEach((b, i) => {
+                    prompt += `${i+1}. Color: ${b.color}, Icono: ${b.icon}\n${b.text}\n\n`;
                 });
-                updateJSONFromBlocks();
-                saveState();
-                renderBlocks();
+                prompt += `Requisitos: formato 16:9, paleta PNFT, iconos 3D, estilo educativo profesional secundaria, no infantil.`;
+                navigator.clipboard.writeText(prompt).then(() => toast('📋 Prompt copiado'));
             });
 
-            document.getElementById('btnCleanDescriptions').addEventListener('click', cleanDescriptions);
-
-            document.getElementById('btnUpdateFromJSON').addEventListener('click', updateBlocksFromJSON);
-
-            document.getElementById('btnPreviewHTML').addEventListener('click', openPreview);
-            document.getElementById('btnBuildMasterPrompt').addEventListener('click', buildMasterPrompt);
-            document.getElementById('btnCopyFinal').addEventListener('click', () => {
-                navigator.clipboard.writeText(document.getElementById('finalPrompt').value).then(() => toast('📋 Prompt final copiado'));
+            document.getElementById('btnUpdateFromJSON').addEventListener('click', () => {
+                try {
+                    const data = JSON.parse(document.getElementById('jsonEditor').value);
+                    state.json = document.getElementById('jsonEditor').value;
+                    const ruta = data.infografía["ruta implementación"] || [];
+                    state.blocks = ruta.map((item, idx) => ({
+                        id: Date.now() + idx,
+                        title: item.titulo,
+                        color: '#0B6284',
+                        icon: item.icono_3d || '🧠',
+                        text: item.descripción
+                    }));
+                    renderCanvas();
+                    saveState();
+                    toast('✅ Actualizado desde JSON');
+                } catch (e) {
+                    toast('❌ JSON inválido');
+                }
             });
 
-            document.getElementById('btnSaveProgress').addEventListener('click', exportProgress);
-            document.getElementById('btnLoadProgress').addEventListener('click', () => document.getElementById('loadJsonInput').click());
-            document.getElementById('loadJsonInput').addEventListener('change', (e) => {
-                if (e.target.files[0]) loadProgressFromFile(e.target.files[0]);
-            });
-
-            document.getElementById('btnApiKey').addEventListener('click', () => {
-                document.getElementById('apiKeyInput').value = state.apiKey;
-                document.getElementById('modalApi').style.display = 'flex';
-            });
-            document.getElementById('btnCancelApi').addEventListener('click', () => document.getElementById('modalApi').style.display = 'none');
-            document.getElementById('btnSaveApi').addEventListener('click', () => {
-                state.apiKey = document.getElementById('apiKeyInput').value.trim();
-                saveState();
-                document.getElementById('modalApi').style.display = 'none';
-                toast('Clave guardada');
-            });
             document.getElementById('btnReset').addEventListener('click', () => {
-                if (confirm('¿Reiniciar todo?')) {
-                    state.documentText = '';
-                    state.currentStep = 0;
-                    state.approvedSteps.clear();
-                    state.stepResponses = {};
-                    state.json = '';
-                    state.blocks = [];
-                    document.getElementById('promptText').value = '';
-                    localStorage.clear();
-                    updateUI();
-                    toast('Reiniciado completamente');
+                if (confirm('¿Reiniciar?')) {
+                    state.documentText = ''; state.blocks = []; state.json = '';
+                    document.getElementById('docTitle').value = '';
+                    document.getElementById('docSubtitle').value = '';
+                    saveState(); renderCanvas();
                 }
             });
 
-            if (state.documentText) {
-                document.getElementById('docText').value = state.documentText;
-                if (state.currentStep === undefined) state.currentStep = 0;
+            // Inicialización
+            const savedBlocks = localStorage.getItem('pnft_blocks');
+            if (savedBlocks) state.blocks = JSON.parse(savedBlocks);
+            const savedSettings = localStorage.getItem('pnft_settings');
+            if (savedSettings) {
+                state.settings = JSON.parse(savedSettings);
+                document.getElementById('orientation').value = state.settings.orientation;
+                document.getElementById('resolution').value = state.settings.resolution;
+                document.getElementById('fontFamily').value = state.settings.fontFamily;
+                document.getElementById('baseFontSize').value = state.settings.baseFontSize;
+                document.getElementById('docTitle').value = state.settings.title;
+                document.getElementById('docSubtitle').value = state.settings.subtitle;
             }
-            updateUI();
-            if (state.documentText && state.currentStep < 3) {
-                document.getElementById('promptText').value = buildPrompt(state.currentStep);
-            }
+            state.documentText = localStorage.getItem('pnft_document') || '';
+            if (state.json) document.getElementById('jsonEditor').value = state.json;
+            renderCanvas();
+            updateCanvasSize();
         })();
     </script>
 </body>
