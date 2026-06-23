@@ -3,14 +3,14 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.5">
-    <title>PNFT - Asistente de Infografías</title>
-    <!-- Bibliotecas para extraer texto de documentos -->
+    <title>PNFT · Asistente de Infografías</title>
+    <!-- PDF.js y Mammoth para extraer texto -->
     <script src="https://cdnjs.cloudflare.com/ajax/libs/pdf.js/2.16.105/pdf.min.js">
     </script>
     <script src="https://cdnjs.cloudflare.com/ajax/libs/mammoth/1.6.0/mammoth.browser.min.js">
     </script>
     <style>
-        /* --- RESET & BASE --- */
+        /* ===== RESET Y BASE ===== */
         * {
             margin: 0;
             padding: 0;
@@ -18,48 +18,47 @@
         }
         body {
             font-family: 'Poppins', sans-serif;
-            background: #f5f7fa;
-            color: #333;
+            background: #f2f6fa;
+            color: #1e2a3a;
+            padding: 20px;
             min-height: 100vh;
             display: flex;
             justify-content: center;
             align-items: center;
-            padding: 20px;
         }
-        /* Simulamos Poppins con fallback */
         @import url('https://fonts.googleapis.com/css2?family=Poppins:wght@300;400;600;700&display=swap');
 
         .app-container {
-            max-width: 1300px;
+            max-width: 1400px;
             width: 100%;
             background: #ffffff;
-            border-radius: 32px;
-            box-shadow: 0 20px 60px rgba(1, 77, 107, 0.15);
+            border-radius: 36px;
+            box-shadow: 0 25px 60px rgba(1, 77, 107, 0.18);
             overflow: hidden;
             display: flex;
             flex-direction: column;
         }
 
-        /* --- HEADER INSTITUCIONAL --- */
+        /* ===== HEADER ===== */
         .app-header {
-            background: linear-gradient(135deg, #014d6b 0%, #063b7f 100%);
-            padding: 20px 30px;
+            background: linear-gradient(135deg, #014d6b, #063b7f);
+            padding: 18px 30px;
             display: flex;
             align-items: center;
             justify-content: space-between;
             flex-wrap: wrap;
-            gap: 15px;
+            gap: 12px;
         }
         .logo-area {
             display: flex;
             align-items: center;
-            gap: 15px;
+            gap: 14px;
         }
-        .logo-placeholder {
-            width: 50px;
-            height: 50px;
-            background: rgba(255, 255, 255, 0.15);
-            border-radius: 12px;
+        .logo-badge {
+            width: 48px;
+            height: 48px;
+            background: rgba(255, 255, 255, 0.12);
+            border-radius: 14px;
             display: flex;
             align-items: center;
             justify-content: center;
@@ -72,13 +71,12 @@
         .app-title {
             color: #fff;
             font-weight: 600;
-            font-size: 1.3rem;
-            letter-spacing: 0.5px;
+            font-size: 1.25rem;
         }
         .app-title small {
             font-weight: 300;
-            font-size: 0.8rem;
-            opacity: 0.8;
+            font-size: 0.75rem;
+            opacity: 0.75;
             display: block;
         }
         .header-actions {
@@ -87,10 +85,10 @@
             flex-wrap: wrap;
         }
         .header-actions button {
-            background: rgba(255, 255, 255, 0.12);
-            border: 1px solid rgba(255, 255, 255, 0.25);
+            background: rgba(255, 255, 255, 0.10);
+            border: 1px solid rgba(255, 255, 255, 0.2);
             color: #fff;
-            padding: 8px 16px;
+            padding: 7px 16px;
             border-radius: 30px;
             font-size: 0.8rem;
             font-weight: 500;
@@ -102,17 +100,17 @@
             gap: 6px;
         }
         .header-actions button:hover {
-            background: rgba(255, 255, 255, 0.25);
+            background: rgba(255, 255, 255, 0.22);
         }
 
-        /* --- STEPPER --- */
+        /* ===== STEPPER ===== */
         .stepper {
             display: flex;
-            background: #f0f4f8;
-            padding: 16px 30px;
-            border-bottom: 1px solid #dce4ec;
+            background: #edf2f8;
+            padding: 12px 30px;
+            border-bottom: 1px solid #d5dfe9;
             flex-wrap: wrap;
-            gap: 8px;
+            gap: 6px;
         }
         .step-indicator {
             display: flex;
@@ -120,9 +118,9 @@
             gap: 8px;
             font-size: 0.85rem;
             font-weight: 500;
-            color: #4a5b6e;
-            padding: 6px 14px;
-            border-radius: 30px;
+            color: #3d576d;
+            padding: 5px 16px;
+            border-radius: 40px;
             background: transparent;
             transition: 0.2s;
             cursor: default;
@@ -130,46 +128,47 @@
         .step-indicator.active {
             background: #014d6b;
             color: #fff;
-            box-shadow: 0 4px 10px rgba(1, 77, 107, 0.3);
+            box-shadow: 0 4px 12px rgba(1, 77, 107, 0.3);
         }
         .step-indicator .num {
             display: inline-block;
-            width: 24px;
-            height: 24px;
+            width: 26px;
+            height: 26px;
             border-radius: 50%;
-            background: rgba(0, 0, 0, 0.08);
+            background: rgba(0, 0, 0, 0.06);
             text-align: center;
-            line-height: 24px;
+            line-height: 26px;
             font-weight: 700;
             font-size: 0.8rem;
         }
         .step-indicator.active .num {
-            background: rgba(255, 255, 255, 0.25);
+            background: rgba(255, 255, 255, 0.2);
         }
         .step-separator {
-            color: #b0c4d8;
+            color: #b0c8db;
             font-weight: 300;
             font-size: 1.2rem;
+            align-self: center;
         }
 
-        /* --- CONTENIDO PRINCIPAL --- */
+        /* ===== MAIN CONTENT ===== */
         .main-content {
-            padding: 30px 35px;
+            padding: 28px 35px 35px;
             background: #fff;
-            min-height: 500px;
+            min-height: 520px;
         }
 
         .step-panel {
             display: none;
-            animation: fadeIn 0.3s ease;
+            animation: fadeUp 0.3s ease;
         }
         .step-panel.active {
             display: block;
         }
-        @keyframes fadeIn {
+        @keyframes fadeUp {
             from {
                 opacity: 0;
-                transform: translateY(12px);
+                transform: translateY(14px);
             }
             to {
                 opacity: 1;
@@ -178,42 +177,42 @@
         }
 
         .step-panel h2 {
-            font-size: 1.6rem;
+            font-size: 1.7rem;
             font-weight: 700;
             color: #014d6b;
-            margin-bottom: 6px;
+            margin-bottom: 4px;
         }
         .step-panel .sub {
-            color: #5a7a8e;
+            color: #4f748c;
             font-size: 0.95rem;
-            margin-bottom: 25px;
+            margin-bottom: 22px;
             border-left: 4px solid #62bdf3;
-            padding-left: 16px;
+            padding-left: 18px;
         }
 
-        /* --- BOTONES DE NAVEGACIÓN --- */
+        /* ===== BOTONES ===== */
         .nav-buttons {
             display: flex;
             justify-content: space-between;
-            margin-top: 30px;
+            margin-top: 32px;
             gap: 15px;
             flex-wrap: wrap;
         }
         .nav-buttons button {
-            padding: 12px 32px;
+            padding: 12px 34px;
             border: none;
             border-radius: 40px;
             font-weight: 600;
             font-size: 0.95rem;
             cursor: pointer;
             transition: 0.2s;
-            background: #e9edf2;
-            color: #2c3e50;
+            background: #e9eef4;
+            color: #1d3547;
         }
         .nav-buttons button.primary {
             background: #014d6b;
             color: #fff;
-            box-shadow: 0 6px 14px rgba(1, 77, 107, 0.25);
+            box-shadow: 0 6px 16px rgba(1, 77, 107, 0.25);
         }
         .nav-buttons button.primary:hover {
             background: #063b7f;
@@ -224,7 +223,7 @@
             pointer-events: none;
         }
 
-        /* --- FORMULARIOS Y CONTROLES --- */
+        /* ===== FORMULARIOS ===== */
         .form-group {
             margin-bottom: 20px;
         }
@@ -237,7 +236,7 @@
         }
         .form-group .hint {
             font-size: 0.8rem;
-            color: #6a7e92;
+            color: #6a859c;
             margin-top: 4px;
         }
         input[type="text"],
@@ -246,7 +245,7 @@
         textarea {
             width: 100%;
             padding: 12px 16px;
-            border: 1px solid #d0dce8;
+            border: 1px solid #cbd8e5;
             border-radius: 14px;
             font-size: 0.95rem;
             font-family: 'Poppins', sans-serif;
@@ -274,27 +273,27 @@
             grid-template-columns: 1fr 1fr 1fr;
             gap: 20px;
         }
-        @media (max-width: 700px) {
+        @media (max-width: 720px) {
             .row-2col,
             .row-3col {
                 grid-template-columns: 1fr;
             }
         }
 
-        /* --- CARGA DE ARCHIVOS --- */
+        /* ===== FILE DROP ===== */
         .file-drop {
             border: 2px dashed #b8ccdd;
             border-radius: 20px;
-            padding: 35px 20px;
+            padding: 32px 20px;
             text-align: center;
             cursor: pointer;
             transition: 0.3s;
-            background: #f8fafc;
+            background: #f7fafd;
             position: relative;
         }
         .file-drop:hover {
             border-color: #62bdf3;
-            background: #f0f7fe;
+            background: #eef6fe;
         }
         .file-drop input[type="file"] {
             position: absolute;
@@ -306,33 +305,32 @@
             cursor: pointer;
         }
         .file-drop .icon {
-            font-size: 2.8rem;
-            margin-bottom: 10px;
+            font-size: 2.6rem;
+            margin-bottom: 6px;
         }
         .file-drop .text {
             font-weight: 500;
             color: #1d3b4f;
         }
         .file-drop .extras {
-            font-size: 0.85rem;
-            color: #6a7e92;
-            margin-top: 6px;
+            font-size: 0.8rem;
+            color: #6a859c;
         }
 
-        /* --- BLOQUES EDITABLES --- */
+        /* ===== BLOQUES EDITABLES (mejorados) ===== */
         .blocks-container {
             display: flex;
             flex-direction: column;
-            gap: 16px;
-            margin: 20px 0;
+            gap: 14px;
+            margin: 18px 0;
         }
         .block-item {
-            background: #f8fafc;
+            background: #f7fafd;
             border-radius: 18px;
-            padding: 18px 22px;
+            padding: 16px 20px;
             border: 1px solid #e0e9f0;
             display: grid;
-            grid-template-columns: 50px 1fr 1fr 0.6fr 40px;
+            grid-template-columns: 45px 1fr 1fr 1.2fr 40px;
             gap: 12px;
             align-items: center;
             transition: 0.2s;
@@ -351,8 +349,8 @@
         .block-item select {
             padding: 8px 12px;
             border-radius: 10px;
-            border: 1px solid #d0dce8;
-            font-size: 0.9rem;
+            border: 1px solid #cbd8e5;
+            font-size: 0.85rem;
             background: #fff;
         }
         .block-item .b-del {
@@ -369,7 +367,7 @@
         .block-item .b-del:hover {
             background: #fee8e8;
         }
-        @media (max-width: 750px) {
+        @media (max-width: 800px) {
             .block-item {
                 grid-template-columns: 40px 1fr;
                 gap: 8px;
@@ -381,8 +379,10 @@
                 grid-row: span 2;
                 justify-self: end;
             }
+            .block-item .b-icono {
+                grid-column: span 1;
+            }
         }
-
         .add-block-btn {
             background: #e9f0f7;
             border: 1px dashed #62bdf3;
@@ -401,10 +401,10 @@
             background: #dceaf5;
         }
 
-        /* --- WIREFRAME ASCII --- */
+        /* ===== WIREFRAME ASCII MEJORADO ===== */
         .wireframe-box {
-            background: #0b1e2b;
-            color: #b0e0ff;
+            background: #0c1f2d;
+            color: #a5d4ff;
             font-family: 'Courier New', monospace;
             padding: 20px;
             border-radius: 18px;
@@ -412,34 +412,59 @@
             line-height: 1.6;
             white-space: pre-wrap;
             overflow-x: auto;
-            margin: 20px 0;
-            border: 1px solid #2a4a5e;
+            margin: 16px 0;
+            border: 1px solid #2f556b;
+            min-height: 200px;
         }
 
-        /* --- PROMPT FINAL --- */
-        .prompt-output {
-            background: #f2f6fb;
+        /* ===== PROMPT EDITABLE ===== */
+        .prompt-editable {
+            background: #f2f8fe;
             border-radius: 18px;
-            padding: 24px;
-            border: 1px solid #d0dce8;
-            font-size: 0.95rem;
-            white-space: pre-wrap;
-            max-height: 500px;
-            overflow-y: auto;
+            padding: 18px;
+            border: 1px solid #cbd8e5;
             font-family: 'Poppins', sans-serif;
+            font-size: 0.9rem;
             line-height: 1.6;
+            min-height: 400px;
+            width: 100%;
+            resize: vertical;
         }
 
-        /* --- RESPONSIVE --- */
+        /* ===== DIVERSIDAD ===== */
+        .diversity-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fill, minmax(170px, 1fr));
+            gap: 12px;
+            background: #f7fafd;
+            padding: 18px;
+            border-radius: 18px;
+            border: 1px solid #e0e9f0;
+        }
+        .diversity-grid label {
+            display: flex;
+            align-items: center;
+            gap: 8px;
+            font-weight: 400;
+            font-size: 0.9rem;
+            cursor: pointer;
+        }
+        .diversity-grid input[type="checkbox"] {
+            width: 18px;
+            height: 18px;
+            accent-color: #014d6b;
+        }
+
+        /* ===== RESPONSIVE ===== */
         @media (max-width: 600px) {
             .app-header {
-                padding: 15px;
+                padding: 14px;
             }
             .app-title {
                 font-size: 1rem;
             }
             .stepper {
-                padding: 12px 15px;
+                padding: 10px 14px;
                 gap: 4px;
             }
             .step-indicator {
@@ -453,25 +478,21 @@
                 font-size: 0.7rem;
             }
             .main-content {
-                padding: 20px 15px;
+                padding: 18px 14px;
             }
             .nav-buttons button {
-                padding: 10px 20px;
-                font-size: 0.85rem;
+                padding: 10px 18px;
+                font-size: 0.8rem;
                 flex: 1;
-            }
-            .row-2col,
-            .row-3col {
-                grid-template-columns: 1fr;
             }
         }
 
-        /* --- MISC --- */
+        /* ===== MISC ===== */
         .badge {
             display: inline-block;
             background: #014d6b10;
             color: #014d6b;
-            padding: 2px 12px;
+            padding: 2px 14px;
             border-radius: 30px;
             font-size: 0.75rem;
             font-weight: 600;
@@ -501,18 +522,35 @@
             flex-wrap: wrap;
             margin-top: 8px;
         }
+        .summary-box {
+            background: #f2f6fb;
+            border-radius: 16px;
+            padding: 18px 22px;
+            border-left: 5px solid #014d6b;
+            margin: 16px 0;
+            font-size: 0.9rem;
+        }
+        .summary-box strong {
+            color: #014d6b;
+        }
+        .inline-icon {
+            display: inline-block;
+            width: 28px;
+            text-align: center;
+        }
     </style>
 </head>
 <body>
 
     <div class="app-container" id="app">
+
         <!-- HEADER -->
         <header class="app-header">
             <div class="logo-area">
-                <div class="logo-placeholder">PNFT</div>
+                <div class="logo-badge">PNFT</div>
                 <div class="app-title">
                     Asistente de Infografías
-                    <small>Prompt Maestro • Guía interactiva</small>
+                    <small>Prompt Maestro · Guía interactiva</small>
                 </div>
             </div>
             <div class="header-actions">
@@ -528,7 +566,7 @@
             <span class="step-separator">▸</span>
             <span class="step-indicator" data-step="2"><span class="num">2</span> Configuración</span>
             <span class="step-separator">▸</span>
-            <span class="step-indicator" data-step="3"><span class="num">3</span> Editar bloques</span>
+            <span class="step-indicator" data-step="3"><span class="num">3</span> Bloques &amp; Diversidad</span>
             <span class="step-separator">▸</span>
             <span class="step-indicator" data-step="4"><span class="num">4</span> Prompt final</span>
         </div>
@@ -536,10 +574,10 @@
         <!-- MAIN CONTENT -->
         <div class="main-content">
 
-            <!-- PASO 1: Documento -->
+            <!-- ========== PASO 1 ========== -->
             <div class="step-panel active" id="step1">
                 <h2>📄 Documento fuente</h2>
-                <div class="sub">Carga el documento o pega el texto del que se extraerá la estructura de la infografía.</div>
+                <div class="sub">Carga un archivo o pega el texto del cual se extraerá la estructura.</div>
 
                 <div class="file-drop" id="fileDrop">
                     <div class="icon">📂</div>
@@ -560,14 +598,14 @@
 
                 <div class="nav-buttons">
                     <span></span>
-                    <button class="primary" onclick="goStep(2)" id="toStep2">Siguiente →</button>
+                    <button class="primary" onclick="goStep(2)">Siguiente →</button>
                 </div>
             </div>
 
-            <!-- PASO 2: Configuración -->
+            <!-- ========== PASO 2 ========== -->
             <div class="step-panel" id="step2">
                 <h2>⚙️ Configuración avanzada</h2>
-                <div class="sub">Personaliza el estilo, formato y enfoque pedagógico de la infografía.</div>
+                <div class="sub">Personaliza el estilo, formato y enfoque pedagógico.</div>
 
                 <div class="row-2col">
                     <div class="form-group">
@@ -664,26 +702,16 @@
                     </select>
                 </div>
 
-                <div class="form-group">
-                    <label>Diversidad e inclusión</label>
-                    <div style="display:flex;flex-wrap:wrap;gap:16px;background:#f8fafc;padding:14px 18px;border-radius:14px;">
-                        <label style="display:flex;align-items:center;gap:6px;font-weight:400;"><input type="checkbox" checked disabled> Étnica (clara, morena, afro, indígena)</label>
-                        <label style="display:flex;align-items:center;gap:6px;font-weight:400;"><input type="checkbox" checked disabled> Balance de género</label>
-                        <label style="display:flex;align-items:center;gap:6px;font-weight:400;"><input type="checkbox" checked disabled> Contexto educativo latinoamericano</label>
-                    </div>
-                    <div class="hint">Este criterio es obligatorio según el prompt maestro.</div>
-                </div>
-
                 <div class="nav-buttons">
                     <button onclick="goStep(1)">← Anterior</button>
                     <button class="primary" onclick="goStep(3)">Siguiente →</button>
                 </div>
             </div>
 
-            <!-- PASO 3: Editar bloques -->
+            <!-- ========== PASO 3 ========== -->
             <div class="step-panel" id="step3">
-                <h2>🧩 Editar arquitectura de información</h2>
-                <div class="sub">Ajusta los bloques que conformarán la infografía. El wireframe se actualiza automáticamente.</div>
+                <h2>🧩 Bloques de contenido &amp; Diversidad</h2>
+                <div class="sub">Edita cada bloque (título, descripción e ícono). El wireframe se actualiza en tiempo real.</div>
 
                 <div class="form-group">
                     <label>Título de la infografía</label>
@@ -695,15 +723,25 @@
                 </div>
 
                 <div class="blocks-container" id="blocksContainer">
-                    <!-- Los bloques se generan con JS -->
+                    <!-- Generado por JS -->
                 </div>
 
                 <button class="add-block-btn" onclick="addBlock()">➕ Añadir bloque</button>
 
-                <div style="margin-top:25px;">
-                    <label style="font-weight:600;">Wireframe ASCII (vista previa)</label>
+                <!-- DIVERSIDAD E INCLUSIÓN (interactivo) -->
+                <div style="margin-top:28px;">
+                    <label style="font-weight:600; font-size:1rem;">🌍 Diversidad e inclusión</label>
+                    <div class="diversity-grid" id="diversityGrid">
+                        <!-- Se llena desde JS con valores por defecto -->
+                    </div>
+                    <div class="hint" style="margin-top:8px;">Selecciona los grupos étnicos y el balance de género que deseas representar.</div>
+                </div>
+
+                <!-- WIREFRAME -->
+                <div style="margin-top:28px;">
+                    <label style="font-weight:600;">📐 Wireframe ASCII (vista previa)</label>
                     <div class="wireframe-box" id="wireframeDisplay">
-                        <!-- Se actualiza en tiempo real -->
+                        <!-- Actualizado por JS -->
                     </div>
                 </div>
 
@@ -713,18 +751,22 @@
                 </div>
             </div>
 
-            <!-- PASO 4: Prompt final -->
+            <!-- ========== PASO 4 ========== -->
             <div class="step-panel" id="step4">
-                <h2>📝 Prompt final para ChatGPT</h2>
-                <div class="sub">Copia este prompt y pégalo en ChatGPT para generar la infografía.</div>
+                <h2>📝 Prompt final (editable)</h2>
+                <div class="sub">Revisa y edita el prompt antes de copiarlo. También puedes ver un resumen de la configuración.</div>
 
-                <div class="prompt-output" id="promptOutput">
-                    <!-- Generado por JS -->
+                <!-- Resumen de configuración -->
+                <div class="summary-box" id="summaryBox">
+                    <strong>Resumen de configuración:</strong> <span id="summaryText">Cargando...</span>
                 </div>
+
+                <textarea class="prompt-editable" id="promptOutput" spellcheck="false"></textarea>
 
                 <div class="flex-center" style="margin-top:18px;gap:14px;flex-wrap:wrap;">
                     <button onclick="copyPrompt()" style="padding:12px 30px;border:none;border-radius:40px;background:#014d6b;color:#fff;font-weight:600;cursor:pointer;">📋 Copiar prompt</button>
                     <button onclick="exportJSON()" style="padding:12px 30px;border:1px solid #014d6b;border-radius:40px;background:transparent;color:#014d6b;font-weight:600;cursor:pointer;">💾 Guardar JSON</button>
+                    <button onclick="regeneratePrompt()" style="padding:12px 30px;border:1px solid #62bdf3;border-radius:40px;background:transparent;color:#014d6b;font-weight:600;cursor:pointer;">🔄 Regenerar prompt</button>
                 </div>
 
                 <div class="nav-buttons">
@@ -737,12 +779,17 @@
     </div><!-- /app-container -->
 
     <script>
-        // ============================================================
+        // ================================================================
         //  ESTADO GLOBAL
-        // ============================================================
+        // ================================================================
         const state = {
             sourceText: '',
             blocks: [], // { id, titulo, descripcion, icono }
+            diversity: {
+                etnias: ['clara', 'morena', 'afro', 'indigena'],
+                genero: ['masculino', 'femenino'],
+                contexto: 'latinoamericano'
+            },
             config: {
                 audiencia: 'Docentes',
                 fidelidad: '100',
@@ -765,11 +812,11 @@
             'Análisis', 'Creatividad', 'Emprendimiento', 'Ética'
         ];
 
-        // ============================================================
+        // ================================================================
         //  INICIALIZACIÓN
-        // ============================================================
+        // ================================================================
         document.addEventListener('DOMContentLoaded', () => {
-            // Cargar estado desde localStorage si existe
+            // Cargar estado desde localStorage
             const saved = localStorage.getItem('pnft_state');
             if (saved) {
                 try {
@@ -788,11 +835,12 @@
                     document.getElementById('layout').value = state.config.layout || 'B';
                     document.getElementById('formato').value = state.config.formato || '1920x1080';
                     document.getElementById('paleta').value = state.config.paleta || 'corporativa';
+                    renderDiversity();
                     renderBlocks();
                     updateWireframe();
                 } catch (e) { console.warn('Error al cargar estado', e); }
             } else {
-                // Bloques de ejemplo (basados en el documento de ejemplo)
+                // Bloques de ejemplo
                 state.blocks = [
                     { id: 1, titulo: 'Comprensión del enfoque curricular', descripcion: 'Enfoque basado en competencias.',
                         icono: 'Diagnóstico' },
@@ -807,15 +855,22 @@
                     { id: 6, titulo: 'Documentación y seguimiento del aprendizaje', descripcion: 'Recopilación de evidencias para valorar competencias, retroalimentar y ajustar.',
                         icono: 'Seguimiento' }
                 ];
+                renderDiversity();
                 renderBlocks();
                 updateWireframe();
             }
-            // Evento de cambio en selects para actualizar estado
+
+            // Eventos de cambio en selects
             document.querySelectorAll('#step2 select').forEach(el => {
-                el.addEventListener('change', updateConfigFromUI);
+                el.addEventListener('change', () => { updateConfigFromUI();
+                    saveState(); });
             });
-            document.getElementById('infografiaTitulo').addEventListener('input', updateConfigFromUI);
-            document.getElementById('infografiaSubtitulo').addEventListener('input', updateConfigFromUI);
+            document.getElementById('infografiaTitulo').addEventListener('input', () => { updateConfigFromUI();
+                updateWireframe();
+                saveState(); });
+            document.getElementById('infografiaSubtitulo').addEventListener('input', () => { updateConfigFromUI();
+                updateWireframe();
+                saveState(); });
 
             // Carga de archivos
             document.getElementById('fileInput').addEventListener('change', handleFileUpload);
@@ -824,7 +879,7 @@
                 saveState();
             });
 
-            // Drag & drop visual
+            // Drag & drop
             const drop = document.getElementById('fileDrop');
             drop.addEventListener('dragover', (e) => { e.preventDefault();
                 drop.style.borderColor = '#014d6b'; });
@@ -838,13 +893,13 @@
                 }
             });
 
-            // Inicializar paso
+            // Iniciar
             goStep(1);
         });
 
-        // ============================================================
-        //  FUNCIONES DE NAVEGACIÓN
-        // ============================================================
+        // ================================================================
+        //  NAVEGACIÓN
+        // ================================================================
         let currentStep = 1;
 
         function goStep(n) {
@@ -860,15 +915,15 @@
             }
             if (n === 4) {
                 generatePrompt();
+                updateSummary();
             }
-            // Guardar estado al cambiar de paso
             saveState();
             window.scrollTo({ top: 0, behavior: 'smooth' });
         }
 
-        // ============================================================
-        //  CONFIGURACIÓN UI → STATE
-        // ============================================================
+        // ================================================================
+        //  CONFIGURACIÓN
+        // ================================================================
         function updateConfigFromUI() {
             state.config.audiencia = document.getElementById('audiencia').value;
             state.config.fidelidad = document.getElementById('fidelidad').value;
@@ -883,9 +938,9 @@
             saveState();
         }
 
-        // ============================================================
+        // ================================================================
         //  PERSISTENCIA (localStorage + JSON)
-        // ============================================================
+        // ================================================================
         function saveState() {
             try {
                 localStorage.setItem('pnft_state', JSON.stringify(state));
@@ -921,27 +976,28 @@
                     document.getElementById('layout').value = state.config.layout || 'B';
                     document.getElementById('formato').value = state.config.formato || '1920x1080';
                     document.getElementById('paleta').value = state.config.paleta || 'corporativa';
+                    renderDiversity();
                     renderBlocks();
                     updateWireframe();
                     saveState();
-                    alert('Configuración importada correctamente.');
+                    alert('✅ Configuración importada correctamente.');
                 } catch (err) {
-                    alert('Error al importar JSON: ' + err.message);
+                    alert('❌ Error al importar JSON: ' + err.message);
                 }
             };
             reader.readAsText(file);
             event.target.value = '';
         }
 
-        // ============================================================
+        // ================================================================
         //  CARGA DE DOCUMENTOS (extracción de texto)
-        // ============================================================
+        // ================================================================
         function handleFileUpload(e) {
             const files = e.target.files;
             if (!files || !files.length) return;
             const file = files[0];
             const ext = file.name.split('.').pop().toLowerCase();
-            document.getElementById('fileStatus').textContent = 'Cargando: ' + file.name;
+            document.getElementById('fileStatus').textContent = '⏳ Cargando: ' + file.name;
 
             if (ext === 'txt') {
                 const reader = new FileReader();
@@ -991,29 +1047,21 @@
                 };
                 reader.readAsArrayBuffer(file);
             } else if (ext === 'pptx' || ext === 'ppt') {
-                // Para PPT/PPTX usamos un enfoque simple: mostrar mensaje y pegar manualmente
-                alert('Los archivos PowerPoint no se pueden procesar automáticamente. Por favor, pega el contenido manualmente en el área de texto.');
-                document.getElementById('fileStatus').textContent = '⚠️ PPT no compatible, pega el texto manualmente';
+                alert('⚠️ PowerPoint no se procesa automáticamente. Por favor, pega el contenido manualmente en el área de texto.');
+                document.getElementById('fileStatus').textContent = '⚠️ PPT no compatible, pega texto manual';
             } else if (['png', 'jpg', 'jpeg', 'gif', 'bmp', 'webp'].includes(ext)) {
-                // Imagen: solo se muestra como referencia, no extraemos texto
-                const reader = new FileReader();
-                reader.onload = (ev) => {
-                    // Podríamos mostrar la imagen en algún lugar, pero no es necesario para el texto
-                    alert('Imagen cargada como referencia. No se extrae texto. Por favor, describe su contenido en el área de texto si es necesario.');
-                    document.getElementById('fileStatus').textContent = '🖼️ Imagen cargada (solo referencia)';
-                };
-                reader.readAsDataURL(file);
+                alert('🖼️ Imagen cargada como referencia. No se extrae texto. Describe su contenido si es necesario.');
+                document.getElementById('fileStatus').textContent = '🖼️ Imagen cargada (referencia)';
             } else {
                 alert('Formato no soportado para extracción automática. Usa TXT, PDF o DOCX.');
                 document.getElementById('fileStatus').textContent = '❌ Formato no soportado';
             }
-            // Reset input para permitir recargar el mismo archivo
             e.target.value = '';
         }
 
-        // ============================================================
-        //  PROCESAR DOCUMENTO (extraer bloques automáticamente)
-        // ============================================================
+        // ================================================================
+        //  PROCESAR DOCUMENTO → generar bloques
+        // ================================================================
         function processDocument() {
             const text = document.getElementById('sourceText').value.trim();
             if (!text) {
@@ -1021,22 +1069,18 @@
                 return;
             }
             state.sourceText = text;
-            // Intentar dividir en bloques por párrafos o títulos
             const lines = text.split(/\n+/).filter(l => l.trim().length > 0);
-            // Si hay pocas líneas, usar cada línea como bloque
             let newBlocks = [];
-            // Buscar patrones: líneas que parecen títulos (mayúsculas, con dos puntos, o cortas)
             let currentTitle = '';
             let currentDesc = [];
             for (let line of lines) {
                 line = line.trim();
-                if (line.length < 60 && (line === line.toUpperCase() || line.endsWith(':'))) {
-                    // Es un título
+                if (line.length < 70 && (line === line.toUpperCase() || line.endsWith(':') || line.match(/^[A-ZÁÉÍÓÚÑ][a-záéíóúñ]+/))) {
                     if (currentTitle && currentDesc.length) {
                         newBlocks.push({
                             id: newBlocks.length + 1,
                             titulo: currentTitle,
-                            descripcion: currentDesc.join(' ').substring(0, 200),
+                            descripcion: currentDesc.join(' ').substring(0, 220),
                             icono: ICONOS_SUGERIDOS[newBlocks.length % ICONOS_SUGERIDOS.length]
                         });
                         currentDesc = [];
@@ -1046,7 +1090,6 @@
                     if (currentTitle) {
                         currentDesc.push(line);
                     } else {
-                        // Si no hay título, usar la primera línea como título
                         if (!currentTitle) {
                             currentTitle = line.substring(0, 50);
                         } else {
@@ -1059,11 +1102,10 @@
                 newBlocks.push({
                     id: newBlocks.length + 1,
                     titulo: currentTitle,
-                    descripcion: currentDesc.join(' ').substring(0, 200),
+                    descripcion: currentDesc.join(' ').substring(0, 220),
                     icono: ICONOS_SUGERIDOS[newBlocks.length % ICONOS_SUGERIDOS.length]
                 });
             }
-            // Si no se generaron bloques, crear al menos uno
             if (newBlocks.length === 0) {
                 newBlocks.push({
                     id: 1,
@@ -1072,22 +1114,19 @@
                     icono: 'Análisis'
                 });
             }
-            // Limitar a 6 bloques
-            if (newBlocks.length > 6) {
-                newBlocks = newBlocks.slice(0, 6);
-            }
+            if (newBlocks.length > 6) newBlocks = newBlocks.slice(0, 6);
             state.blocks = newBlocks;
             renderBlocks();
             updateWireframe();
             saveState();
-            document.getElementById('fileStatus').textContent = '✅ Documento procesado, ' + state.blocks.length + ' bloques generados.';
-            alert('Se generaron ' + state.blocks.length + ' bloques a partir del texto. Puedes editarlos en el paso 3.');
+            document.getElementById('fileStatus').textContent = '✅ Procesado: ' + state.blocks.length + ' bloques.';
+            alert('Se generaron ' + state.blocks.length + ' bloques. Puedes editarlos en el paso 3.');
             goStep(3);
         }
 
-        // ============================================================
-        //  RENDERIZADO DE BLOQUES
-        // ============================================================
+        // ================================================================
+        //  RENDERIZADO DE BLOQUES (mejorado)
+        // ================================================================
         function renderBlocks() {
             const container = document.getElementById('blocksContainer');
             container.innerHTML = '';
@@ -1096,15 +1135,14 @@
                 div.className = 'block-item';
                 div.innerHTML = `
               <div class="b-num">${idx+1}</div>
-              <input type="text" class="b-titulo" value="${escapeHtml(block.titulo)}" placeholder="Título del bloque">
-              <input type="text" class="b-desc" value="${escapeHtml(block.descripcion)}" placeholder="Descripción breve">
+              <input type="text" class="b-titulo" value="${escapeHtml(block.titulo)}" placeholder="Título">
+              <input type="text" class="b-desc" value="${escapeHtml(block.descripcion)}" placeholder="Descripción">
               <select class="b-icono">
                 ${ICONOS_SUGERIDOS.map(ico => `<option value="${ico}" ${ico===block.icono?'selected':''}>${ico}</option>`).join('')}
               </select>
               <button class="b-del" onclick="removeBlock(${idx})">✕</button>
             `;
                 container.appendChild(div);
-                // Eventos para actualizar estado
                 const tituloInput = div.querySelector('.b-titulo');
                 const descInput = div.querySelector('.b-desc');
                 const iconoSelect = div.querySelector('.b-icono');
@@ -1133,6 +1171,10 @@
         }
 
         function addBlock() {
+            if (state.blocks.length >= 6) {
+                alert('Máximo 6 bloques permitidos.');
+                return;
+            }
             state.blocks.push({
                 id: state.blocks.length + 1,
                 titulo: 'Nuevo bloque',
@@ -1153,51 +1195,135 @@
             saveState();
         }
 
-        // ============================================================
-        //  WIREFRAME ASCII
-        // ============================================================
+        // ================================================================
+        //  DIVERSIDAD (interactivo)
+        // ================================================================
+        function renderDiversity() {
+            const grid = document.getElementById('diversityGrid');
+            grid.innerHTML = '';
+            // Etnias
+            const etnias = [
+                { id: 'clara', label: 'Tez clara' },
+                { id: 'morena', label: 'Tez morena' },
+                { id: 'afro', label: 'Afrodescendiente' },
+                { id: 'indigena', label: 'Indígena' }
+            ];
+            const generos = [
+                { id: 'masculino', label: 'Género masculino' },
+                { id: 'femenino', label: 'Género femenino' }
+            ];
+            // Usamos los valores de state.diversity.etnias y state.diversity.genero
+            const selectedEtnias = state.diversity.etnias || ['clara', 'morena', 'afro', 'indigena'];
+            const selectedGeneros = state.diversity.genero || ['masculino', 'femenino'];
+
+            etnias.forEach(e => {
+                const label = document.createElement('label');
+                const cb = document.createElement('input');
+                cb.type = 'checkbox';
+                cb.checked = selectedEtnias.includes(e.id);
+                cb.dataset.group = 'etnia';
+                cb.dataset.value = e.id;
+                cb.addEventListener('change', updateDiversity);
+                label.appendChild(cb);
+                label.appendChild(document.createTextNode(' ' + e.label));
+                grid.appendChild(label);
+            });
+            // Separador visual
+            const sep = document.createElement('div');
+            sep.style.width = '100%';
+            sep.style.borderTop = '1px dashed #cbd8e5';
+            sep.style.margin = '6px 0';
+            grid.appendChild(sep);
+
+            generos.forEach(g => {
+                const label = document.createElement('label');
+                const cb = document.createElement('input');
+                cb.type = 'checkbox';
+                cb.checked = selectedGeneros.includes(g.id);
+                cb.dataset.group = 'genero';
+                cb.dataset.value = g.id;
+                cb.addEventListener('change', updateDiversity);
+                label.appendChild(cb);
+                label.appendChild(document.createTextNode(' ' + g.label));
+                grid.appendChild(label);
+            });
+        }
+
+        function updateDiversity() {
+            const checks = document.querySelectorAll('#diversityGrid input[type="checkbox"]');
+            const etnias = [];
+            const generos = [];
+            checks.forEach(cb => {
+                if (cb.checked) {
+                    if (cb.dataset.group === 'etnia') etnias.push(cb.dataset.value);
+                    if (cb.dataset.group === 'genero') generos.push(cb.dataset.value);
+                }
+            });
+            state.diversity.etnias = etnias.length ? etnias : ['clara', 'morena', 'afro', 'indigena'];
+            state.diversity.genero = generos.length ? generos : ['masculino', 'femenino'];
+            saveState();
+            // Actualizar wireframe (no es necesario, pero por si acaso)
+            updateWireframe();
+        }
+
+        // ================================================================
+        //  WIREFRAME ASCII mejorado
+        // ================================================================
         function updateWireframe() {
             const container = document.getElementById('wireframeDisplay');
             const titulo = document.getElementById('infografiaTitulo').value || 'Título';
             const subtitulo = document.getElementById('infografiaSubtitulo').value || 'Subtítulo';
-            let lines = [];
-            const headerLine = '┌' + '─'.repeat(70) + '┐';
-            const footerLine = '└' + '─'.repeat(70) + '┘';
-            lines.push(headerLine);
-            lines.push('│  LOGO      ' + titulo.padEnd(40) + '   ILUSTRACIÓN  │');
-            lines.push('│            ' + subtitulo.padEnd(40) + '               │');
-            lines.push('├' + '─'.repeat(70) + '┤');
-
-            // Body: bloques en grid según layout
             const layout = state.config.layout || 'B';
             const blocks = state.blocks;
+
+            let lines = [];
+            const w = 72;
+            const headerLine = '┌' + '─'.repeat(w) + '┐';
+            const footerLine = '└' + '─'.repeat(w) + '┘';
+
+            lines.push(headerLine);
+            // Header
+            let headerContent = '│  LOGO   ' + titulo.padEnd(40) + '   ILUSTRACIÓN  │';
+            if (headerContent.length > w + 2) headerContent = headerContent.substring(0, w + 1) + '│';
+            lines.push(headerContent);
+            let subContent = '│         ' + subtitulo.padEnd(50) + '│';
+            if (subContent.length > w + 2) subContent = subContent.substring(0, w + 1) + '│';
+            lines.push(subContent);
+            lines.push('├' + '─'.repeat(w) + '┤');
+
+            // Body según layout
+            const renderBlockLine = (b, idx, maxLen = 28) => {
+                const label = (idx + 1) + '. ' + b.titulo.substring(0, maxLen);
+                return label.padEnd(maxLen + 3);
+            };
+
             if (layout === 'A') {
                 // Lineal
                 blocks.forEach((b, i) => {
-                    const txt = (i + 1) + '. ' + b.titulo.substring(0, 30);
-                    lines.push('│  ' + txt.padEnd(68) + '│');
-                    if (i < blocks.length - 1) lines.push('│  ↓                                       │');
+                    const txt = (i + 1) + '. ' + b.titulo.substring(0, 35);
+                    lines.push('│  ' + txt.padEnd(w - 3) + '│');
+                    if (i < blocks.length - 1) lines.push('│  ↓' + ' '.repeat(w - 4) + '│');
                 });
             } else if (layout === 'B') {
                 // Grid 2x3
                 const cols = 3;
                 const rows = Math.ceil(blocks.length / cols);
                 for (let r = 0; r < rows; r++) {
-                    let rowLine = '│';
+                    let row = '│';
                     for (let c = 0; c < cols; c++) {
                         const idx = r * cols + c;
                         if (idx < blocks.length) {
                             const b = blocks[idx];
-                            const label = (idx + 1) + '. ' + b.titulo.substring(0, 15);
-                            rowLine += ' ' + label.padEnd(20) + ' │';
+                            const label = (idx + 1) + '. ' + b.titulo.substring(0, 16);
+                            row += ' ' + label.padEnd(20) + ' │';
                         } else {
-                            rowLine += ' '.repeat(22) + '│';
+                            row += ' '.repeat(22) + '│';
                         }
                     }
-                    lines.push(rowLine);
+                    lines.push(row);
                 }
             } else if (layout === 'C') {
-                // Tres columnas (inicio, desarrollo, conclusión)
+                // Tres columnas
                 const mid = Math.floor(blocks.length / 3);
                 const col1 = blocks.slice(0, mid);
                 const col2 = blocks.slice(mid, mid * 2);
@@ -1217,14 +1343,12 @@
                 const half = Math.ceil(blocks.length / 2);
                 const top = blocks.slice(0, half);
                 const bottom = blocks.slice(half);
-                // Fila superior
                 let topLine = '│';
                 top.forEach((b, i) => {
                     topLine += ' ' + (i + 1) + '. ' + b.titulo.substring(0, 12).padEnd(15) + ' │';
                 });
                 lines.push(topLine);
                 if (top.length) lines.push('│  ↓ → → → → → → → → → → → → → → → → → → → → → → → → → → → → → ↓  │');
-                // Fila inferior (invertida para flujo Z)
                 let bottomLine = '│';
                 bottom.slice().reverse().forEach((b, i) => {
                     const idx = blocks.indexOf(b);
@@ -1253,23 +1377,22 @@
             }
 
             // Footer
-            lines.push('├' + '─'.repeat(70) + '┤');
-            lines.push('│  Bloque Footer 1   │  Bloque Footer 2   │  Bloque Footer 3   │');
+            lines.push('├' + '─'.repeat(w) + '┤');
+            lines.push('│  Footer 1           │  Footer 2           │  Footer 3           │');
             lines.push(footerLine);
 
             container.textContent = lines.join('\n');
         }
 
-        // ============================================================
-        //  GENERAR PROMPT FINAL
-        // ============================================================
+        // ================================================================
+        //  GENERAR PROMPT (editable)
+        // ================================================================
         function generatePrompt() {
             const config = state.config;
             const blocks = state.blocks;
             const titulo = config.titulo || 'Infografía PNFT';
             const subtitulo = config.subtitulo || '';
 
-            // Mapeo de estilos
             const estiloMap = {
                 'PNFT-01': '3D Cartoon Educativo - Vibrante, cercano, colorido, motivador.',
                 'PNFT-02': '3D Semi Realista - Profesional, moderno, institucional.',
@@ -1278,7 +1401,6 @@
                 'PNFT-05': 'Vectorial Moderna - Canva Style, minimalista, limpio.',
                 'PNFT-06': 'Fotorealista - Fotografías reales, contextos auténticos, mayor formalidad.'
             };
-
             const layoutMap = {
                 'A': 'Secuencial Lineal (1→2→3→4→5→6)',
                 'B': 'Grid 2×3',
@@ -1286,6 +1408,9 @@
                 'D': 'Flujo Z (1→2→3 ↓ 6←5←4)',
                 'E': 'Pirámide'
             };
+
+            const etniasText = (state.diversity.etnias || ['clara', 'morena', 'afro', 'indigena']).join(', ');
+            const generoText = (state.diversity.genero || ['masculino', 'femenino']).join(', ');
 
             let prompt = `# PROMPT MAESTRO PNFT - INFOGRAFÍA EDUCATIVA
 
@@ -1341,9 +1466,9 @@ Características generales:
 ---
 
 ## 6. DIVERSIDAD E INCLUSIÓN
-- Representación obligatoria de tonos claros, medios, afrodescendientes e indígenas.
-- Balance de género.
-- Contexto latinoamericano.
+- **Etnias representadas:** ${etniasText}
+- **Géneros representados:** ${generoText}
+- **Contexto:** Latinoamericano (obligatorio)
 
 ---
 
@@ -1402,28 +1527,42 @@ SIEMPRE usar: diseño académico, estilo PNFT, iconografía 3D, distribución ho
 Genera la infografía siguiendo exactamente la arquitectura, colores, tipografía y estilo indicados. Aplica la diversidad e inclusión obligatoria. El resultado debe ser profesional, educativo y alineado con la identidad PNFT.
 `;
 
-            document.getElementById('promptOutput').textContent = prompt;
+            document.getElementById('promptOutput').value = prompt;
+        }
+
+        function regeneratePrompt() {
+            generatePrompt();
         }
 
         function copyPrompt() {
-            const text = document.getElementById('promptOutput').textContent;
+            const text = document.getElementById('promptOutput').value;
             navigator.clipboard.writeText(text).then(() => {
-                alert('Prompt copiado al portapapeles.');
+                alert('✅ Prompt copiado al portapapeles.');
             }).catch(() => {
-                // Fallback
                 const area = document.createElement('textarea');
                 area.value = text;
                 document.body.appendChild(area);
                 area.select();
                 document.execCommand('copy');
                 document.body.removeChild(area);
-                alert('Prompt copiado al portapapeles.');
+                alert('✅ Prompt copiado al portapapeles.');
             });
         }
 
-        // ============================================================
+        // ================================================================
+        //  RESUMEN DE CONFIGURACIÓN (en paso 4)
+        // ================================================================
+        function updateSummary() {
+            const c = state.config;
+            const etnias = (state.diversity.etnias || []).join(', ');
+            const generos = (state.diversity.genero || []).join(', ');
+            document.getElementById('summaryText').textContent =
+                `Audiencia: ${c.audiencia} | Fidelidad: ${c.fidelidad}% | Densidad: ${c.densidad} | Intervención: Modo ${c.intervencion} | Estilo: ${c.estilo} | Layout: ${c.layout} | Formato: ${c.formato} | Etnias: ${etnias} | Géneros: ${generos}`;
+        }
+
+        // ================================================================
         //  REINICIO
-        // ============================================================
+        // ================================================================
         function resetApp() {
             if (confirm('¿Reiniciar toda la configuración?')) {
                 localStorage.removeItem('pnft_state');
@@ -1431,12 +1570,13 @@ Genera la infografía siguiendo exactamente la arquitectura, colores, tipografí
             }
         }
 
-        // ============================================================
-        //  ACTUALIZAR WIREFRAME AL CAMBIAR TÍTULO/SUBTÍTULO
-        // ============================================================
-        document.getElementById('infografiaTitulo').addEventListener('input', updateWireframe);
-        document.getElementById('infografiaSubtitulo').addEventListener('input', updateWireframe);
+        // Actualizar wireframe cuando se cambia layout o bloques
+        document.addEventListener('change', (e) => {
+            if (e.target.id === 'layout' || e.target.id === 'infografiaTitulo' || e.target.id === 'infografiaSubtitulo') {
+                updateWireframe();
+            }
+        });
+        // También al editar bloques (ya se llama desde los eventos input)
     </script>
-
 </body>
 </html>
