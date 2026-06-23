@@ -584,12 +584,21 @@
                     sections[sections.length - 1].text = estructura.substring(lastIndex).trim();
                 }
                 sections.forEach(s => {
-                    s.text = s.text.replace(/[│├└─]+/g, '').replace(/\n{3,}/g, '\n\n').trim();
+                    s.text = s.text
+                        .replace(/[─│┌┐└┘├┤┬┴┼═]/g, '')
+                        .replace(/\[\d+[–\-]\d+\]\s*/g, '')
+                        .replace(/→ FUNCIÓN:.*$/gm, '')
+                        .replace(/\n{3,}/g, '\n\n')
+                        .trim();
+                    const flujoIndex = s.text.indexOf('FLUJO VISUAL RESUMIDO');
+                    if (flujoIndex !== -1) s.text = s.text.substring(0, flujoIndex).trim();
+                    const consIndex = s.text.indexOf('CONSIDERACIÓN FINAL');
+                    if (consIndex !== -1) s.text = s.text.substring(0, consIndex).trim();
                 });
                 if (sections.length === 0) {
                     sections.push({
                         title: 'Infografía PNFT',
-                        text: estructura.replace(/[│├└─]+/g, '').trim()
+                        text: estructura.replace(/[─│┌┐└┘├┤┬┴┼═]/g, '').trim()
                     });
                 }
                 sections.forEach(s => {
@@ -683,9 +692,12 @@
                     gris: '#c9c9c9'
                 };
 
+                let rawTitle = titleMatch[1] ? titleMatch[1].trim() : (state.documentText.split('\n')[0] || 'Infografía PNFT');
+                rawTitle = rawTitle.replace(/[─│┌┐└┘├┤┬┴┼═]/g, '').replace(/\s{2,}/g, ' ').trim();
+
                 const json = {
                     infografía: {
-                        titulo: titleMatch[1] ? titleMatch[1].trim() : (state.documentText.split('\n')[0] || 'Infografía PNFT'),
+                        titulo: rawTitle,
                         subtitulo: subMatch[1] ? subMatch[1].trim() : 'Orientaciones para la implementación curricular',
                         propósito: {
                             pregunta: '¿CUÁL ES EL PROPÓSITO DE ESTA ESTRATEGIA?',
