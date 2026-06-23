@@ -832,10 +832,23 @@
       overflow-y: auto;
       padding-right: 4px;
     }
+    .doc-list {
+      margin: 8px 0 12px;
+      font-size: 13px;
+      color: var(--azul-oscuro);
+      background: #eef8fb;
+      padding: 10px 14px;
+      border-radius: 14px;
+      border: 1px solid #cbeef2;
+    }
+    .doc-list span {
+      font-weight: 600;
+    }
   </style>
 </head>
 <body>
   <div class="app">
+    <!-- SIDEBAR -->
     <aside class="sidebar">
       <div class="brand">
         <div class="brand-logo">PNFT</div>
@@ -875,6 +888,7 @@
       </div>
     </aside>
 
+    <!-- MAIN -->
     <main class="main">
       <section class="topbar">
         <div class="hero">
@@ -896,18 +910,19 @@
         <div class="panel-grid">
           <div class="card">
             <h3>1. Documento fuente</h3>
-            <p class="lead">Carga un archivo (Word, PDF, PPT, imagen) o pega el texto directamente.</p>
+            <p class="lead">Carga uno o varios archivos (Word, PDF, PPT, imagen) o pega el texto directamente. Se fusionarán automáticamente.</p>
 
             <div class="file-drop" id="fileDrop">
               <div class="icon">📂</div>
-              <div class="text">Arrastra o selecciona un archivo</div>
+              <div class="text">Arrastra o selecciona múltiples archivos</div>
               <div class="extras">Word (.docx) · PDF · PowerPoint (.pptx) · Imagen · TXT</div>
-              <input type="file" id="fileInput" accept=".docx,.pdf,.pptx,.ppt,.txt,.png,.jpg,.jpeg,.gif,.bmp">
+              <input type="file" id="fileInput" accept=".docx,.pdf,.pptx,.ppt,.txt,.png,.jpg,.jpeg,.gif,.bmp" multiple>
             </div>
             <div id="fileStatus" class="file-status">Ningún archivo cargado</div>
+            <div id="docList" class="doc-list" style="display:none;"></div>
 
             <div class="field">
-              <label for="docTitle">Título del documento</label>
+              <label for="docTitle">Título del documento (principal)</label>
               <input id="docTitle" placeholder="Ej: Orientaciones de Asesoría y Seguimiento" />
             </div>
             <div class="field">
@@ -915,7 +930,7 @@
               <input id="docDate" placeholder="Ej: Junio 2026" />
             </div>
             <div class="field">
-              <label for="sourceText">Texto del documento fuente</label>
+              <label for="sourceText">Texto del documento fuente (combinado)</label>
               <textarea id="sourceText" placeholder="Pega aquí el documento completo..."></textarea>
             </div>
             <div class="btn-row">
@@ -1160,7 +1175,8 @@
       },
       docTitle: "Orientaciones de AyS para centros educativos de incorporación posterior al inicio del curso lectivo",
       docDate: "Junio 2026",
-      sourceText: ""
+      sourceText: "",
+      loadedFiles: []
     };
 
     // ================================================================
@@ -1188,13 +1204,16 @@
           if (state.understanding) {
             document.getElementById('understanding').innerHTML = buildUnderstandingHTML(state.understanding);
           }
+          if (state.loadedFiles && state.loadedFiles.length) {
+            updateFileList(state.loadedFiles);
+          }
           goStep(state.step || 1);
         } catch (e) { console.warn('Error al cargar estado', e); }
       } else {
         loadExample();
       }
 
-      // Eventos para guardar automáticamente y actualizar vista previa
+      // Eventos automáticos
       document.getElementById('docTitle').addEventListener('input', () => { state.docTitle = document.getElementById(
           'docTitle').value;
         saveState();
@@ -1207,17 +1226,15 @@
         state.sourceText = e.target.value;
         saveState();
       });
-      // Configuración: al cambiar cualquier select, guardar y actualizar vista previa
-      const configSelects = document.querySelectorAll('#panel-2 select');
-      configSelects.forEach(el => {
+      document.querySelectorAll('#panel-2 select').forEach(el => {
         el.addEventListener('change', () => {
           saveConfig();
           saveState();
-          renderPreview(); // ← importante: actualiza wireframe al cambiar configuración
+          renderPreview();
         });
       });
 
-      // Carga de archivos
+      // Carga de archivos (múltiple)
       document.getElementById('fileInput').addEventListener('change', handleFileUpload);
       const drop = document.getElementById('fileDrop');
       drop.addEventListener('dragover', (e) => { e.preventDefault();
@@ -1232,7 +1249,6 @@
         }
       });
 
-      // Navegación sidebar
       document.querySelectorAll('.step-btn').forEach(btn => {
         btn.addEventListener('click', () => goStep(Number(btn.dataset.step)));
       });
@@ -1272,76 +1288,93 @@
     }
 
     // ================================================================
-    //  CARGA DE DOCUMENTOS (archivos)
+    //  CARGA DE MÚLTIPLES DOCUMENTOS
     // ================================================================
     function handleFileUpload(e) {
       const files = e.target.files;
       if (!files || !files.length) return;
-      const file = files[0];
-      const ext = file.name.split('.').pop().toLowerCase();
-      document.getElementById('fileStatus').textContent = '⏳ Cargando: ' + file.name;
+      document.getElementById('fileStatus').textContent = `⏳ Cargando ${files.length} archivo(s)...`;
+      let combinedText = document.getElementById('sourceText').value || '';
+      const fileNames = [];
+      let processed = 0;
 
-      if (ext === 'txt') {
-        const reader = new FileReader();
-        reader.onload = (ev) => {
-          document.getElementById('sourceText').value = ev.target.result;
-          state.sourceText = ev.target.result;
-          document.getElementById('fileStatus').textContent = '✅ TXT cargado';
+      function processFile(index) {
+        if (index >= files.length) {
+          document.getElementById('fileStatus').textContent = `✅ ${files.length} archivo(s) cargado(s).`;
+          document.getElementById('sourceText').value = combinedText;
+          state.sourceText = combinedText;
+          state.loadedFiles = fileNames;
+          updateFileList(fileNames);
           saveState();
-          analyzeDocument();
-        };
-        reader.readAsText(file);
-      } else if (ext === 'pdf') {
+          return;
+        }
+        const file = files[index];
+        const ext = file.name.split('.').pop().toLowerCase();
         const reader = new FileReader();
         reader.onload = async (ev) => {
+          let text = '';
           try {
-            const typedArray = new Uint8Array(ev.target.result);
-            const pdf = await pdfjsLib.getDocument(typedArray).promise;
-            let text = '';
-            for (let i = 1; i <= pdf.numPages; i++) {
-              const page = await pdf.getPage(i);
-              const content = await page.getTextContent();
-              text += content.items.map(item => item.str).join(' ') + '\n';
+            if (ext === 'txt') {
+              text = ev.target.result;
+            } else if (ext === 'pdf') {
+              const typedArray = new Uint8Array(ev.target.result);
+              const pdf = await pdfjsLib.getDocument(typedArray).promise;
+              let txt = '';
+              for (let i = 1; i <= pdf.numPages; i++) {
+                const page = await pdf.getPage(i);
+                const content = await page.getTextContent();
+                txt += content.items.map(item => item.str).join(' ') + '\n';
+              }
+              text = txt;
+            } else if (ext === 'docx') {
+              const arrayBuffer = ev.target.result;
+              const result = await mammoth.extractRawText({ arrayBuffer });
+              text = result.value;
+            } else if (ext === 'pptx' || ext === 'ppt') {
+              text = `[Contenido de ${file.name} no extraíble automáticamente. Por favor, pega su texto manualmente.]`;
+            } else if (['png', 'jpg', 'jpeg', 'gif', 'bmp', 'webp'].includes(ext)) {
+              text = `[Imagen: ${file.name} - describe su contenido en el área de texto si es necesario.]`;
+            } else {
+              text = `[Formato no soportado: ${file.name}]`;
             }
-            document.getElementById('sourceText').value = text;
-            state.sourceText = text;
-            document.getElementById('fileStatus').textContent = '✅ PDF cargado';
-            saveState();
-            analyzeDocument();
           } catch (err) {
-            alert('Error al leer PDF: ' + err.message);
-            document.getElementById('fileStatus').textContent = '❌ Error en PDF';
+            text = `[Error al leer ${file.name}: ${err.message}]`;
           }
-        };
-        reader.readAsArrayBuffer(file);
-      } else if (ext === 'docx') {
-        const reader = new FileReader();
-        reader.onload = async (ev) => {
-          try {
-            const arrayBuffer = ev.target.result;
-            const result = await mammoth.extractRawText({ arrayBuffer });
-            document.getElementById('sourceText').value = result.value;
-            state.sourceText = result.value;
-            document.getElementById('fileStatus').textContent = '✅ DOCX cargado';
-            saveState();
-            analyzeDocument();
-          } catch (err) {
-            alert('Error al leer DOCX: ' + err.message);
-            document.getElementById('fileStatus').textContent = '❌ Error en DOCX';
+          if (text.trim()) {
+            combinedText += `\n\n--- ${file.name} ---\n${text}`;
+          } else {
+            combinedText += `\n\n--- ${file.name} (sin texto extraíble) ---`;
           }
+          fileNames.push(file.name);
+          processed++;
+          document.getElementById('fileStatus').textContent = `⏳ Procesando ${processed}/${files.length}...`;
+          processFile(index + 1);
         };
-        reader.readAsArrayBuffer(file);
-      } else if (ext === 'pptx' || ext === 'ppt') {
-        alert('⚠️ PowerPoint no se procesa automáticamente. Por favor, pega el contenido manualmente.');
-        document.getElementById('fileStatus').textContent = '⚠️ PPT no compatible';
-      } else if (['png', 'jpg', 'jpeg', 'gif', 'bmp', 'webp'].includes(ext)) {
-        alert('🖼️ Imagen cargada como referencia. No se extrae texto. Describe su contenido si es necesario.');
-        document.getElementById('fileStatus').textContent = '🖼️ Imagen cargada (referencia)';
-      } else {
-        alert('Formato no soportado para extracción automática. Usa TXT, PDF o DOCX.');
-        document.getElementById('fileStatus').textContent = '❌ Formato no soportado';
+        if (ext === 'txt') {
+          reader.readAsText(file);
+        } else if (ext === 'pdf' || ext === 'docx' || ext === 'pptx' || ext === 'ppt' || ['png', 'jpg', 'jpeg', 'gif',
+            'bmp', 'webp'
+          ].includes(ext)) {
+          reader.readAsArrayBuffer(file);
+        } else {
+          combinedText += `\n\n--- ${file.name} (formato no compatible) ---\n`;
+          fileNames.push(file.name);
+          processed++;
+          document.getElementById('fileStatus').textContent = `⏳ Procesando ${processed}/${files.length}...`;
+          processFile(index + 1);
+        }
       }
-      e.target.value = '';
+      processFile(0);
+    }
+
+    function updateFileList(fileNames) {
+      const container = document.getElementById('docList');
+      if (fileNames && fileNames.length) {
+        container.style.display = 'block';
+        container.innerHTML = `<span>📄 Documentos cargados:</span> ${fileNames.join(', ')}`;
+      } else {
+        container.style.display = 'none';
+      }
     }
 
     // ================================================================
@@ -1352,7 +1385,7 @@
       const title = document.getElementById('docTitle').value.trim() || 'Documento PNFT';
       const date = document.getElementById('docDate').value.trim() || 'Sin fecha';
       if (!text) {
-        alert('Pega primero el documento fuente o carga un archivo.');
+        alert('Pega primero el documento fuente o carga archivos.');
         return;
       }
       state.docTitle = title;
@@ -1559,7 +1592,7 @@
     }
 
     // ================================================================
-    //  VISTA PREVIA (wireframe) - ahora refleja el layout seleccionado
+    //  VISTA PREVIA (wireframe) - refleja el layout seleccionado
     // ================================================================
     function renderPreview() {
       saveConfig();
@@ -1568,8 +1601,6 @@
       const layout = state.config.layout || 'Grid 2x3';
       const blocks = state.blocks;
 
-      // Construir el HTML de los bloques según el layout
-      let cardsHTML = '';
       const renderCard = (block) => `
         <article class="route-card">
           <div class="route-num">${escapeHTML(block.numero)}</div>
@@ -1579,23 +1610,20 @@
         </article>
       `;
 
-      let gridStyle = '';
       let bodyContent = '';
+      let gridStyle = '';
 
       if (layout === 'Secuencial lineal') {
-        // Mostrar bloques en una sola columna con flechas
         bodyContent = blocks.map((b, i) => `
           ${renderCard(b)}
           ${i < blocks.length - 1 ? '<div style="text-align:center;font-size:24px;color:var(--azul-claro);">↓</div>' : ''}
         `).join('');
         gridStyle = 'grid-template-columns: 1fr; max-width: 400px; margin:0 auto;';
       } else if (layout === 'Grid 2x3') {
-        // Grid de 2 o 3 columnas según cantidad
         let cols = 3;
         if (blocks.length <= 2) cols = 2;
         else if (blocks.length <= 4) cols = 2;
         else cols = 3;
-        // Si hay más de 6, usamos 3 columnas y más filas
         if (blocks.length > 6) cols = 3;
         const rows = Math.ceil(blocks.length / cols);
         let grid = '';
@@ -1606,12 +1634,10 @@
         bodyContent = grid;
         gridStyle = `grid-template-columns: repeat(${cols}, 1fr);`;
       } else if (layout === 'Tres columnas') {
-        // Dividir en 3 columnas: inicio, desarrollo, conclusión
         const mid = Math.floor(blocks.length / 3);
         const col1 = blocks.slice(0, mid);
         const col2 = blocks.slice(mid, mid * 2);
         const col3 = blocks.slice(mid * 2);
-        // Renderizar cada columna
         const renderCol = (col, label) => `
           <div style="display:flex;flex-direction:column;gap:10px;">
             <div style="font-weight:800;color:var(--azul-oscuro);font-size:13px;text-align:center;">${label}</div>
@@ -1625,11 +1651,9 @@
         `;
         gridStyle = 'grid-template-columns: repeat(3, 1fr);';
       } else if (layout === 'Flujo Z') {
-        // Flujo Z: fila superior, luego flecha, luego fila inferior (invertida)
         const half = Math.ceil(blocks.length / 2);
         const top = blocks.slice(0, half);
         const bottom = blocks.slice(half);
-        // Mostrar top en orden, luego bottom en orden inverso para simular flujo Z
         const topHTML = top.map(b => renderCard(b)).join('');
         const bottomHTML = bottom.slice().reverse().map(b => renderCard(b)).join('');
         bodyContent = `
@@ -1639,7 +1663,6 @@
         `;
         gridStyle = 'grid-template-columns: 1fr;';
       } else if (layout === 'Pirámide') {
-        // Pirámide: 1 arriba, 2 abajo, 3 abajo, etc.
         let pyramidHTML = '';
         let index = 0;
         let level = 1;
@@ -1657,12 +1680,10 @@
         bodyContent = pyramidHTML;
         gridStyle = 'grid-template-columns: 1fr;';
       } else {
-        // fallback: grid simple
         bodyContent = blocks.map(b => renderCard(b)).join('');
         gridStyle = 'grid-template-columns: repeat(3, 1fr);';
       }
 
-      // Construir el wireframe completo
       document.getElementById('previewStage').innerHTML = `
         <section class="inf-header">
           <div class="inf-logo">PNFT</div>
