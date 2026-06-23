@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>PNFT Infografía Lab · Lienzo Visual</title>
+    <title>PNFT Infografía Lab · Sistema Completo</title>
     <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
     <script src="https://cdnjs.cloudflare.com/ajax/libs/pdf.js/3.11.174/pdf.min.js"></script>
     <script src="https://cdn.jsdelivr.net/npm/mammoth@1.6.0/mammoth.browser.min.js"></script>
@@ -14,6 +14,7 @@
             --bg: #F8FAFC; --surface: #FFFFFF; --border: #E2E8F0;
             --text: #1E293B; --text-secondary: #64748B;
             --primary: #09B7AE; --primary-hover: #089B92;
+            --danger: #EF4444; --warning: #F59E0B; --success: #10B981;
             --shadow-sm: 0 1px 3px rgba(0,0,0,0.06), 0 1px 2px rgba(0,0,0,0.04);
             --shadow-md: 0 4px 12px rgba(0,0,0,0.08);
             --radius-lg: 20px; --radius: 12px;
@@ -48,9 +49,9 @@
         .btn-sm { padding:0.4rem 0.8rem; font-size:0.8rem; }
         .main-container { display:flex; flex:1; overflow:hidden; }
         .toolbar {
-            width:260px; background:var(--surface); border-right:1px solid var(--border);
+            width:280px; background:var(--surface); border-right:1px solid var(--border);
             padding:1rem; display:flex; flex-direction:column; gap:1rem;
-            overflow-y:auto;
+            overflow-y:auto; max-height:calc(100vh - 70px);
         }
         .toolbar label { font-weight:600; font-size:0.8rem; color:var(--text-secondary); display:block; margin-bottom:0.3rem; }
         select, input[type="text"], input[type="number"] {
@@ -62,16 +63,11 @@
             flex:1; padding:1.5rem; overflow-y:auto;
             display:flex; flex-direction:column; align-items:center; gap:1.5rem;
         }
-        .canvas-settings {
-            display:flex; gap:1rem; flex-wrap:wrap; align-items:center;
-            background:var(--surface); padding:0.75rem 1rem; border-radius:var(--radius);
-            box-shadow: var(--shadow-sm);
-        }
         .canvas {
             background: var(--surface); border-radius: var(--radius-lg);
             box-shadow: var(--shadow-md); padding:2rem;
             display:flex; flex-direction:column; gap:1.5rem;
-            transition: all 0.3s;
+            transition: all 0.3s; width:100%; max-width:1200px;
         }
         .block-card {
             background: #fff; border:2px solid var(--border); border-radius:var(--radius);
@@ -79,6 +75,8 @@
             box-shadow: var(--shadow-sm); transition: box-shadow 0.2s;
         }
         .block-card:hover { box-shadow: var(--shadow-md); }
+        .block-card.density-warn { border-color: var(--warning); }
+        .block-card.density-bad { border-color: var(--danger); }
         .block-card .block-header {
             display:flex; align-items:center; justify-content:space-between;
             margin-bottom:0.5rem;
@@ -90,27 +88,41 @@
             resize:vertical; background:var(--bg);
         }
         .block-card .block-controls {
-            display:flex; gap:0.5rem; margin-top:0.5rem; flex-wrap:wrap;
+            display:flex; gap:0.5rem; margin-top:0.5rem; flex-wrap:wrap; align-items:center;
         }
+        .density-indicator {
+            display:inline-block; width:12px; height:12px; border-radius:50%;
+            margin-left:8px;
+        }
+        .density-ok { background: var(--success); }
+        .density-warn { background: var(--warning); }
+        .density-bad { background: var(--danger); }
         .toast {
             position:fixed; bottom:2rem; right:2rem; background:#1E293B;
             color:#fff; padding:0.8rem 1.5rem; border-radius:30px; font-weight:600;
             z-index:999; opacity:0; transition:0.3s;
         }
         .toast.show { opacity:1; }
-        .advanced-panel {
-            background:var(--surface); border-radius:var(--radius);
-            padding:1rem; margin-top:1rem; box-shadow: var(--shadow-sm);
+        .pnft-panel {
+            background: #EFF6FF; border:1px solid #BFDBFE; border-radius:var(--radius);
+            padding:1rem; margin-top:1rem;
+        }
+        .pnft-panel h4 { color:#1E40AF; margin-bottom:0.5rem; }
+        .pnft-panel ul { margin-left:1.2rem; font-size:0.85rem; }
+        .fidelity-alert {
+            background: #FEF3C7; border:1px solid #F59E0B; border-radius:8px;
+            padding:0.5rem; margin:0.5rem 0; font-size:0.8rem;
         }
         @media (max-width:800px) {
             .main-container { flex-direction:column; }
-            .toolbar { width:100%; flex-direction:row; flex-wrap:wrap; }
+            .toolbar { width:100%; max-height:auto; flex-direction:row; flex-wrap:wrap; }
+            .canvas { max-width:100%; }
         }
     </style>
 </head>
 <body>
     <header>
-        <div class="logo"><div class="logo-icon">P</div> Infografía Lab</div>
+        <div class="logo"><div class="logo-icon">P</div> Infografía Lab · Sistema PNFT</div>
         <div style="display:flex; gap:0.5rem; flex-wrap:wrap;">
             <button class="btn btn-outline btn-sm" id="btnApiKey">🔑 Clave</button>
             <button class="btn btn-sm" id="btnReset">↺ Nuevo</button>
@@ -164,23 +176,24 @@
             <button class="btn btn-sm" id="btnAddBlock">➕ Agregar bloque</button>
             <button class="btn btn-outline btn-sm" id="btnLoadDocument">📂 Cargar documento</button>
             <input type="file" id="fileInput" accept=".docx,.pdf,.pptx,.txt" hidden>
+            <button class="btn btn-sm" id="btnAnalyze">🤖 Analizar con PNFT</button>
+            <button class="btn btn-sm btn-outline" id="btnVerifyFidelity">🔍 Verificar fidelidad</button>
             <button class="btn btn-sm" id="btnPreview">👁️ Previsualizar</button>
             <button class="btn btn-sm" id="btnBuildPrompt">🪄 Generar prompt</button>
-            <details class="advanced-panel">
-                <summary style="cursor:pointer; font-weight:600;">⚙️ Modo avanzado</summary>
-                <div style="margin-top:0.5rem;">
-                    <label>JSON de estructura</label>
-                    <textarea id="jsonEditor" rows="6" style="font-family:monospace; font-size:0.8rem;"></textarea>
-                    <button class="btn btn-outline btn-sm" id="btnUpdateFromJSON" style="margin-top:0.5rem;">Actualizar desde JSON</button>
+            <details class="pnft-panel" id="pnftPanel" open>
+                <summary style="cursor:pointer; font-weight:600;">📋 Recomendaciones PNFT</summary>
+                <div id="pnftRecommendations" style="margin-top:0.5rem;">
+                    <p style="font-size:0.85rem; color:var(--text-secondary);">Ejecuta "Analizar con PNFT" para obtener sugerencias.</p>
                 </div>
+            </details>
+            <details class="pnft-panel">
+                <summary style="cursor:pointer; font-weight:600;">⚙️ JSON (avanzado)</summary>
+                <textarea id="jsonEditor" rows="6" style="font-family:monospace; font-size:0.8rem; width:100%; margin-top:0.5rem;"></textarea>
+                <button class="btn btn-outline btn-sm" id="btnUpdateFromJSON" style="margin-top:0.5rem;">Actualizar desde JSON</button>
             </details>
         </aside>
 
         <div class="canvas-area">
-            <div class="canvas-settings">
-                <span style="font-weight:600;">Área de trabajo</span>
-                <span id="canvasSizeLabel" style="color:var(--text-secondary); font-size:0.85rem;"></span>
-            </div>
             <div class="canvas" id="canvas"></div>
         </div>
     </div>
@@ -213,11 +226,10 @@
                 stepResponses: JSON.parse(localStorage.getItem('pnft_responses') || '{}'),
                 approvedSteps: new Set(JSON.parse(localStorage.getItem('pnft_approved') || '[]')),
                 json: localStorage.getItem('pnft_json') || '',
+                fidelityWarnings: []
             };
 
-            // 🔥 BIBLIOTECA COMPLETA DE 150 ICONOS 3D
             const iconLibrary = [
-                // Semi realista (40)
                 { emoji: '🧠', name: 'cerebro_neuronal', style: 'semi' },
                 { emoji: '🫀', name: 'corazon_anatomico', style: 'semi' },
                 { emoji: '👁️', name: 'ojo_humano', style: 'semi' },
@@ -258,7 +270,6 @@
                 { emoji: '🦴', name: 'esqueleto_humano', style: 'semi' },
                 { emoji: '🧠', name: 'cerebro_lobulo_frontal', style: 'semi' },
                 { emoji: '🫁', name: 'pulmones', style: 'semi' },
-                // Isométrico tecnológico (40)
                 { emoji: '🖥️', name: 'monitor_pc', style: 'isometrico' },
                 { emoji: '📱', name: 'smartphone', style: 'isometrico' },
                 { emoji: '⌨️', name: 'teclado_mecanico', style: 'isometrico' },
@@ -299,7 +310,6 @@
                 { emoji: '🛠️', name: 'llave_inglesa', style: 'isometrico' },
                 { emoji: '📹', name: 'camara_seguridad', style: 'isometrico' },
                 { emoji: '🧭', name: 'brujula_digital', style: 'isometrico' },
-                // Futurista tecnológico (40)
                 { emoji: '🧠', name: 'interfaz_cerebro_maquina', style: 'futurista' },
                 { emoji: '🦾', name: 'brazo_bionico', style: 'futurista' },
                 { emoji: '👁️', name: 'implante_ocular', style: 'futurista' },
@@ -340,7 +350,6 @@
                 { emoji: '🦿', name: 'protesis_deportiva', style: 'futurista' },
                 { emoji: '🧪', name: 'pildora_inteligente', style: 'futurista' },
                 { emoji: '🌟', name: 'nodo_estelar', style: 'futurista' },
-                // Fotorrealista (30)
                 { emoji: '📷', name: 'camara_dslr', style: 'fotorealista' },
                 { emoji: '🎻', name: 'violin_madera', style: 'fotorealista' },
                 { emoji: '🎺', name: 'trompeta_dorada', style: 'fotorealista' },
@@ -377,20 +386,17 @@
                 {
                     id: 'estructura',
                     title: '🧩 Bloque 1 – Sistema de Estructura',
-                    desc: 'Define wireframe 16:9, distribución de bloques, flujo de lectura y organización PNFT.',
                     promptBase: `Actúa como arquitecto de información PNFT. Analiza el documento y define en UN SOLO BLOQUE: 1) Wireframe 16:9 con 12 columnas. 2) Distribución de bloques principales. 3) Flujo de lectura (izquierda→derecha). 4) Organización de secciones según la estructura curricular. Usa diagramas ASCII. Para cada sección, escribe "SECCIÓN X: Título" y luego el contenido detallado.`
                 },
                 {
                     id: 'jerarquia',
                     title: '🎯 Bloque 2 – Sistema de Jerarquía Multicapa',
-                    desc: 'Unifica jerarquía tipográfica, visual, cromática (paleta PNFT) e importancia pedagógica.',
-                    promptBase: `Aplica el sistema de jerarquía PNFT: 1) Jerarquía tipográfica (Poppins Bold, SemiBold, Regular). 2) Jerarquía por tamaño y espaciado. 3) Jerarquía cromática (paleta #09B7AE, #0BD2CE, #014D6B, #0B6284, #62BDF3, #063B7F, #45258F, #9ED16F, #C9C9C9). El color es codificación pedagógica. 4) Jerarquía de bloques según importancia pedagógica (Pesos PNFT: 1 contexto, 3 comprensión, 5 aplicación). Justifica cada decisión. Para cada sección, escribe "SECCIÓN X: Título" y luego el contenido detallado.`
+                    promptBase: `Aplica el sistema de jerarquía PNFT usando la respuesta anterior: 1) Jerarquía tipográfica (Poppins Bold, SemiBold, Regular). 2) Jerarquía por tamaño y espaciado. 3) Jerarquía cromática (paleta #09B7AE, #0BD2CE, #014D6B, #0B6284, #62BDF3, #063B7F, #45258F, #9ED16F, #C9C9C9). El color es codificación pedagógica. 4) Jerarquía de bloques según importancia pedagógica (Pesos PNFT: 1 contexto, 3 comprensión, 5 aplicación). Justifica cada decisión.`
                 },
                 {
                     id: 'estilo',
                     title: '🎨 Bloque 3 – Estilo Visual y Restricciones',
-                    desc: 'Define estilo, tipografía, iconografía, composición, densidad cognitiva y restricciones.',
-                    promptBase: `Aplica el sistema de estilo y restricciones PNFT: 1) ESTILO: Educativo, académico, profesional, moderno, secundaria. No infantil, no comercial. 2) TIPOGRAFÍA: Poppins (Bold, SemiBold, Regular). 3) ICONOGRAFÍA: Solo 3D semi realista (cerebro, bloques, robot, escudo). Prohibido flat, emojis, clipart. 4) ILUSTRACIONES: Adolescentes 16-18 años, vestimenta casual institucional. 5) COMPOSICIÓN: Tarjetas redondeadas, alto contraste, lectura ≤10s por bloque. 6) DENSIDAD COGNITIVA: Máximo 3-5 ideas por bloque. Evitar saturación. 7) RESTRICCIONES: No modificar, resumir, reinterpretar ni agregar contenido. Fidelidad 100%. Verifica con tabla. Para cada sección, escribe "SECCIÓN X: Título" y luego el contenido detallado.`
+                    promptBase: `Aplica el sistema de estilo y restricciones PNFT usando las respuestas anteriores: 1) ESTILO: Educativo, académico, profesional, moderno, secundaria. No infantil, no comercial. 2) TIPOGRAFÍA: Poppins (Bold, SemiBold, Regular). 3) ICONOGRAFÍA: Solo 3D semi realista (cerebro, bloques, robot, escudo). Prohibido flat, emojis, clipart. 4) ILUSTRACIONES: Adolescentes 16-18 años, vestimenta casual institucional. 5) COMPOSICIÓN: Tarjetas redondeadas, alto contraste, lectura ≤10s por bloque. 6) DENSIDAD COGNITIVA: Máximo 3-5 ideas por bloque. Evitar saturación. 7) RESTRICCIONES: No modificar, resumir, reinterpretar ni agregar contenido. Fidelidad 100%. Verifica con tabla.`
                 }
             ];
 
@@ -423,6 +429,114 @@
                     }
                 }
                 return prompt;
+            }
+
+            async function callGemini(prompt) {
+                if (!state.apiKey) throw new Error('Clave Gemini no configurada');
+                const res = await fetch(`https://generativelanguage.googleapis.com/v1beta/models/gemini-2.0-flash:generateContent?key=${state.apiKey}`, {
+                    method:'POST',
+                    headers:{'Content-Type':'application/json'},
+                    body: JSON.stringify({
+                        contents:[{parts:[{text:prompt}]}],
+                        generationConfig:{temperature:0.4, maxOutputTokens:3000}
+                    })
+                });
+                if (!res.ok) throw new Error((await res.json()).error?.message);
+                const data = await res.json();
+                return data.candidates[0].content.parts[0].text;
+            }
+
+            async function runAllAnalysisBlocks() {
+                if (!state.documentText) {
+                    toast('Primero carga un documento');
+                    return;
+                }
+                toast('⏳ Ejecutando análisis PNFT (Bloques 1, 2 y 3)...');
+                try {
+                    // Bloque 1
+                    let response;
+                    if (state.apiKey) {
+                        response = await callGemini(buildPrompt(0));
+                    } else {
+                        navigator.clipboard.writeText(buildPrompt(0));
+                        toast('Prompt Bloque 1 copiado. Pega la respuesta de ChatGPT aquí.');
+                        response = await new Promise(resolve => {
+                            const input = document.createElement('textarea');
+                            input.placeholder = 'Pega aquí la respuesta del Bloque 1...';
+                            input.style.cssText = 'position:fixed;top:50%;left:50%;transform:translate(-50%,-50%);z-index:9999;width:80%;height:200px;';
+                            document.body.appendChild(input);
+                            input.focus();
+                            input.addEventListener('blur', () => {
+                                resolve(input.value);
+                                document.body.removeChild(input);
+                            });
+                        });
+                    }
+                    state.stepResponses['estructura'] = response;
+                    state.approvedSteps.add('estructura');
+
+                    // Bloque 2
+                    if (state.apiKey) {
+                        response = await callGemini(buildPrompt(1));
+                    } else {
+                        navigator.clipboard.writeText(buildPrompt(1));
+                        toast('Prompt Bloque 2 copiado. Pega la respuesta de ChatGPT aquí.');
+                        response = await new Promise(resolve => {
+                            const input = document.createElement('textarea');
+                            input.placeholder = 'Pega aquí la respuesta del Bloque 2...';
+                            input.style.cssText = 'position:fixed;top:50%;left:50%;transform:translate(-50%,-50%);z-index:9999;width:80%;height:200px;';
+                            document.body.appendChild(input);
+                            input.focus();
+                            input.addEventListener('blur', () => {
+                                resolve(input.value);
+                                document.body.removeChild(input);
+                            });
+                        });
+                    }
+                    state.stepResponses['jerarquia'] = response;
+                    state.approvedSteps.add('jerarquia');
+
+                    // Bloque 3
+                    if (state.apiKey) {
+                        response = await callGemini(buildPrompt(2));
+                    } else {
+                        navigator.clipboard.writeText(buildPrompt(2));
+                        toast('Prompt Bloque 3 copiado. Pega la respuesta de ChatGPT aquí.');
+                        response = await new Promise(resolve => {
+                            const input = document.createElement('textarea');
+                            input.placeholder = 'Pega aquí la respuesta del Bloque 3...';
+                            input.style.cssText = 'position:fixed;top:50%;left:50%;transform:translate(-50%,-50%);z-index:9999;width:80%;height:200px;';
+                            document.body.appendChild(input);
+                            input.focus();
+                            input.addEventListener('blur', () => {
+                                resolve(input.value);
+                                document.body.removeChild(input);
+                            });
+                        });
+                    }
+                    state.stepResponses['estilo'] = response;
+                    state.approvedSteps.add('estilo');
+
+                    // Construir JSON y bloques visuales
+                    const json = buildInitialJSON();
+                    state.json = JSON.stringify(json, null, 2);
+                    document.getElementById('jsonEditor').value = state.json;
+
+                    const ruta = json.infografía["ruta implementación"] || [];
+                    state.blocks = ruta.map((item, idx) => ({
+                        id: Date.now() + idx,
+                        title: item.titulo,
+                        color: '#0B6284',
+                        icon: item.icono_3d || '🧠',
+                        text: item.descripción
+                    }));
+                    renderCanvas();
+                    updatePNFTRecommendations();
+                    saveState();
+                    toast('✅ Análisis PNFT completado. Revisa las recomendaciones.');
+                } catch (err) {
+                    toast('❌ Error: ' + err.message);
+                }
             }
 
             function extractSectionsFromStructure() {
@@ -468,6 +582,9 @@
 
             function buildInitialJSON() {
                 const estructura = state.stepResponses['estructura'] || '';
+                const jerarquia = state.stepResponses['jerarquia'] || '';
+                const estilo = state.stepResponses['estilo'] || '';
+
                 const titleMatch = estructura.match(/título[:\s]*([^\n]+)/i) || [];
                 const subMatch = estructura.match(/subtítulo[:\s]*([^\n]+)/i) || [];
                 const propositoMatch = estructura.match(/propósito[:\s]*([^\n]+)/i) || [];
@@ -521,61 +638,71 @@
                 };
             }
 
-            async function analyzeDocument() {
-                if (!state.documentText) {
-                    toast('Primero carga un documento');
+            function updatePNFTRecommendations() {
+                const container = document.getElementById('pnftRecommendations');
+                const jerarquia = state.stepResponses['jerarquia'] || '';
+                const estilo = state.stepResponses['estilo'] || '';
+
+                if (!jerarquia && !estilo) {
+                    container.innerHTML = '<p style="font-size:0.85rem; color:var(--text-secondary);">Ejecuta "Analizar con PNFT" para obtener sugerencias.</p>';
                     return;
                 }
-                toast('⏳ Analizando documento con IA...');
-                try {
-                    let response;
-                    if (state.apiKey) {
-                        const prompt = buildPrompt(0);
-                        const res = await fetch(`https://generativelanguage.googleapis.com/v1beta/models/gemini-2.0-flash:generateContent?key=${state.apiKey}`, {
-                            method:'POST',
-                            headers:{'Content-Type':'application/json'},
-                            body: JSON.stringify({
-                                contents:[{parts:[{text:prompt}]}],
-                                generationConfig:{temperature:0.4, maxOutputTokens:3000}
-                            })
-                        });
-                        if (!res.ok) throw new Error((await res.json()).error?.message);
-                        const data = await res.json();
-                        response = data.candidates[0].content.parts[0].text;
-                    } else {
-                        navigator.clipboard.writeText(buildPrompt(0));
-                        toast('Prompt copiado. Pega la respuesta de ChatGPT aquí.');
-                        response = await new Promise(resolve => {
-                            const input = document.createElement('textarea');
-                            input.placeholder = 'Pega aquí la respuesta de la IA...';
-                            input.style.cssText = 'position:fixed;top:50%;left:50%;transform:translate(-50%,-50%);z-index:9999;width:80%;height:200px;';
-                            document.body.appendChild(input);
-                            input.focus();
-                            input.addEventListener('blur', () => {
-                                resolve(input.value);
-                                document.body.removeChild(input);
-                            });
+
+                let html = '';
+                // Extraer recomendaciones de jerarquía
+                const tipografiaMatch = jerarquia.match(/Poppins\s*(Bold|SemiBold|Regular)/gi);
+                if (tipografiaMatch) {
+                    html += `<p><strong>Tipografía sugerida:</strong> ${tipografiaMatch.join(', ')}</p>`;
+                }
+                const colorMatches = jerarquia.match(/#[0-9a-fA-F]{6}/g);
+                if (colorMatches) {
+                    html += `<p><strong>Colores detectados:</strong> ${colorMatches.join(', ')}</p>`;
+                }
+                // Extraer restricciones
+                if (estilo.includes('No modificar')) {
+                    html += '<p><strong>⚠️ Restricción:</strong> No modificar, resumir ni reinterpretar el contenido.</p>';
+                }
+                if (estilo.includes('infantil')) {
+                    html += '<p><strong>🚫 Prohibido:</strong> Estilo infantil, caricaturas, emojis, clipart.</p>';
+                }
+                if (estilo.includes('3D')) {
+                    html += '<p><strong>🎨 Iconografía:</strong> Solo 3D semi realista.</p>';
+                }
+                if (!html) {
+                    html = '<p style="font-size:0.85rem;">Análisis completado. Revisa el JSON avanzado para más detalles.</p>';
+                }
+                container.innerHTML = html;
+            }
+
+            function checkFidelity() {
+                if (!state.documentText || state.blocks.length === 0) {
+                    toast('Primero carga un documento y analízalo');
+                    return;
+                }
+                state.fidelityWarnings = [];
+                state.blocks.forEach((block, idx) => {
+                    // Buscar si el texto del bloque aparece en el documento original
+                    const words = block.text.split(/\s+/).filter(w => w.length > 4);
+                    let foundCount = 0;
+                    words.forEach(word => {
+                        if (state.documentText.toLowerCase().includes(word.toLowerCase())) {
+                            foundCount++;
+                        }
+                    });
+                    const ratio = words.length > 0 ? foundCount / words.length : 0;
+                    if (ratio < 0.5) {
+                        state.fidelityWarnings.push({
+                            blockIndex: idx,
+                            title: block.title,
+                            ratio: Math.round(ratio * 100)
                         });
                     }
-                    state.stepResponses['estructura'] = response;
-                    state.approvedSteps.add('estructura');
-                    const json = buildInitialJSON();
-                    state.json = JSON.stringify(json, null, 2);
-                    document.getElementById('jsonEditor').value = state.json;
-                    // Convertir a bloques visuales
-                    const ruta = json.infografía["ruta implementación"] || [];
-                    state.blocks = ruta.map((item, idx) => ({
-                        id: Date.now() + idx,
-                        title: item.titulo,
-                        color: '#0B6284',
-                        icon: item.icono_3d || '🧠',
-                        text: item.descripción
-                    }));
-                    renderCanvas();
-                    saveState();
-                    toast('✅ Documento analizado. Ya puedes editar los bloques.');
-                } catch (err) {
-                    toast('❌ Error: ' + err.message);
+                });
+                renderCanvas();
+                if (state.fidelityWarnings.length > 0) {
+                    toast(`⚠️ ${state.fidelityWarnings.length} bloque(s) con posible desviación del documento original.`);
+                } else {
+                    toast('✅ Todos los bloques mantienen alta fidelidad con el documento.');
                 }
             }
 
@@ -587,11 +714,36 @@
                     card.className = 'block-card';
                     card.draggable = true;
                     card.dataset.index = index;
+
+                    // Validación de densidad
+                    const words = block.text.split(/\s+/).length;
+                    const ideas = block.text.split(/[.,;]/).length;
+                    let densityClass = '';
+                    let densityLabel = '';
+                    if (words > 60 || ideas > 5) {
+                        densityClass = 'density-bad';
+                        densityLabel = 'Alta densidad';
+                        card.classList.add('density-bad');
+                    } else if (words > 40 || ideas > 4) {
+                        densityClass = 'density-warn';
+                        densityLabel = 'Densidad media';
+                        card.classList.add('density-warn');
+                    } else {
+                        densityClass = 'density-ok';
+                        densityLabel = 'Densidad óptima';
+                    }
+
+                    // Verificar fidelidad
+                    const warning = state.fidelityWarnings.find(w => w.blockIndex === index);
+                    const fidelityAlert = warning ? `<div class="fidelity-alert">⚠️ Posible desviación del documento (${warning.ratio}% de coincidencia)</div>` : '';
+
                     card.innerHTML = `
                         <div class="block-header">
                             <span class="block-icon">${block.icon}</span>
+                            <span style="font-size:0.75rem;">${densityLabel} <span class="density-indicator ${densityClass}"></span></span>
                             <button class="btn btn-sm remove-block">🗑️</button>
                         </div>
+                        ${fidelityAlert}
                         <textarea rows="3">${escapeHtml(block.text)}</textarea>
                         <div class="block-controls">
                             <select class="block-color" style="width:auto;">
@@ -663,14 +815,27 @@
                 } catch (e) {}
             }
 
-            function updateCanvasSize() {
-                const [w, h] = state.settings.resolution.split('x').map(Number);
-                const canvas = document.getElementById('canvas');
-                const maxWidth = Math.min(w, 1200);
-                const scale = maxWidth / w;
-                canvas.style.width = maxWidth + 'px';
-                canvas.style.minHeight = (h * scale) + 'px';
-                document.getElementById('canvasSizeLabel').textContent = `${w} × ${h} (escala aproximada)`;
+            function openPreview() {
+                const w = window.open('', 'preview', 'width=1200,height=800');
+                const [rw, rh] = state.settings.resolution.split('x').map(Number);
+                let html = `<!DOCTYPE html><html><head><meta charset="UTF-8"><title>Vista previa</title>
+                <link href="https://fonts.googleapis.com/css2?family=${state.settings.fontFamily}:wght@400;600;700&display=swap" rel="stylesheet">
+                <style>
+                    body { font-family: '${state.settings.fontFamily}', sans-serif; background:#F5F7FA; margin:0; padding:20px; }
+                    .infografia { max-width:${rw}px; margin:0 auto; background:#fff; border-radius:20px; overflow:hidden; }
+                    .header { background:#063B7F; color:#fff; padding:30px; text-align:center; }
+                    .grid { display:flex; flex-wrap:wrap; gap:20px; padding:30px; }
+                    .card { border-radius:16px; padding:20px; color:#fff; flex:1 1 300px; }
+                    .card .icon { font-size:3rem; margin-bottom:10px; }
+                </style></head><body>
+                <div class="infografia"><div class="header"><h1>${state.settings.title||'Infografía'}</h1><p>${state.settings.subtitle||''}</p></div>
+                <div class="grid">`;
+                state.blocks.forEach(b => {
+                    html += `<div class="card" style="background:${b.color};"><div class="icon">${b.icon}</div><h2>${b.text.split('\n')[0]}</h2><p>${b.text.replace(/\n/g,'<br>')}</p></div>`;
+                });
+                html += `</div></div></body></html>`;
+                w.document.write(html);
+                w.document.close();
             }
 
             document.getElementById('btnAddBlock').addEventListener('click', () => {
@@ -710,69 +875,27 @@
                         json.slides.forEach(s => s.texts.forEach(t => text += t+'\n'));
                     } else throw new Error('Formato no soportado');
                     state.documentText = text;
-                    document.getElementById('docText').value = text;
-                    toast('✅ Documento cargado. Usa "Analizar documento" para extraer las secciones.');
+                    toast('✅ Documento cargado. Usa "Analizar con PNFT" para procesarlo.');
                     saveState();
                 } catch (err) { toast('❌ '+err.message); }
             });
 
-            document.getElementById('btnAnalyze').addEventListener('click', analyzeDocument);
+            document.getElementById('btnAnalyze').addEventListener('click', runAllAnalysisBlocks);
+            document.getElementById('btnVerifyFidelity').addEventListener('click', checkFidelity);
 
-            document.getElementById('orientation').addEventListener('change', (e) => {
-                state.settings.orientation = e.target.value;
-                saveState();
-            });
-            document.getElementById('resolution').addEventListener('change', (e) => {
-                state.settings.resolution = e.target.value;
-                updateCanvasSize();
-                saveState();
-            });
-            document.getElementById('fontFamily').addEventListener('change', (e) => {
-                state.settings.fontFamily = e.target.value;
-                saveState();
-            });
-            document.getElementById('baseFontSize').addEventListener('input', (e) => {
-                state.settings.baseFontSize = parseInt(e.target.value);
-                saveState();
-            });
-            document.getElementById('docTitle').addEventListener('input', (e) => {
-                state.settings.title = e.target.value;
-                saveState();
-            });
-            document.getElementById('docSubtitle').addEventListener('input', (e) => {
-                state.settings.subtitle = e.target.value;
-                saveState();
-            });
+            document.getElementById('orientation').addEventListener('change', (e) => { state.settings.orientation = e.target.value; saveState(); });
+            document.getElementById('resolution').addEventListener('change', (e) => { state.settings.resolution = e.target.value; saveState(); });
+            document.getElementById('fontFamily').addEventListener('change', (e) => { state.settings.fontFamily = e.target.value; saveState(); });
+            document.getElementById('baseFontSize').addEventListener('input', (e) => { state.settings.baseFontSize = parseInt(e.target.value); saveState(); });
+            document.getElementById('docTitle').addEventListener('input', (e) => { state.settings.title = e.target.value; saveState(); });
+            document.getElementById('docSubtitle').addEventListener('input', (e) => { state.settings.subtitle = e.target.value; saveState(); });
 
-            document.getElementById('btnPreview').addEventListener('click', () => {
-                const w = window.open('', 'preview', 'width=1200,height=800');
-                const [rw, rh] = state.settings.resolution.split('x').map(Number);
-                let html = `<!DOCTYPE html><html><head><meta charset="UTF-8"><title>Vista previa</title>
-                <link href="https://fonts.googleapis.com/css2?family=${state.settings.fontFamily}:wght@400;600;700&display=swap" rel="stylesheet">
-                <style>
-                    body { font-family: '${state.settings.fontFamily}', sans-serif; background:#F5F7FA; margin:0; padding:20px; }
-                    .infografia { max-width:${rw}px; margin:0 auto; background:#fff; border-radius:20px; overflow:hidden; }
-                    .header { background:#063B7F; color:#fff; padding:30px; text-align:center; }
-                    .grid { display:flex; flex-wrap:wrap; gap:20px; padding:30px; }
-                    .card { border-radius:16px; padding:20px; color:#fff; flex:1 1 300px; }
-                    .card .icon { font-size:3rem; margin-bottom:10px; }
-                    .card h2 { margin:0 0 10px; }
-                </style></head><body>
-                <div class="infografia"><div class="header"><h1>${state.settings.title||'Infografía'}</h1><p>${state.settings.subtitle||''}</p></div>
-                <div class="grid">`;
-                state.blocks.forEach(b => {
-                    html += `<div class="card" style="background:${b.color};"><div class="icon">${b.icon}</div><h2>${b.text.split('\n')[0]}</h2><p>${b.text.replace(/\n/g,'<br>')}</p></div>`;
-                });
-                html += `</div></div></body></html>`;
-                w.document.write(html);
-                w.document.close();
-            });
+            document.getElementById('btnPreview').addEventListener('click', openPreview);
 
             document.getElementById('btnBuildPrompt').addEventListener('click', () => {
                 let prompt = `Genera una infografía educativa PNFT con estos parámetros:\n\n`;
                 prompt += `Documento fuente: ${state.documentText}\n\n`;
-                prompt += `Orientación: ${state.settings.orientation}\n`;
-                prompt += `Resolución: ${state.settings.resolution}\n`;
+                prompt += `Orientación: ${state.settings.orientation}\nResolución: ${state.settings.resolution}\n`;
                 prompt += `Tipografía: ${state.settings.fontFamily}, tamaño base ${state.settings.baseFontSize}px\n`;
                 prompt += `Título: ${state.settings.title}\nSubtítulo: ${state.settings.subtitle}\n\n`;
                 prompt += `Bloques:\n`;
@@ -780,6 +903,7 @@
                     prompt += `${i+1}. Color: ${b.color}, Icono: ${b.icon}\n${b.text}\n\n`;
                 });
                 prompt += `Requisitos: formato 16:9, paleta PNFT, iconos 3D, estilo educativo profesional secundaria, no infantil.`;
+                prompt += `\nAnálisis de jerarquía:\n${state.stepResponses['jerarquia'] || ''}\n\nAnálisis de estilo:\n${state.stepResponses['estilo'] || ''}`;
                 navigator.clipboard.writeText(prompt).then(() => toast('📋 Prompt copiado'));
             });
 
@@ -798,14 +922,13 @@
                     renderCanvas();
                     saveState();
                     toast('✅ Actualizado desde JSON');
-                } catch (e) {
-                    toast('❌ JSON inválido');
-                }
+                } catch (e) { toast('❌ JSON inválido'); }
             });
 
             document.getElementById('btnReset').addEventListener('click', () => {
                 if (confirm('¿Reiniciar?')) {
                     state.documentText = ''; state.blocks = []; state.json = '';
+                    state.stepResponses = {}; state.approvedSteps.clear();
                     document.getElementById('docTitle').value = '';
                     document.getElementById('docSubtitle').value = '';
                     saveState(); renderCanvas();
@@ -827,8 +950,8 @@
             }
             state.documentText = localStorage.getItem('pnft_document') || '';
             if (state.json) document.getElementById('jsonEditor').value = state.json;
+            if (state.stepResponses['estructura']) updatePNFTRecommendations();
             renderCanvas();
-            updateCanvasSize();
         })();
     </script>
 </body>
