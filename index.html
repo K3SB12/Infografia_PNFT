@@ -2,387 +2,1441 @@
 <html lang="es">
 <head>
     <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>PNFT Infografía Lab · Sistema Guiado</title>
-    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
-    <script src="https://cdnjs.cloudflare.com/ajax/libs/pdf.js/3.11.174/pdf.min.js"></script>
-    <script src="https://cdn.jsdelivr.net/npm/mammoth@1.6.0/mammoth.browser.min.js"></script>
-    <script src="https://cdn.jsdelivr.net/npm/pptx2json@0.0.7/dist/pptx2json.min.js"></script>
-    <script src="https://cdn.jsdelivr.net/npm/tesseract.js@5/dist/tesseract.min.js"></script>
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.5">
+    <title>PNFT - Asistente de Infografías</title>
+    <!-- Bibliotecas para extraer texto de documentos -->
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/pdf.js/2.16.105/pdf.min.js">
+    </script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/mammoth/1.6.0/mammoth.browser.min.js">
+    </script>
     <style>
-        :root {
-            --bg: #F8FAFC; --surface: #FFFFFF; --border: #E2E8F0;
-            --text: #1E293B; --text-secondary: #64748B;
-            --primary: #09B7AE; --primary-hover: #089B92;
-            --danger: #EF4444; --warning: #F59E0B; --success: #10B981;
-            --shadow-sm: 0 1px 3px rgba(0,0,0,0.06);
-            --shadow-md: 0 4px 12px rgba(0,0,0,0.08);
-            --radius: 12px; --radius-lg: 20px;
+        /* --- RESET & BASE --- */
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
         }
-        * { margin:0; padding:0; box-sizing:border-box; }
-        body { font-family: 'Inter', system-ui, sans-serif; background: var(--bg); color: var(--text); min-height:100vh; display:flex; flex-direction:column; }
-        header { background: var(--surface); padding:0.75rem 1.5rem; display:flex; align-items:center; justify-content:space-between; flex-wrap:wrap; gap:0.75rem; box-shadow: var(--shadow-sm); position:sticky; top:0; z-index:100; }
-        .logo { display:flex; align-items:center; gap:0.5rem; font-weight:700; font-size:1.1rem; color:#014D6B; }
-        .logo-icon { width:34px; height:34px; background:linear-gradient(135deg, #09B7AE, #063B7F); border-radius:10px; display:flex; align-items:center; justify-content:center; color:#fff; font-weight:800; font-size:0.9rem; }
-        .btn { font-family:inherit; font-weight:600; font-size:0.85rem; padding:0.5rem 1rem; border-radius:30px; border:none; cursor:pointer; transition:0.2s; display:inline-flex; align-items:center; gap:0.4rem; background:var(--primary); color:#fff; }
-        .btn:hover { background:var(--primary-hover); }
-        .btn-outline { background:transparent; color:var(--primary); border:1.5px solid var(--primary); }
-        .btn-outline:hover { background:var(--primary); color:#fff; }
-        .btn-sm { padding:0.4rem 0.8rem; font-size:0.8rem; }
-        .main-container { display:flex; flex:1; overflow:hidden; }
-        .toolbar { width:280px; background:var(--surface); border-right:1px solid var(--border); padding:1rem; display:flex; flex-direction:column; gap:1rem; overflow-y:auto; max-height:calc(100vh - 70px); }
-        .toolbar label { font-weight:600; font-size:0.8rem; color:var(--text-secondary); display:block; margin-bottom:0.3rem; }
-        select, input[type="text"], input[type="number"] { width:100%; padding:0.5rem 0.75rem; border-radius:8px; border:1.5px solid var(--border); font-family:inherit; font-size:0.85rem; background:var(--bg); }
-        select:focus, input:focus { outline:none; border-color:var(--primary); }
-        .canvas-area { flex:1; padding:1.5rem; overflow-y:auto; display:flex; flex-direction:column; align-items:center; gap:1.5rem; }
-        .canvas { background: var(--surface); border-radius: var(--radius-lg); box-shadow: var(--shadow-md); padding:2rem; display:flex; flex-direction:column; gap:1.5rem; width:100%; max-width:1200px; }
-        .block-card { background: #fff; border:2px solid var(--border); border-radius:var(--radius); padding:1rem; cursor:move; position:relative; box-shadow: var(--shadow-sm); transition: box-shadow 0.2s; }
-        .block-card:hover { box-shadow: var(--shadow-md); }
-        .block-card.density-warn { border-color: var(--warning); }
-        .block-card.density-bad { border-color: var(--danger); }
-        .block-card .block-header { display:flex; align-items:center; justify-content:space-between; margin-bottom:0.5rem; }
-        .block-card .block-icon { font-size:2rem; }
-        .block-card textarea { width:100%; border:1px solid var(--border); border-radius:8px; padding:0.5rem; font-family:inherit; font-size:0.9rem; resize:vertical; background:var(--bg); }
-        .block-card .block-controls { display:flex; gap:0.5rem; margin-top:0.5rem; flex-wrap:wrap; align-items:center; }
-        .density-indicator { display:inline-block; width:12px; height:12px; border-radius:50%; margin-left:8px; }
-        .density-ok { background: var(--success); } .density-warn { background: var(--warning); } .density-bad { background: var(--danger); }
-        .toast { position:fixed; bottom:2rem; right:2rem; background:#1E293B; color:#fff; padding:0.8rem 1.5rem; border-radius:30px; font-weight:600; z-index:999; opacity:0; transition:0.3s; }
-        .toast.show { opacity:1; }
-        .pnft-panel { background: #EFF6FF; border:1px solid #BFDBFE; border-radius:var(--radius); padding:1rem; margin-top:1rem; }
-        .pnft-panel h4 { color:#1E40AF; margin-bottom:0.5rem; }
-        .fidelity-alert { background: #FEF3C7; border:1px solid #F59E0B; border-radius:8px; padding:0.5rem; margin:0.5rem 0; font-size:0.8rem; }
-        /* Panel de pasos de análisis */
-        .analysis-steps { background: #fff; border:2px solid var(--primary); border-radius:var(--radius-lg); padding:1.5rem; margin-bottom:1rem; }
-        .analysis-steps h3 { color: var(--primary); margin-bottom:0.75rem; }
-        .step-item { display:flex; align-items:center; gap:0.5rem; margin-bottom:0.5rem; font-size:0.9rem; }
-        .step-indicator { width:24px; height:24px; border-radius:50%; background: var(--bg); display:flex; align-items:center; justify-content:center; font-weight:700; font-size:0.8rem; }
-        .step-item.active .step-indicator { background: var(--primary); color: #fff; }
-        .step-item.completed .step-indicator { background: var(--success); color: #fff; }
-        @media (max-width:800px) { .main-container { flex-direction:column; } .toolbar { width:100%; max-height:auto; flex-direction:row; flex-wrap:wrap; } .canvas { max-width:100%; } }
+        body {
+            font-family: 'Poppins', sans-serif;
+            background: #f5f7fa;
+            color: #333;
+            min-height: 100vh;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            padding: 20px;
+        }
+        /* Simulamos Poppins con fallback */
+        @import url('https://fonts.googleapis.com/css2?family=Poppins:wght@300;400;600;700&display=swap');
+
+        .app-container {
+            max-width: 1300px;
+            width: 100%;
+            background: #ffffff;
+            border-radius: 32px;
+            box-shadow: 0 20px 60px rgba(1, 77, 107, 0.15);
+            overflow: hidden;
+            display: flex;
+            flex-direction: column;
+        }
+
+        /* --- HEADER INSTITUCIONAL --- */
+        .app-header {
+            background: linear-gradient(135deg, #014d6b 0%, #063b7f 100%);
+            padding: 20px 30px;
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            flex-wrap: wrap;
+            gap: 15px;
+        }
+        .logo-area {
+            display: flex;
+            align-items: center;
+            gap: 15px;
+        }
+        .logo-placeholder {
+            width: 50px;
+            height: 50px;
+            background: rgba(255, 255, 255, 0.15);
+            border-radius: 12px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-weight: 700;
+            font-size: 20px;
+            color: #fff;
+            letter-spacing: 1px;
+            backdrop-filter: blur(4px);
+        }
+        .app-title {
+            color: #fff;
+            font-weight: 600;
+            font-size: 1.3rem;
+            letter-spacing: 0.5px;
+        }
+        .app-title small {
+            font-weight: 300;
+            font-size: 0.8rem;
+            opacity: 0.8;
+            display: block;
+        }
+        .header-actions {
+            display: flex;
+            gap: 10px;
+            flex-wrap: wrap;
+        }
+        .header-actions button {
+            background: rgba(255, 255, 255, 0.12);
+            border: 1px solid rgba(255, 255, 255, 0.25);
+            color: #fff;
+            padding: 8px 16px;
+            border-radius: 30px;
+            font-size: 0.8rem;
+            font-weight: 500;
+            cursor: pointer;
+            transition: 0.2s;
+            backdrop-filter: blur(4px);
+            display: inline-flex;
+            align-items: center;
+            gap: 6px;
+        }
+        .header-actions button:hover {
+            background: rgba(255, 255, 255, 0.25);
+        }
+
+        /* --- STEPPER --- */
+        .stepper {
+            display: flex;
+            background: #f0f4f8;
+            padding: 16px 30px;
+            border-bottom: 1px solid #dce4ec;
+            flex-wrap: wrap;
+            gap: 8px;
+        }
+        .step-indicator {
+            display: flex;
+            align-items: center;
+            gap: 8px;
+            font-size: 0.85rem;
+            font-weight: 500;
+            color: #4a5b6e;
+            padding: 6px 14px;
+            border-radius: 30px;
+            background: transparent;
+            transition: 0.2s;
+            cursor: default;
+        }
+        .step-indicator.active {
+            background: #014d6b;
+            color: #fff;
+            box-shadow: 0 4px 10px rgba(1, 77, 107, 0.3);
+        }
+        .step-indicator .num {
+            display: inline-block;
+            width: 24px;
+            height: 24px;
+            border-radius: 50%;
+            background: rgba(0, 0, 0, 0.08);
+            text-align: center;
+            line-height: 24px;
+            font-weight: 700;
+            font-size: 0.8rem;
+        }
+        .step-indicator.active .num {
+            background: rgba(255, 255, 255, 0.25);
+        }
+        .step-separator {
+            color: #b0c4d8;
+            font-weight: 300;
+            font-size: 1.2rem;
+        }
+
+        /* --- CONTENIDO PRINCIPAL --- */
+        .main-content {
+            padding: 30px 35px;
+            background: #fff;
+            min-height: 500px;
+        }
+
+        .step-panel {
+            display: none;
+            animation: fadeIn 0.3s ease;
+        }
+        .step-panel.active {
+            display: block;
+        }
+        @keyframes fadeIn {
+            from {
+                opacity: 0;
+                transform: translateY(12px);
+            }
+            to {
+                opacity: 1;
+                transform: translateY(0);
+            }
+        }
+
+        .step-panel h2 {
+            font-size: 1.6rem;
+            font-weight: 700;
+            color: #014d6b;
+            margin-bottom: 6px;
+        }
+        .step-panel .sub {
+            color: #5a7a8e;
+            font-size: 0.95rem;
+            margin-bottom: 25px;
+            border-left: 4px solid #62bdf3;
+            padding-left: 16px;
+        }
+
+        /* --- BOTONES DE NAVEGACIÓN --- */
+        .nav-buttons {
+            display: flex;
+            justify-content: space-between;
+            margin-top: 30px;
+            gap: 15px;
+            flex-wrap: wrap;
+        }
+        .nav-buttons button {
+            padding: 12px 32px;
+            border: none;
+            border-radius: 40px;
+            font-weight: 600;
+            font-size: 0.95rem;
+            cursor: pointer;
+            transition: 0.2s;
+            background: #e9edf2;
+            color: #2c3e50;
+        }
+        .nav-buttons button.primary {
+            background: #014d6b;
+            color: #fff;
+            box-shadow: 0 6px 14px rgba(1, 77, 107, 0.25);
+        }
+        .nav-buttons button.primary:hover {
+            background: #063b7f;
+            transform: translateY(-2px);
+        }
+        .nav-buttons button:disabled {
+            opacity: 0.4;
+            pointer-events: none;
+        }
+
+        /* --- FORMULARIOS Y CONTROLES --- */
+        .form-group {
+            margin-bottom: 20px;
+        }
+        .form-group label {
+            display: block;
+            font-weight: 600;
+            font-size: 0.9rem;
+            color: #1d3b4f;
+            margin-bottom: 5px;
+        }
+        .form-group .hint {
+            font-size: 0.8rem;
+            color: #6a7e92;
+            margin-top: 4px;
+        }
+        input[type="text"],
+        input[type="number"],
+        select,
+        textarea {
+            width: 100%;
+            padding: 12px 16px;
+            border: 1px solid #d0dce8;
+            border-radius: 14px;
+            font-size: 0.95rem;
+            font-family: 'Poppins', sans-serif;
+            transition: 0.2s;
+            background: #fafcfe;
+        }
+        input:focus,
+        select:focus,
+        textarea:focus {
+            outline: none;
+            border-color: #62bdf3;
+            box-shadow: 0 0 0 3px rgba(98, 189, 243, 0.2);
+        }
+        textarea {
+            min-height: 120px;
+            resize: vertical;
+        }
+        .row-2col {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 20px;
+        }
+        .row-3col {
+            display: grid;
+            grid-template-columns: 1fr 1fr 1fr;
+            gap: 20px;
+        }
+        @media (max-width: 700px) {
+            .row-2col,
+            .row-3col {
+                grid-template-columns: 1fr;
+            }
+        }
+
+        /* --- CARGA DE ARCHIVOS --- */
+        .file-drop {
+            border: 2px dashed #b8ccdd;
+            border-radius: 20px;
+            padding: 35px 20px;
+            text-align: center;
+            cursor: pointer;
+            transition: 0.3s;
+            background: #f8fafc;
+            position: relative;
+        }
+        .file-drop:hover {
+            border-color: #62bdf3;
+            background: #f0f7fe;
+        }
+        .file-drop input[type="file"] {
+            position: absolute;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            opacity: 0;
+            cursor: pointer;
+        }
+        .file-drop .icon {
+            font-size: 2.8rem;
+            margin-bottom: 10px;
+        }
+        .file-drop .text {
+            font-weight: 500;
+            color: #1d3b4f;
+        }
+        .file-drop .extras {
+            font-size: 0.85rem;
+            color: #6a7e92;
+            margin-top: 6px;
+        }
+
+        /* --- BLOQUES EDITABLES --- */
+        .blocks-container {
+            display: flex;
+            flex-direction: column;
+            gap: 16px;
+            margin: 20px 0;
+        }
+        .block-item {
+            background: #f8fafc;
+            border-radius: 18px;
+            padding: 18px 22px;
+            border: 1px solid #e0e9f0;
+            display: grid;
+            grid-template-columns: 50px 1fr 1fr 0.6fr 40px;
+            gap: 12px;
+            align-items: center;
+            transition: 0.2s;
+        }
+        .block-item:hover {
+            border-color: #62bdf3;
+            background: #f0f7fe;
+        }
+        .block-item .b-num {
+            font-weight: 700;
+            color: #014d6b;
+            font-size: 1.2rem;
+            text-align: center;
+        }
+        .block-item input,
+        .block-item select {
+            padding: 8px 12px;
+            border-radius: 10px;
+            border: 1px solid #d0dce8;
+            font-size: 0.9rem;
+            background: #fff;
+        }
+        .block-item .b-del {
+            background: none;
+            border: none;
+            color: #b22234;
+            font-size: 1.4rem;
+            cursor: pointer;
+            font-weight: 300;
+            transition: 0.2s;
+            padding: 4px 8px;
+            border-radius: 8px;
+        }
+        .block-item .b-del:hover {
+            background: #fee8e8;
+        }
+        @media (max-width: 750px) {
+            .block-item {
+                grid-template-columns: 40px 1fr;
+                gap: 8px;
+            }
+            .block-item .b-num {
+                grid-row: span 2;
+            }
+            .block-item .b-del {
+                grid-row: span 2;
+                justify-self: end;
+            }
+        }
+
+        .add-block-btn {
+            background: #e9f0f7;
+            border: 1px dashed #62bdf3;
+            border-radius: 40px;
+            padding: 12px 24px;
+            font-weight: 600;
+            color: #014d6b;
+            cursor: pointer;
+            transition: 0.2s;
+            margin-top: 10px;
+            display: inline-flex;
+            align-items: center;
+            gap: 8px;
+        }
+        .add-block-btn:hover {
+            background: #dceaf5;
+        }
+
+        /* --- WIREFRAME ASCII --- */
+        .wireframe-box {
+            background: #0b1e2b;
+            color: #b0e0ff;
+            font-family: 'Courier New', monospace;
+            padding: 20px;
+            border-radius: 18px;
+            font-size: 0.8rem;
+            line-height: 1.6;
+            white-space: pre-wrap;
+            overflow-x: auto;
+            margin: 20px 0;
+            border: 1px solid #2a4a5e;
+        }
+
+        /* --- PROMPT FINAL --- */
+        .prompt-output {
+            background: #f2f6fb;
+            border-radius: 18px;
+            padding: 24px;
+            border: 1px solid #d0dce8;
+            font-size: 0.95rem;
+            white-space: pre-wrap;
+            max-height: 500px;
+            overflow-y: auto;
+            font-family: 'Poppins', sans-serif;
+            line-height: 1.6;
+        }
+
+        /* --- RESPONSIVE --- */
+        @media (max-width: 600px) {
+            .app-header {
+                padding: 15px;
+            }
+            .app-title {
+                font-size: 1rem;
+            }
+            .stepper {
+                padding: 12px 15px;
+                gap: 4px;
+            }
+            .step-indicator {
+                font-size: 0.7rem;
+                padding: 4px 10px;
+            }
+            .step-indicator .num {
+                width: 20px;
+                height: 20px;
+                line-height: 20px;
+                font-size: 0.7rem;
+            }
+            .main-content {
+                padding: 20px 15px;
+            }
+            .nav-buttons button {
+                padding: 10px 20px;
+                font-size: 0.85rem;
+                flex: 1;
+            }
+            .row-2col,
+            .row-3col {
+                grid-template-columns: 1fr;
+            }
+        }
+
+        /* --- MISC --- */
+        .badge {
+            display: inline-block;
+            background: #014d6b10;
+            color: #014d6b;
+            padding: 2px 12px;
+            border-radius: 30px;
+            font-size: 0.75rem;
+            font-weight: 600;
+            border: 1px solid #62bdf350;
+        }
+        .flex-center {
+            display: flex;
+            align-items: center;
+            gap: 12px;
+            flex-wrap: wrap;
+        }
+        .mt-10 {
+            margin-top: 10px;
+        }
+        .mb-10 {
+            margin-bottom: 10px;
+        }
+        .text-muted {
+            color: #5a7a8e;
+        }
+        .text-small {
+            font-size: 0.85rem;
+        }
+        .json-actions {
+            display: flex;
+            gap: 10px;
+            flex-wrap: wrap;
+            margin-top: 8px;
+        }
     </style>
 </head>
 <body>
-    <header>
-        <div class="logo"><div class="logo-icon">P</div> Infografía Lab · Sistema Guiado</div>
-        <div style="display:flex; gap:0.5rem; flex-wrap:wrap;">
-            <button class="btn btn-outline btn-sm" id="btnApiKey">🔑 Clave</button>
-            <button class="btn btn-sm" id="btnReset">↺ Nuevo</button>
-        </div>
-    </header>
 
-    <div class="main-container">
-        <aside class="toolbar" id="toolbar">
-            <div><label>📐 Orientación</label><select id="orientation"><option value="16:9" selected>16:9 (horizontal)</option><option value="9:16">9:16 (vertical)</option><option value="4:3">4:3</option><option value="3:2">3:2</option><option value="1:1">1:1 (cuadrado)</option><option value="4:5">4:5</option></select></div>
-            <div><label>🖥️ Resolución</label><select id="resolution"><option value="640x480">640 × 480</option><option value="1280x720">1280 × 720</option><option value="1920x1080" selected>1920 × 1080</option><option value="2560x1440">2560 × 1440</option><option value="3840x2160">3840 × 2160</option></select></div>
-            <div><label>🔤 Tipografía</label><select id="fontFamily"><option value="Poppins" selected>Poppins</option><option value="Inter">Inter</option><option value="Montserrat">Montserrat</option><option value="Roboto">Roboto</option></select></div>
-            <div><label>📏 Tamaño base</label><input type="number" id="baseFontSize" value="16" min="12" max="24" step="1"></div>
-            <div><label>🏷️ Título</label><input type="text" id="docTitle" placeholder="Título de la infografía"></div>
-            <div><label>📝 Subtítulo</label><input type="text" id="docSubtitle" placeholder="Subtítulo opcional"></div>
-            <button class="btn btn-sm" id="btnAddBlock">➕ Agregar bloque</button>
-            <button class="btn btn-outline btn-sm" id="btnLoadDocument">📂 Cargar documento</button>
-            <input type="file" id="fileInput" accept=".docx,.pdf,.pptx,.txt" hidden>
-            <button class="btn btn-sm" id="btnAnalyze">🤖 Analizar con PNFT</button>
-            <button class="btn btn-sm btn-outline" id="btnVerifyFidelity">🔍 Verificar fidelidad</button>
-            <button class="btn btn-sm" id="btnPreview">👁️ Previsualizar</button>
-            <button class="btn btn-sm" id="btnBuildPrompt">🪄 Generar prompt</button>
-            <details class="pnft-panel" id="pnftPanel" open>
-                <summary style="cursor:pointer; font-weight:600;">📋 Recomendaciones PNFT</summary>
-                <div id="pnftRecommendations" style="margin-top:0.5rem;"><p style="font-size:0.85rem; color:var(--text-secondary);">Ejecuta "Analizar con PNFT" para obtener sugerencias.</p></div>
-            </details>
-            <details class="pnft-panel"><summary style="cursor:pointer; font-weight:600;">⚙️ JSON (avanzado)</summary><textarea id="jsonEditor" rows="6" style="font-family:monospace; font-size:0.8rem; width:100%; margin-top:0.5rem;"></textarea><button class="btn btn-outline btn-sm" id="btnUpdateFromJSON" style="margin-top:0.5rem;">Actualizar desde JSON</button></details>
-        </aside>
-
-        <div class="canvas-area">
-            <div id="analysisSteps" class="analysis-steps" style="display:none;">
-                <h3>🧩 Pasos de Análisis PNFT</h3>
-                <div class="step-item" data-step="1"><span class="step-indicator">1</span> Análisis de Estructura</div>
-                <div class="step-item" data-step="2"><span class="step-indicator">2</span> Análisis de Jerarquía</div>
-                <div class="step-item" data-step="3"><span class="step-indicator">3</span> Análisis de Estilo y Restricciones</div>
-                <textarea id="pasteResponse" rows="4" placeholder="Pega aquí la respuesta de ChatGPT para el paso actual..." style="margin-top:1rem; display:none;"></textarea>
-                <div style="margin-top:0.5rem; display:flex; gap:0.5rem;" id="analysisActions">
-                    <button class="btn btn-sm" id="btnSubmitPaste" style="display:none;">✅ Enviar respuesta</button>
-                    <button class="btn btn-sm btn-outline" id="btnCancelAnalysis" style="display:none;">Cancelar</button>
+    <div class="app-container" id="app">
+        <!-- HEADER -->
+        <header class="app-header">
+            <div class="logo-area">
+                <div class="logo-placeholder">PNFT</div>
+                <div class="app-title">
+                    Asistente de Infografías
+                    <small>Prompt Maestro • Guía interactiva</small>
                 </div>
             </div>
-            <div class="canvas" id="canvas"></div>
-        </div>
-    </div>
+            <div class="header-actions">
+                <button onclick="exportJSON()">📤 Exportar JSON</button>
+                <button onclick="document.getElementById('importJSON').click()">📥 Importar JSON</button>
+                <input type="file" id="importJSON" accept=".json" style="display:none" onchange="importJSON(event)">
+            </div>
+        </header>
 
-    <div id="modalApi" style="display:none;position:fixed;inset:0;background:rgba(0,0,0,0.5);z-index:200;align-items:center;justify-content:center;">
-        <div style="background:#fff;padding:2rem;border-radius:20px;max-width:400px;width:90%;"><h3>🔑 Clave Gemini (gratis)</h3><p style="font-size:0.85rem;"><a href="https://aistudio.google.com/apikey" target="_blank">Obtener clave gratuita</a></p><input type="password" id="apiKeyInput" placeholder="AIza..." style="width:100%;margin:0.5rem 0;"><button class="btn" id="btnSaveApi">Guardar</button><button class="btn btn-outline" id="btnCancelApi">Cancelar</button></div>
-    </div>
-    <div class="toast" id="toast"></div>
+        <!-- STEPPER -->
+        <div class="stepper" id="stepper">
+            <span class="step-indicator active" data-step="1"><span class="num">1</span> Documento</span>
+            <span class="step-separator">▸</span>
+            <span class="step-indicator" data-step="2"><span class="num">2</span> Configuración</span>
+            <span class="step-separator">▸</span>
+            <span class="step-indicator" data-step="3"><span class="num">3</span> Editar bloques</span>
+            <span class="step-separator">▸</span>
+            <span class="step-indicator" data-step="4"><span class="num">4</span> Prompt final</span>
+        </div>
+
+        <!-- MAIN CONTENT -->
+        <div class="main-content">
+
+            <!-- PASO 1: Documento -->
+            <div class="step-panel active" id="step1">
+                <h2>📄 Documento fuente</h2>
+                <div class="sub">Carga el documento o pega el texto del que se extraerá la estructura de la infografía.</div>
+
+                <div class="file-drop" id="fileDrop">
+                    <div class="icon">📂</div>
+                    <div class="text">Arrastra o selecciona un archivo</div>
+                    <div class="extras">Word (.docx) · PDF · PowerPoint (.pptx) · Imagen · TXT</div>
+                    <input type="file" id="fileInput" accept=".docx,.pdf,.pptx,.ppt,.txt,.png,.jpg,.jpeg,.gif,.bmp">
+                </div>
+
+                <div class="form-group">
+                    <label>O pega el texto aquí</label>
+                    <textarea id="sourceText" placeholder="Pega el contenido textual del documento..."></textarea>
+                </div>
+
+                <div class="flex-center">
+                    <button class="primary" onclick="processDocument()" style="padding:12px 32px;border:none;border-radius:40px;background:#014d6b;color:#fff;font-weight:600;cursor:pointer;">▶ Procesar documento</button>
+                    <span class="text-muted text-small" id="fileStatus">Ningún archivo cargado</span>
+                </div>
+
+                <div class="nav-buttons">
+                    <span></span>
+                    <button class="primary" onclick="goStep(2)" id="toStep2">Siguiente →</button>
+                </div>
+            </div>
+
+            <!-- PASO 2: Configuración -->
+            <div class="step-panel" id="step2">
+                <h2>⚙️ Configuración avanzada</h2>
+                <div class="sub">Personaliza el estilo, formato y enfoque pedagógico de la infografía.</div>
+
+                <div class="row-2col">
+                    <div class="form-group">
+                        <label>Audiencia</label>
+                        <select id="audiencia">
+                            <option value="Docentes" selected>Docentes</option>
+                            <option value="Asesores Regionales">Asesores Regionales</option>
+                            <option value="Asesores Nacionales">Asesores Nacionales</option>
+                            <option value="Direcciones de Centro Educativo">Direcciones</option>
+                            <option value="Supervisión Educativa">Supervisión</option>
+                            <option value="Estudiantes">Estudiantes</option>
+                            <option value="Familias">Familias</option>
+                            <option value="Autoridades MEP">Autoridades MEP</option>
+                            <option value="Público General">Público General</option>
+                        </select>
+                    </div>
+                    <div class="form-group">
+                        <label>Fidelidad documental</label>
+                        <select id="fidelidad">
+                            <option value="100">100% - Fidelidad total</option>
+                            <option value="90">90% - Síntesis mínima</option>
+                            <option value="75">75% - Adaptación pedagógica</option>
+                            <option value="50">50% - Adaptación visual libre</option>
+                        </select>
+                    </div>
+                </div>
+
+                <div class="row-2col">
+                    <div class="form-group">
+                        <label>Densidad cognitiva</label>
+                        <select id="densidad">
+                            <option value="BAJA">Baja (1-3 ideas/bloque)</option>
+                            <option value="MEDIA" selected>Media (3-5 ideas/bloque)</option>
+                            <option value="ALTA">Alta (5-8 ideas/bloque)</option>
+                        </select>
+                    </div>
+                    <div class="form-group">
+                        <label>Intervención IA</label>
+                        <select id="intervencion">
+                            <option value="1">Modo 1 - Organizar únicamente</option>
+                            <option value="2" selected>Modo 2 - Organizar y jerarquizar</option>
+                            <option value="3">Modo 3 - + Sintetizar</option>
+                            <option value="4">Modo 4 - + Optimizar</option>
+                        </select>
+                    </div>
+                </div>
+
+                <div class="row-3col">
+                    <div class="form-group">
+                        <label>Estilo visual</label>
+                        <select id="estilo">
+                            <option value="PNFT-01">PNFT-01 · 3D Cartoon Educativo</option>
+                            <option value="PNFT-02" selected>PNFT-02 · 3D Semi Realista</option>
+                            <option value="PNFT-03">PNFT-03 · Isométrico Tecnológico</option>
+                            <option value="PNFT-04">PNFT-04 · Futurista Tecnológico</option>
+                            <option value="PNFT-05">PNFT-05 · Vectorial Moderna</option>
+                            <option value="PNFT-06">PNFT-06 · Fotorealista</option>
+                        </select>
+                    </div>
+                    <div class="form-group">
+                        <label>Layout</label>
+                        <select id="layout">
+                            <option value="A">A · Secuencial Lineal</option>
+                            <option value="B" selected>B · Grid 2×3</option>
+                            <option value="C">C · Tres Columnas</option>
+                            <option value="D">D · Flujo Z</option>
+                            <option value="E">E · Pirámide</option>
+                        </select>
+                    </div>
+                    <div class="form-group">
+                        <label>Formato / Dimensiones</label>
+                        <select id="formato">
+                            <option value="1920x1080">1920×1080 (Full HD · 16:9)</option>
+                            <option value="1600x900">1600×900</option>
+                            <option value="3840x2160">3840×2160 (4K)</option>
+                            <option value="800x2000">800×2000 (Vertical)</option>
+                            <option value="1080x1920">1080×1920 (Vertical)</option>
+                            <option value="1080x1080">1080×1080 (Cuadrado)</option>
+                            <option value="A4_V">A4 Vertical</option>
+                            <option value="A4_H">A4 Horizontal</option>
+                            <option value="Poster">Póster</option>
+                        </select>
+                    </div>
+                </div>
+
+                <div class="form-group">
+                    <label>Paleta de colores</label>
+                    <select id="paleta">
+                        <option value="corporativa" selected>Corporativa PNFT (oficial)</option>
+                        <option value="monocromatica">Monocromática</option>
+                        <option value="analoga">Análoga</option>
+                        <option value="complementaria">Complementaria</option>
+                        <option value="triadica">Triádica</option>
+                    </select>
+                </div>
+
+                <div class="form-group">
+                    <label>Diversidad e inclusión</label>
+                    <div style="display:flex;flex-wrap:wrap;gap:16px;background:#f8fafc;padding:14px 18px;border-radius:14px;">
+                        <label style="display:flex;align-items:center;gap:6px;font-weight:400;"><input type="checkbox" checked disabled> Étnica (clara, morena, afro, indígena)</label>
+                        <label style="display:flex;align-items:center;gap:6px;font-weight:400;"><input type="checkbox" checked disabled> Balance de género</label>
+                        <label style="display:flex;align-items:center;gap:6px;font-weight:400;"><input type="checkbox" checked disabled> Contexto educativo latinoamericano</label>
+                    </div>
+                    <div class="hint">Este criterio es obligatorio según el prompt maestro.</div>
+                </div>
+
+                <div class="nav-buttons">
+                    <button onclick="goStep(1)">← Anterior</button>
+                    <button class="primary" onclick="goStep(3)">Siguiente →</button>
+                </div>
+            </div>
+
+            <!-- PASO 3: Editar bloques -->
+            <div class="step-panel" id="step3">
+                <h2>🧩 Editar arquitectura de información</h2>
+                <div class="sub">Ajusta los bloques que conformarán la infografía. El wireframe se actualiza automáticamente.</div>
+
+                <div class="form-group">
+                    <label>Título de la infografía</label>
+                    <input type="text" id="infografiaTitulo" placeholder="Ej: Orientaciones de Asesoría y Seguimiento" value="Orientaciones de Asesoría y Seguimiento">
+                </div>
+                <div class="form-group">
+                    <label>Subtítulo</label>
+                    <input type="text" id="infografiaSubtitulo" placeholder="Ej: Junio 2026" value="Junio 2026">
+                </div>
+
+                <div class="blocks-container" id="blocksContainer">
+                    <!-- Los bloques se generan con JS -->
+                </div>
+
+                <button class="add-block-btn" onclick="addBlock()">➕ Añadir bloque</button>
+
+                <div style="margin-top:25px;">
+                    <label style="font-weight:600;">Wireframe ASCII (vista previa)</label>
+                    <div class="wireframe-box" id="wireframeDisplay">
+                        <!-- Se actualiza en tiempo real -->
+                    </div>
+                </div>
+
+                <div class="nav-buttons">
+                    <button onclick="goStep(2)">← Anterior</button>
+                    <button class="primary" onclick="goStep(4)">Siguiente →</button>
+                </div>
+            </div>
+
+            <!-- PASO 4: Prompt final -->
+            <div class="step-panel" id="step4">
+                <h2>📝 Prompt final para ChatGPT</h2>
+                <div class="sub">Copia este prompt y pégalo en ChatGPT para generar la infografía.</div>
+
+                <div class="prompt-output" id="promptOutput">
+                    <!-- Generado por JS -->
+                </div>
+
+                <div class="flex-center" style="margin-top:18px;gap:14px;flex-wrap:wrap;">
+                    <button onclick="copyPrompt()" style="padding:12px 30px;border:none;border-radius:40px;background:#014d6b;color:#fff;font-weight:600;cursor:pointer;">📋 Copiar prompt</button>
+                    <button onclick="exportJSON()" style="padding:12px 30px;border:1px solid #014d6b;border-radius:40px;background:transparent;color:#014d6b;font-weight:600;cursor:pointer;">💾 Guardar JSON</button>
+                </div>
+
+                <div class="nav-buttons">
+                    <button onclick="goStep(3)">← Anterior</button>
+                    <button onclick="resetApp()" style="background:#e9edf2;">🔄 Reiniciar</button>
+                </div>
+            </div>
+
+        </div><!-- /main-content -->
+    </div><!-- /app-container -->
 
     <script>
-        (function() {
-            const state = {
-                apiKey: localStorage.getItem('pnft_api_key') || '',
-                documentText: '',
-                blocks: [],
-                settings: { orientation: '16:9', resolution: '1920x1080', fontFamily: 'Poppins', baseFontSize: 16, title: '', subtitle: '' },
-                stepResponses: JSON.parse(localStorage.getItem('pnft_responses') || '{}'),
-                approvedSteps: new Set(JSON.parse(localStorage.getItem('pnft_approved') || '[]')),
-                json: localStorage.getItem('pnft_json') || '',
-                fidelityWarnings: [],
-                analysisStep: 1, // 1,2,3
-                analysisInProgress: false
+        // ============================================================
+        //  ESTADO GLOBAL
+        // ============================================================
+        const state = {
+            sourceText: '',
+            blocks: [], // { id, titulo, descripcion, icono }
+            config: {
+                audiencia: 'Docentes',
+                fidelidad: '100',
+                densidad: 'MEDIA',
+                intervencion: '2',
+                estilo: 'PNFT-02',
+                layout: 'B',
+                formato: '1920x1080',
+                paleta: 'corporativa',
+                titulo: 'Orientaciones de Asesoría y Seguimiento',
+                subtitulo: 'Junio 2026'
+            }
+        };
+
+        // Íconos sugeridos (conceptos)
+        const ICONOS_SUGERIDOS = [
+            'Diagnóstico', 'Planificación', 'Seguimiento', 'Innovación',
+            'Seguridad', 'Evaluación', 'Competencias', 'Currículo',
+            'Tecnología', 'Colaboración', 'Liderazgo', 'Comunicación',
+            'Análisis', 'Creatividad', 'Emprendimiento', 'Ética'
+        ];
+
+        // ============================================================
+        //  INICIALIZACIÓN
+        // ============================================================
+        document.addEventListener('DOMContentLoaded', () => {
+            // Cargar estado desde localStorage si existe
+            const saved = localStorage.getItem('pnft_state');
+            if (saved) {
+                try {
+                    const parsed = JSON.parse(saved);
+                    Object.assign(state, parsed);
+                    // Sincronizar UI
+                    document.getElementById('sourceText').value = state.sourceText || '';
+                    document.getElementById('infografiaTitulo').value = state.config.titulo || '';
+                    document.getElementById('infografiaSubtitulo').value = state.config.subtitulo || '';
+                    // Config selects
+                    document.getElementById('audiencia').value = state.config.audiencia || 'Docentes';
+                    document.getElementById('fidelidad').value = state.config.fidelidad || '100';
+                    document.getElementById('densidad').value = state.config.densidad || 'MEDIA';
+                    document.getElementById('intervencion').value = state.config.intervencion || '2';
+                    document.getElementById('estilo').value = state.config.estilo || 'PNFT-02';
+                    document.getElementById('layout').value = state.config.layout || 'B';
+                    document.getElementById('formato').value = state.config.formato || '1920x1080';
+                    document.getElementById('paleta').value = state.config.paleta || 'corporativa';
+                    renderBlocks();
+                    updateWireframe();
+                } catch (e) { console.warn('Error al cargar estado', e); }
+            } else {
+                // Bloques de ejemplo (basados en el documento de ejemplo)
+                state.blocks = [
+                    { id: 1, titulo: 'Comprensión del enfoque curricular', descripcion: 'Enfoque basado en competencias.',
+                        icono: 'Diagnóstico' },
+                    { id: 2, titulo: 'Valoración del contexto educativo', descripcion: 'Reconocimiento de condiciones del centro y del estudiantado.',
+                        icono: 'Análisis' },
+                    { id: 3, titulo: 'Identificación del punto de partida', descripcion: 'Valoración diagnóstica de conocimientos, habilidades, experiencias, intereses y fortalezas.',
+                        icono: 'Evaluación' },
+                    { id: 4, titulo: 'Toma de decisiones curriculares', descripcion: 'Priorización de saberes conceptuales de Apropiación Tecnológica y Digital.',
+                        icono: 'Planificación' },
+                    { id: 5, titulo: 'Ejes transversales y metodologías activas', descripcion: 'Implementación de Aprendizaje Basado en Retos articulado con Ciudadanía y ética digital y Emprendimiento e innovación.',
+                        icono: 'Innovación' },
+                    { id: 6, titulo: 'Documentación y seguimiento del aprendizaje', descripcion: 'Recopilación de evidencias para valorar competencias, retroalimentar y ajustar.',
+                        icono: 'Seguimiento' }
+                ];
+                renderBlocks();
+                updateWireframe();
+            }
+            // Evento de cambio en selects para actualizar estado
+            document.querySelectorAll('#step2 select').forEach(el => {
+                el.addEventListener('change', updateConfigFromUI);
+            });
+            document.getElementById('infografiaTitulo').addEventListener('input', updateConfigFromUI);
+            document.getElementById('infografiaSubtitulo').addEventListener('input', updateConfigFromUI);
+
+            // Carga de archivos
+            document.getElementById('fileInput').addEventListener('change', handleFileUpload);
+            document.getElementById('sourceText').addEventListener('input', (e) => {
+                state.sourceText = e.target.value;
+                saveState();
+            });
+
+            // Drag & drop visual
+            const drop = document.getElementById('fileDrop');
+            drop.addEventListener('dragover', (e) => { e.preventDefault();
+                drop.style.borderColor = '#014d6b'; });
+            drop.addEventListener('dragleave', () => { drop.style.borderColor = '#b8ccdd'; });
+            drop.addEventListener('drop', (e) => {
+                e.preventDefault();
+                drop.style.borderColor = '#b8ccdd';
+                if (e.dataTransfer.files.length) {
+                    document.getElementById('fileInput').files = e.dataTransfer.files;
+                    handleFileUpload({ target: { files: e.dataTransfer.files } });
+                }
+            });
+
+            // Inicializar paso
+            goStep(1);
+        });
+
+        // ============================================================
+        //  FUNCIONES DE NAVEGACIÓN
+        // ============================================================
+        let currentStep = 1;
+
+        function goStep(n) {
+            document.querySelectorAll('.step-panel').forEach(el => el.classList.remove('active'));
+            document.getElementById('step' + n).classList.add('active');
+            document.querySelectorAll('.step-indicator').forEach(el => {
+                el.classList.toggle('active', parseInt(el.dataset.step) === n);
+            });
+            currentStep = n;
+            if (n === 3) {
+                renderBlocks();
+                updateWireframe();
+            }
+            if (n === 4) {
+                generatePrompt();
+            }
+            // Guardar estado al cambiar de paso
+            saveState();
+            window.scrollTo({ top: 0, behavior: 'smooth' });
+        }
+
+        // ============================================================
+        //  CONFIGURACIÓN UI → STATE
+        // ============================================================
+        function updateConfigFromUI() {
+            state.config.audiencia = document.getElementById('audiencia').value;
+            state.config.fidelidad = document.getElementById('fidelidad').value;
+            state.config.densidad = document.getElementById('densidad').value;
+            state.config.intervencion = document.getElementById('intervencion').value;
+            state.config.estilo = document.getElementById('estilo').value;
+            state.config.layout = document.getElementById('layout').value;
+            state.config.formato = document.getElementById('formato').value;
+            state.config.paleta = document.getElementById('paleta').value;
+            state.config.titulo = document.getElementById('infografiaTitulo').value;
+            state.config.subtitulo = document.getElementById('infografiaSubtitulo').value;
+            saveState();
+        }
+
+        // ============================================================
+        //  PERSISTENCIA (localStorage + JSON)
+        // ============================================================
+        function saveState() {
+            try {
+                localStorage.setItem('pnft_state', JSON.stringify(state));
+            } catch (e) { /* ignore */ }
+        }
+
+        function exportJSON() {
+            const blob = new Blob([JSON.stringify(state, null, 2)], { type: 'application/json' });
+            const a = document.createElement('a');
+            a.href = URL.createObjectURL(blob);
+            a.download = 'pnft_config.json';
+            a.click();
+            URL.revokeObjectURL(a.href);
+        }
+
+        function importJSON(event) {
+            const file = event.target.files[0];
+            if (!file) return;
+            const reader = new FileReader();
+            reader.onload = (e) => {
+                try {
+                    const data = JSON.parse(e.target.result);
+                    Object.assign(state, data);
+                    // Sincronizar UI
+                    document.getElementById('sourceText').value = state.sourceText || '';
+                    document.getElementById('infografiaTitulo').value = state.config.titulo || '';
+                    document.getElementById('infografiaSubtitulo').value = state.config.subtitulo || '';
+                    document.getElementById('audiencia').value = state.config.audiencia || 'Docentes';
+                    document.getElementById('fidelidad').value = state.config.fidelidad || '100';
+                    document.getElementById('densidad').value = state.config.densidad || 'MEDIA';
+                    document.getElementById('intervencion').value = state.config.intervencion || '2';
+                    document.getElementById('estilo').value = state.config.estilo || 'PNFT-02';
+                    document.getElementById('layout').value = state.config.layout || 'B';
+                    document.getElementById('formato').value = state.config.formato || '1920x1080';
+                    document.getElementById('paleta').value = state.config.paleta || 'corporativa';
+                    renderBlocks();
+                    updateWireframe();
+                    saveState();
+                    alert('Configuración importada correctamente.');
+                } catch (err) {
+                    alert('Error al importar JSON: ' + err.message);
+                }
+            };
+            reader.readAsText(file);
+            event.target.value = '';
+        }
+
+        // ============================================================
+        //  CARGA DE DOCUMENTOS (extracción de texto)
+        // ============================================================
+        function handleFileUpload(e) {
+            const files = e.target.files;
+            if (!files || !files.length) return;
+            const file = files[0];
+            const ext = file.name.split('.').pop().toLowerCase();
+            document.getElementById('fileStatus').textContent = 'Cargando: ' + file.name;
+
+            if (ext === 'txt') {
+                const reader = new FileReader();
+                reader.onload = (ev) => {
+                    document.getElementById('sourceText').value = ev.target.result;
+                    state.sourceText = ev.target.result;
+                    saveState();
+                    document.getElementById('fileStatus').textContent = '✅ TXT cargado';
+                };
+                reader.readAsText(file);
+            } else if (ext === 'pdf') {
+                const reader = new FileReader();
+                reader.onload = async (ev) => {
+                    try {
+                        const typedArray = new Uint8Array(ev.target.result);
+                        const pdf = await pdfjsLib.getDocument(typedArray).promise;
+                        let text = '';
+                        for (let i = 1; i <= pdf.numPages; i++) {
+                            const page = await pdf.getPage(i);
+                            const content = await page.getTextContent();
+                            text += content.items.map(item => item.str).join(' ') + '\n';
+                        }
+                        document.getElementById('sourceText').value = text;
+                        state.sourceText = text;
+                        saveState();
+                        document.getElementById('fileStatus').textContent = '✅ PDF cargado';
+                    } catch (err) {
+                        alert('Error al leer PDF: ' + err.message);
+                        document.getElementById('fileStatus').textContent = '❌ Error en PDF';
+                    }
+                };
+                reader.readAsArrayBuffer(file);
+            } else if (ext === 'docx') {
+                const reader = new FileReader();
+                reader.onload = async (ev) => {
+                    try {
+                        const arrayBuffer = ev.target.result;
+                        const result = await mammoth.extractRawText({ arrayBuffer });
+                        document.getElementById('sourceText').value = result.value;
+                        state.sourceText = result.value;
+                        saveState();
+                        document.getElementById('fileStatus').textContent = '✅ DOCX cargado';
+                    } catch (err) {
+                        alert('Error al leer DOCX: ' + err.message);
+                        document.getElementById('fileStatus').textContent = '❌ Error en DOCX';
+                    }
+                };
+                reader.readAsArrayBuffer(file);
+            } else if (ext === 'pptx' || ext === 'ppt') {
+                // Para PPT/PPTX usamos un enfoque simple: mostrar mensaje y pegar manualmente
+                alert('Los archivos PowerPoint no se pueden procesar automáticamente. Por favor, pega el contenido manualmente en el área de texto.');
+                document.getElementById('fileStatus').textContent = '⚠️ PPT no compatible, pega el texto manualmente';
+            } else if (['png', 'jpg', 'jpeg', 'gif', 'bmp', 'webp'].includes(ext)) {
+                // Imagen: solo se muestra como referencia, no extraemos texto
+                const reader = new FileReader();
+                reader.onload = (ev) => {
+                    // Podríamos mostrar la imagen en algún lugar, pero no es necesario para el texto
+                    alert('Imagen cargada como referencia. No se extrae texto. Por favor, describe su contenido en el área de texto si es necesario.');
+                    document.getElementById('fileStatus').textContent = '🖼️ Imagen cargada (solo referencia)';
+                };
+                reader.readAsDataURL(file);
+            } else {
+                alert('Formato no soportado para extracción automática. Usa TXT, PDF o DOCX.');
+                document.getElementById('fileStatus').textContent = '❌ Formato no soportado';
+            }
+            // Reset input para permitir recargar el mismo archivo
+            e.target.value = '';
+        }
+
+        // ============================================================
+        //  PROCESAR DOCUMENTO (extraer bloques automáticamente)
+        // ============================================================
+        function processDocument() {
+            const text = document.getElementById('sourceText').value.trim();
+            if (!text) {
+                alert('Primero pega o carga un documento con texto.');
+                return;
+            }
+            state.sourceText = text;
+            // Intentar dividir en bloques por párrafos o títulos
+            const lines = text.split(/\n+/).filter(l => l.trim().length > 0);
+            // Si hay pocas líneas, usar cada línea como bloque
+            let newBlocks = [];
+            // Buscar patrones: líneas que parecen títulos (mayúsculas, con dos puntos, o cortas)
+            let currentTitle = '';
+            let currentDesc = [];
+            for (let line of lines) {
+                line = line.trim();
+                if (line.length < 60 && (line === line.toUpperCase() || line.endsWith(':'))) {
+                    // Es un título
+                    if (currentTitle && currentDesc.length) {
+                        newBlocks.push({
+                            id: newBlocks.length + 1,
+                            titulo: currentTitle,
+                            descripcion: currentDesc.join(' ').substring(0, 200),
+                            icono: ICONOS_SUGERIDOS[newBlocks.length % ICONOS_SUGERIDOS.length]
+                        });
+                        currentDesc = [];
+                    }
+                    currentTitle = line.replace(/[:]$/, '').trim();
+                } else {
+                    if (currentTitle) {
+                        currentDesc.push(line);
+                    } else {
+                        // Si no hay título, usar la primera línea como título
+                        if (!currentTitle) {
+                            currentTitle = line.substring(0, 50);
+                        } else {
+                            currentDesc.push(line);
+                        }
+                    }
+                }
+            }
+            if (currentTitle && currentDesc.length) {
+                newBlocks.push({
+                    id: newBlocks.length + 1,
+                    titulo: currentTitle,
+                    descripcion: currentDesc.join(' ').substring(0, 200),
+                    icono: ICONOS_SUGERIDOS[newBlocks.length % ICONOS_SUGERIDOS.length]
+                });
+            }
+            // Si no se generaron bloques, crear al menos uno
+            if (newBlocks.length === 0) {
+                newBlocks.push({
+                    id: 1,
+                    titulo: 'Contenido principal',
+                    descripcion: text.substring(0, 200),
+                    icono: 'Análisis'
+                });
+            }
+            // Limitar a 6 bloques
+            if (newBlocks.length > 6) {
+                newBlocks = newBlocks.slice(0, 6);
+            }
+            state.blocks = newBlocks;
+            renderBlocks();
+            updateWireframe();
+            saveState();
+            document.getElementById('fileStatus').textContent = '✅ Documento procesado, ' + state.blocks.length + ' bloques generados.';
+            alert('Se generaron ' + state.blocks.length + ' bloques a partir del texto. Puedes editarlos en el paso 3.');
+            goStep(3);
+        }
+
+        // ============================================================
+        //  RENDERIZADO DE BLOQUES
+        // ============================================================
+        function renderBlocks() {
+            const container = document.getElementById('blocksContainer');
+            container.innerHTML = '';
+            state.blocks.forEach((block, idx) => {
+                const div = document.createElement('div');
+                div.className = 'block-item';
+                div.innerHTML = `
+              <div class="b-num">${idx+1}</div>
+              <input type="text" class="b-titulo" value="${escapeHtml(block.titulo)}" placeholder="Título del bloque">
+              <input type="text" class="b-desc" value="${escapeHtml(block.descripcion)}" placeholder="Descripción breve">
+              <select class="b-icono">
+                ${ICONOS_SUGERIDOS.map(ico => `<option value="${ico}" ${ico===block.icono?'selected':''}>${ico}</option>`).join('')}
+              </select>
+              <button class="b-del" onclick="removeBlock(${idx})">✕</button>
+            `;
+                container.appendChild(div);
+                // Eventos para actualizar estado
+                const tituloInput = div.querySelector('.b-titulo');
+                const descInput = div.querySelector('.b-desc');
+                const iconoSelect = div.querySelector('.b-icono');
+                tituloInput.addEventListener('input', (e) => {
+                    state.blocks[idx].titulo = e.target.value;
+                    updateWireframe();
+                    saveState();
+                });
+                descInput.addEventListener('input', (e) => {
+                    state.blocks[idx].descripcion = e.target.value;
+                    updateWireframe();
+                    saveState();
+                });
+                iconoSelect.addEventListener('change', (e) => {
+                    state.blocks[idx].icono = e.target.value;
+                    saveState();
+                });
+            });
+            updateWireframe();
+        }
+
+        function escapeHtml(str) {
+            const div = document.createElement('div');
+            div.textContent = str || '';
+            return div.innerHTML;
+        }
+
+        function addBlock() {
+            state.blocks.push({
+                id: state.blocks.length + 1,
+                titulo: 'Nuevo bloque',
+                descripcion: 'Descripción pendiente',
+                icono: ICONOS_SUGERIDOS[state.blocks.length % ICONOS_SUGERIDOS.length]
+            });
+            renderBlocks();
+            saveState();
+        }
+
+        function removeBlock(idx) {
+            if (state.blocks.length <= 1) {
+                alert('Debe haber al menos un bloque.');
+                return;
+            }
+            state.blocks.splice(idx, 1);
+            renderBlocks();
+            saveState();
+        }
+
+        // ============================================================
+        //  WIREFRAME ASCII
+        // ============================================================
+        function updateWireframe() {
+            const container = document.getElementById('wireframeDisplay');
+            const titulo = document.getElementById('infografiaTitulo').value || 'Título';
+            const subtitulo = document.getElementById('infografiaSubtitulo').value || 'Subtítulo';
+            let lines = [];
+            const headerLine = '┌' + '─'.repeat(70) + '┐';
+            const footerLine = '└' + '─'.repeat(70) + '┘';
+            lines.push(headerLine);
+            lines.push('│  LOGO      ' + titulo.padEnd(40) + '   ILUSTRACIÓN  │');
+            lines.push('│            ' + subtitulo.padEnd(40) + '               │');
+            lines.push('├' + '─'.repeat(70) + '┤');
+
+            // Body: bloques en grid según layout
+            const layout = state.config.layout || 'B';
+            const blocks = state.blocks;
+            if (layout === 'A') {
+                // Lineal
+                blocks.forEach((b, i) => {
+                    const txt = (i + 1) + '. ' + b.titulo.substring(0, 30);
+                    lines.push('│  ' + txt.padEnd(68) + '│');
+                    if (i < blocks.length - 1) lines.push('│  ↓                                       │');
+                });
+            } else if (layout === 'B') {
+                // Grid 2x3
+                const cols = 3;
+                const rows = Math.ceil(blocks.length / cols);
+                for (let r = 0; r < rows; r++) {
+                    let rowLine = '│';
+                    for (let c = 0; c < cols; c++) {
+                        const idx = r * cols + c;
+                        if (idx < blocks.length) {
+                            const b = blocks[idx];
+                            const label = (idx + 1) + '. ' + b.titulo.substring(0, 15);
+                            rowLine += ' ' + label.padEnd(20) + ' │';
+                        } else {
+                            rowLine += ' '.repeat(22) + '│';
+                        }
+                    }
+                    lines.push(rowLine);
+                }
+            } else if (layout === 'C') {
+                // Tres columnas (inicio, desarrollo, conclusión)
+                const mid = Math.floor(blocks.length / 3);
+                const col1 = blocks.slice(0, mid);
+                const col2 = blocks.slice(mid, mid * 2);
+                const col3 = blocks.slice(mid * 2);
+                const maxRows = Math.max(col1.length, col2.length, col3.length);
+                lines.push('│  INICIO     │  DESARROLLO │  CONCLUSIÓN  │');
+                for (let i = 0; i < maxRows; i++) {
+                    let row = '│';
+                    const b1 = col1[i] ? (i + 1) + '. ' + col1[i].titulo.substring(0, 12) : '';
+                    const b2 = col2[i] ? (i + 1 + col1.length) + '. ' + col2[i].titulo.substring(0, 12) : '';
+                    const b3 = col3[i] ? (i + 1 + col1.length + col2.length) + '. ' + col3[i].titulo.substring(0, 12) : '';
+                    row += ' ' + b1.padEnd(13) + ' │ ' + b2.padEnd(13) + ' │ ' + b3.padEnd(13) + ' │';
+                    lines.push(row);
+                }
+            } else if (layout === 'D') {
+                // Flujo Z
+                const half = Math.ceil(blocks.length / 2);
+                const top = blocks.slice(0, half);
+                const bottom = blocks.slice(half);
+                // Fila superior
+                let topLine = '│';
+                top.forEach((b, i) => {
+                    topLine += ' ' + (i + 1) + '. ' + b.titulo.substring(0, 12).padEnd(15) + ' │';
+                });
+                lines.push(topLine);
+                if (top.length) lines.push('│  ↓ → → → → → → → → → → → → → → → → → → → → → → → → → → → → → ↓  │');
+                // Fila inferior (invertida para flujo Z)
+                let bottomLine = '│';
+                bottom.slice().reverse().forEach((b, i) => {
+                    const idx = blocks.indexOf(b);
+                    bottomLine += ' ' + (idx + 1) + '. ' + b.titulo.substring(0, 12).padEnd(15) + ' │';
+                });
+                lines.push(bottomLine);
+            } else if (layout === 'E') {
+                // Pirámide
+                if (blocks.length >= 1) {
+                    const b0 = blocks[0];
+                    lines.push('│            ' + '1. ' + b0.titulo.substring(0, 20).padEnd(20) + '            │');
+                }
+                if (blocks.length >= 2) {
+                    const b1 = blocks[1];
+                    const b2 = blocks.length >= 3 ? blocks[2] : null;
+                    let row = '│     ';
+                    row += '2. ' + b1.titulo.substring(0, 15).padEnd(18);
+                    if (b2) row += '3. ' + b2.titulo.substring(0, 15).padEnd(18);
+                    row += '     │';
+                    lines.push(row);
+                }
+                for (let i = 3; i < blocks.length; i++) {
+                    const b = blocks[i];
+                    lines.push('│  ' + (i + 1) + '. ' + b.titulo.substring(0, 25).padEnd(25) + '  │');
+                }
+            }
+
+            // Footer
+            lines.push('├' + '─'.repeat(70) + '┤');
+            lines.push('│  Bloque Footer 1   │  Bloque Footer 2   │  Bloque Footer 3   │');
+            lines.push(footerLine);
+
+            container.textContent = lines.join('\n');
+        }
+
+        // ============================================================
+        //  GENERAR PROMPT FINAL
+        // ============================================================
+        function generatePrompt() {
+            const config = state.config;
+            const blocks = state.blocks;
+            const titulo = config.titulo || 'Infografía PNFT';
+            const subtitulo = config.subtitulo || '';
+
+            // Mapeo de estilos
+            const estiloMap = {
+                'PNFT-01': '3D Cartoon Educativo - Vibrante, cercano, colorido, motivador.',
+                'PNFT-02': '3D Semi Realista - Profesional, moderno, institucional.',
+                'PNFT-03': 'Isométrico Tecnológico - Sistemas, procesos, arquitectura digital.',
+                'PNFT-04': 'Futurista Tecnológico - Holográfico, IA, innovación.',
+                'PNFT-05': 'Vectorial Moderna - Canva Style, minimalista, limpio.',
+                'PNFT-06': 'Fotorealista - Fotografías reales, contextos auténticos, mayor formalidad.'
             };
 
-            const iconLibrary = [
-                { emoji: '🧠', name: 'cerebro_neuronal', style: 'semi' },{ emoji: '🫀', name: 'corazon_anatomico', style: 'semi' },{ emoji: '👁️', name: 'ojo_humano', style: 'semi' },{ emoji: '🦴', name: 'hueso_femur', style: 'semi' },{ emoji: '🌱', name: 'planta_crecimiento', style: 'semi' },{ emoji: '🌳', name: 'arbol_frondoso', style: 'semi' },{ emoji: '🍎', name: 'manzana_hoja', style: 'semi' },{ emoji: '📚', name: 'libro_abierto', style: 'semi' },{ emoji: '✏️', name: 'lapiz_madera', style: 'semi' },{ emoji: '📐', name: 'escuadra_metalica', style: 'semi' },{ emoji: '🧲', name: 'iman_herradura', style: 'semi' },{ emoji: '🔬', name: 'microscopio', style: 'semi' },{ emoji: '🧪', name: 'tubo_ensayo', style: 'semi' },{ emoji: '🌍', name: 'globo_terraqueo', style: 'semi' },{ emoji: '🗺️', name: 'mapa_enrollado', style: 'semi' },{ emoji: '🏛️', name: 'columna_dorica', style: 'semi' },{ emoji: '⚖️', name: 'balanza_justicia', style: 'semi' },{ emoji: '💡', name: 'bombilla_incandescente', style: 'semi' },{ emoji: '🔑', name: 'llave_antigua', style: 'semi' },{ emoji: '🧰', name: 'caja_herramientas', style: 'semi' },{ emoji: '🧭', name: 'brujula_nautica', style: 'semi' },{ emoji: '🪶', name: 'pluma_estilografica', style: 'semi' },{ emoji: '🎭', name: 'mascara_teatral', style: 'semi' },{ emoji: '🧩', name: 'pieza_rompecabezas', style: 'semi' },{ emoji: '🎓', name: 'birrete_academico', style: 'semi' },{ emoji: '📜', name: 'pergamino_antiguo', style: 'semi' },{ emoji: '🏺', name: 'anfora_griega', style: 'semi' },{ emoji: '🧮', name: 'abaco_madera', style: 'semi' },{ emoji: '⌛', name: 'reloj_arena', style: 'semi' },{ emoji: '📡', name: 'antena_parabolica', style: 'semi' },{ emoji: '🛰️', name: 'satelite_orbital', style: 'semi' },{ emoji: '🧬', name: 'helice_adn', style: 'semi' },{ emoji: '🔭', name: 'telescopio_refractor', style: 'semi' },{ emoji: '💊', name: 'capsula_medicamento', style: 'semi' },{ emoji: '🦷', name: 'diente_molar', style: 'semi' },{ emoji: '🧫', name: 'placa_petri', style: 'semi' },{ emoji: '🩺', name: 'estetoscopio', style: 'semi' },{ emoji: '🦴', name: 'esqueleto_humano', style: 'semi' },{ emoji: '🧠', name: 'cerebro_lobulo_frontal', style: 'semi' },{ emoji: '🫁', name: 'pulmones', style: 'semi' },{ emoji: '🖥️', name: 'monitor_pc', style: 'isometrico' },{ emoji: '📱', name: 'smartphone', style: 'isometrico' },{ emoji: '⌨️', name: 'teclado_mecanico', style: 'isometrico' },{ emoji: '🖱️', name: 'mouse_oficina', style: 'isometrico' },{ emoji: '💾', name: 'disco_duro', style: 'isometrico' },{ emoji: '🔌', name: 'cable_usb', style: 'isometrico' },{ emoji: '🎧', name: 'auriculares', style: 'isometrico' },{ emoji: '📷', name: 'camara_reflex', style: 'isometrico' },{ emoji: '🖨️', name: 'impresora', style: 'isometrico' },{ emoji: '📡', name: 'router_wifi', style: 'isometrico' },{ emoji: '🧱', name: 'servidor_rack', style: 'isometrico' },{ emoji: '💻', name: 'laptop_abierta', style: 'isometrico' },{ emoji: '🎮', name: 'control_videojuegos', style: 'isometrico' },{ emoji: '🖊️', name: 'lapiz_digital', style: 'isometrico' },{ emoji: '📟', name: 'reloj_inteligente', style: 'isometrico' },{ emoji: '📡', name: 'antena_telecom', style: 'isometrico' },{ emoji: '🛰️', name: 'drone_cuadricoptero', style: 'isometrico' },{ emoji: '🏭', name: 'fabrica_automatizada', style: 'isometrico' },{ emoji: '🚗', name: 'coche_electrico', style: 'isometrico' },{ emoji: '🚀', name: 'cohete_espacial', style: 'isometrico' },{ emoji: '🛸', name: 'nave_nodriza', style: 'isometrico' },{ emoji: '🏗️', name: 'grua_construccion', style: 'isometrico' },{ emoji: '🔩', name: 'tuerca_tornillo', style: 'isometrico' },{ emoji: '⚙️', name: 'engranaje_dentado', style: 'isometrico' },{ emoji: '🧰', name: 'maletin_herramientas', style: 'isometrico' },{ emoji: '📐', name: 'regla_compas', style: 'isometrico' },{ emoji: '📏', name: 'cinta_metrica', style: 'isometrico' },{ emoji: '💡', name: 'panel_solar', style: 'isometrico' },{ emoji: '🔋', name: 'bateria_recargable', style: 'isometrico' },{ emoji: '🌐', name: 'globo_nodos_red', style: 'isometrico' },{ emoji: '🖥️', name: 'servidor_enrack', style: 'isometrico' },{ emoji: '🎛️', name: 'mesa_mezclas', style: 'isometrico' },{ emoji: '🧲', name: 'electroiman', style: 'isometrico' },{ emoji: '📡', name: 'radar', style: 'isometrico' },{ emoji: '🧬', name: 'secuenciador_genetico', style: 'isometrico' },{ emoji: '🧪', name: 'reactor_quimico', style: 'isometrico' },{ emoji: '🏥', name: 'cama_hospitalaria', style: 'isometrico' },{ emoji: '🛠️', name: 'llave_inglesa', style: 'isometrico' },{ emoji: '📹', name: 'camara_seguridad', style: 'isometrico' },{ emoji: '🧭', name: 'brujula_digital', style: 'isometrico' },{ emoji: '🧠', name: 'interfaz_cerebro_maquina', style: 'futurista' },{ emoji: '🦾', name: 'brazo_bionico', style: 'futurista' },{ emoji: '👁️', name: 'implante_ocular', style: 'futurista' },{ emoji: '💉', name: 'nanorobots_vial', style: 'futurista' },{ emoji: '🧬', name: 'molecula_datos', style: 'futurista' },{ emoji: '🌌', name: 'agujero_gusano', style: 'futurista' },{ emoji: '🛸', name: 'caza_estelar', style: 'futurista' },{ emoji: '🛰️', name: 'estacion_espacial', style: 'futurista' },{ emoji: '🚀', name: 'propulsor_ionico', style: 'futurista' },{ emoji: '🕶️', name: 'gafas_ra', style: 'futurista' },{ emoji: '⌚', name: 'reloj_holografico', style: 'futurista' },{ emoji: '💻', name: 'tableta_transparente', style: 'futurista' },{ emoji: '🎮', name: 'guante_haptico', style: 'futurista' },{ emoji: '🔮', name: 'esfera_datos', style: 'futurista' },{ emoji: '📡', name: 'antena_cuantica', style: 'futurista' },{ emoji: '🧲', name: 'campo_magnetico', style: 'futurista' },{ emoji: '🧬', name: 'crisol_adn', style: 'futurista' },{ emoji: '🏙️', name: 'ciudad_flotante', style: 'futurista' },{ emoji: '🚁', name: 'vehiculo_aereo_personal', style: 'futurista' },{ emoji: '🛡️', name: 'escudo_energia', style: 'futurista' },{ emoji: '⚡', name: 'reactor_fusion', style: 'futurista' },{ emoji: '🌀', name: 'portal_dimensional', style: 'futurista' },{ emoji: '💠', name: 'cristal_memoria', style: 'futurista' },{ emoji: '🔳', name: 'cubo_datos', style: 'futurista' },{ emoji: '📊', name: 'dashboard_neural', style: 'futurista' },{ emoji: '🧪', name: 'sintetizador_molecular', style: 'futurista' },{ emoji: '🧬', name: 'capsula_genetica', style: 'futurista' },{ emoji: '🌐', name: 'red_neuronal_global', style: 'futurista' },{ emoji: '💢', name: 'exoesqueleto_militar', style: 'futurista' },{ emoji: '🛰️', name: 'dron_espia', style: 'futurista' },{ emoji: '🔋', name: 'celda_energia_infinita', style: 'futurista' },{ emoji: '🧠', name: 'nucleo_ia', style: 'futurista' },{ emoji: '📡', name: 'comunicador_cuantico', style: 'futurista' },{ emoji: '🕹️', name: 'consola_mando', style: 'futurista' },{ emoji: '🧬', name: 'biomodulo_regeneracion', style: 'futurista' },{ emoji: '👓', name: 'lentes_contacto_inteligentes', style: 'futurista' },{ emoji: '🎧', name: 'implante_coclear', style: 'futurista' },{ emoji: '🦿', name: 'protesis_deportiva', style: 'futurista' },{ emoji: '🧪', name: 'pildora_inteligente', style: 'futurista' },{ emoji: '🌟', name: 'nodo_estelar', style: 'futurista' },{ emoji: '📷', name: 'camara_dslr', style: 'fotorealista' },{ emoji: '🎻', name: 'violin_madera', style: 'fotorealista' },{ emoji: '🎺', name: 'trompeta_dorada', style: 'fotorealista' },{ emoji: '🖌️', name: 'pincel_pintura', style: 'fotorealista' },{ emoji: '⌚', name: 'reloj_mecanico', style: 'fotorealista' },{ emoji: '💎', name: 'diamante_tallado', style: 'fotorealista' },{ emoji: '🪙', name: 'monedas_oro', style: 'fotorealista' },{ emoji: '📖', name: 'biblia_cuero', style: 'fotorealista' },{ emoji: '🖋️', name: 'pluma_lujo', style: 'fotorealista' },{ emoji: '🧳', name: 'maleta_vintage', style: 'fotorealista' },{ emoji: '🔍', name: 'lupa_madera', style: 'fotorealista' },{ emoji: '📐', name: 'compas_dibujo', style: 'fotorealista' },{ emoji: '🎧', name: 'auriculares_estudio', style: 'fotorealista' },{ emoji: '💡', name: 'bombilla_edison', style: 'fotorealista' },{ emoji: '🧲', name: 'iman_neodimio', style: 'fotorealista' },{ emoji: '📡', name: 'microfono_condensador', style: 'fotorealista' },{ emoji: '🖥️', name: 'monitor_diseno', style: 'fotorealista' },{ emoji: '🎮', name: 'joystick_simulacion', style: 'fotorealista' },{ emoji: '🧪', name: 'matraz_erlenmeyer', style: 'fotorealista' },{ emoji: '🧬', name: 'modelo_adn_cristalino', style: 'fotorealista' },{ emoji: '🦷', name: 'implante_dental', style: 'fotorealista' },{ emoji: '🧠', name: 'protesis_cerebral', style: 'fotorealista' },{ emoji: '🫀', name: 'valvula_cardiaca', style: 'fotorealista' },{ emoji: '🔬', name: 'lente_microscopio_electronico', style: 'fotorealista' },{ emoji: '📡', name: 'antena_granja_satelites', style: 'fotorealista' },{ emoji: '🚁', name: 'helicoptero_rescate', style: 'fotorealista' },{ emoji: '🚗', name: 'motor_seccionado', style: 'fotorealista' },{ emoji: '🔧', name: 'llave_dinamometrica', style: 'fotorealista' },{ emoji: '🧰', name: 'estuche_cirugia_robotica', style: 'fotorealista' },{ emoji: '🎓', name: 'toga_academica', style: 'fotorealista' }
-            ];
+            const layoutMap = {
+                'A': 'Secuencial Lineal (1→2→3→4→5→6)',
+                'B': 'Grid 2×3',
+                'C': 'Tres Columnas (Inicio, Desarrollo, Conclusión)',
+                'D': 'Flujo Z (1→2→3 ↓ 6←5←4)',
+                'E': 'Pirámide'
+            };
 
-            const analysisBlocks = [
-                { id: 'estructura', title: '🧩 Bloque 1 – Sistema de Estructura', promptBase: `Actúa como arquitecto de información PNFT. Analiza el documento y define en UN SOLO BLOQUE: 1) Wireframe 16:9 con 12 columnas. 2) Distribución de bloques principales. 3) Flujo de lectura (izquierda→derecha). 4) Organización de secciones según la estructura curricular. Usa diagramas ASCII. Para cada sección, escribe "SECCIÓN X: Título" y luego el contenido detallado.` },
-                { id: 'jerarquia', title: '🎯 Bloque 2 – Sistema de Jerarquía Multicapa', promptBase: `Aplica el sistema de jerarquía PNFT usando la respuesta anterior: 1) Jerarquía tipográfica (Poppins Bold, SemiBold, Regular). 2) Jerarquía por tamaño y espaciado. 3) Jerarquía cromática (paleta #09B7AE, #0BD2CE, #014D6B, #0B6284, #62BDF3, #063B7F, #45258F, #9ED16F, #C9C9C9). El color es codificación pedagógica. 4) Jerarquía de bloques según importancia pedagógica (Pesos PNFT: 1 contexto, 3 comprensión, 5 aplicación). Justifica cada decisión.` },
-                { id: 'estilo', title: '🎨 Bloque 3 – Estilo Visual y Restricciones', promptBase: `Aplica el sistema de estilo y restricciones PNFT usando las respuestas anteriores: 1) ESTILO: Educativo, académico, profesional, moderno, secundaria. No infantil, no comercial. 2) TIPOGRAFÍA: Poppins (Bold, SemiBold, Regular). 3) ICONOGRAFÍA: Solo 3D semi realista (cerebro, bloques, robot, escudo). Prohibido flat, emojis, clipart. 4) ILUSTRACIONES: Adolescentes 16-18 años, vestimenta casual institucional. 5) COMPOSICIÓN: Tarjetas redondeadas, alto contraste, lectura ≤10s por bloque. 6) DENSIDAD COGNITIVA: Máximo 3-5 ideas por bloque. Evitar saturación. 7) RESTRICCIONES: No modificar, resumir, reinterpretar ni agregar contenido. Fidelidad 100%. Verifica con tabla.` }
-            ];
+            let prompt = `# PROMPT MAESTRO PNFT - INFOGRAFÍA EDUCATIVA
 
-            function toast(msg) { const t = document.getElementById('toast'); t.textContent = msg; t.className = 'toast show'; clearTimeout(t._t); t._t = setTimeout(() => t.classList.remove('show'), 2500); }
-            function saveState() {
-                localStorage.setItem('pnft_api_key', state.apiKey);
-                localStorage.setItem('pnft_blocks', JSON.stringify(state.blocks));
-                localStorage.setItem('pnft_settings', JSON.stringify(state.settings));
-                localStorage.setItem('pnft_document', state.documentText);
-                localStorage.setItem('pnft_responses', JSON.stringify(state.stepResponses));
-                localStorage.setItem('pnft_approved', JSON.stringify([...state.approvedSteps]));
-                localStorage.setItem('pnft_json', state.json);
-            }
+## ACCIÓN PRINCIPAL
+Crear una infografía educativa institucional PNFT con arquitectura visual profesional, respetando identidad corporativa, estructura curricular y estándares gráficos institucionales.
 
-            function buildPrompt(blockIndex) {
-                let prompt = analysisBlocks[blockIndex].promptBase;
-                if (blockIndex === 0) prompt += '\n\n📎 DOCUMENTO FUENTE:\n' + state.documentText;
-                else {
-                    prompt += '\n\n📋 CONTEXTO ACUMULADO (respuestas previas):';
-                    for (let i = 0; i < blockIndex; i++) if (state.stepResponses[analysisBlocks[i].id]) prompt += '\n\n✅ ' + analysisBlocks[i].title + ':\n' + state.stepResponses[analysisBlocks[i].id];
-                }
-                return prompt;
-            }
+---
 
-            async function callGemini(prompt) {
-                if (!state.apiKey) throw new Error('Clave Gemini no configurada');
-                const res = await fetch(`https://generativelanguage.googleapis.com/v1beta/models/gemini-2.0-flash:generateContent?key=${state.apiKey}`, {
-                    method:'POST', headers:{'Content-Type':'application/json'},
-                    body: JSON.stringify({ contents:[{parts:[{text:prompt}]}], generationConfig:{temperature:0.4, maxOutputTokens:3000} })
-                });
-                if (!res.ok) throw new Error((await res.json()).error?.message);
-                const data = await res.json();
-                return data.candidates[0].content.parts[0].text;
-            }
+## 1. ESPECIFICACIONES TÉCNICAS
+- **Formato:** Infografía educativa horizontal
+- **Dimensiones:** ${config.formato.replace('x', ' × ')} px
+- **Relación de aspecto:** 16:9
+- **Orientación:** Horizontal
+- **Resolución:** 72 DPI (pantalla) / 300 DPI (impresión)
+- **Salida:** PNG y PDF
 
-            function updateStepIndicators(activeStep) {
-                document.querySelectorAll('.step-item').forEach(item => {
-                    const step = parseInt(item.dataset.step);
-                    item.classList.remove('active', 'completed');
-                    if (step < activeStep) item.classList.add('completed');
-                    else if (step === activeStep) item.classList.add('active');
-                });
-            }
+---
 
-            function showPasteUI(stepIndex) {
-                const pasteTextarea = document.getElementById('pasteResponse');
-                const submitBtn = document.getElementById('btnSubmitPaste');
-                const cancelBtn = document.getElementById('btnCancelAnalysis');
-                pasteTextarea.style.display = 'block';
-                submitBtn.style.display = 'inline-flex';
-                cancelBtn.style.display = 'inline-flex';
-                pasteTextarea.value = '';
-                pasteTextarea.placeholder = `Pega aquí la respuesta de ChatGPT para el Bloque ${stepIndex+1}...`;
-                updateStepIndicators(stepIndex+1);
-                document.getElementById('analysisSteps').style.display = 'block';
-            }
+## 2. IDENTIDAD VISUAL CORPORATIVA
+- **Logo PNFT:** Superior izquierda, X=30px, Y=30px, ancho 140px.
+- Mantener proporción y colores originales.
 
-            function hidePasteUI() {
-                document.getElementById('pasteResponse').style.display = 'none';
-                document.getElementById('btnSubmitPaste').style.display = 'none';
-                document.getElementById('btnCancelAnalysis').style.display = 'none';
-                document.getElementById('analysisSteps').style.display = 'none';
-            }
+---
 
-            async function runAllAnalysisBlocks() {
-                if (!state.documentText) return toast('Primero carga un documento');
-                if (state.analysisInProgress) return;
-                state.analysisInProgress = true;
-                hidePasteUI();
-                try {
-                    // Si hay API key, ejecutar todo automáticamente
-                    if (state.apiKey) {
-                        toast('⏳ Ejecutando análisis PNFT automático...');
-                        for (let i = 0; i < 3; i++) {
-                            updateStepIndicators(i+1);
-                            const response = await callGemini(buildPrompt(i));
-                            state.stepResponses[analysisBlocks[i].id] = response;
-                            state.approvedSteps.add(analysisBlocks[i].id);
-                        }
-                        finishAnalysis();
-                    } else {
-                        // Sin API: guiar paso a paso
-                        state.analysisStep = 1;
-                        showPasteUI(0);
-                        document.getElementById('btnSubmitPaste').onclick = async () => {
-                            const text = document.getElementById('pasteResponse').value.trim();
-                            if (!text) return toast('Pega la respuesta primero');
-                            state.stepResponses[analysisBlocks[state.analysisStep-1].id] = text;
-                            state.approvedSteps.add(analysisBlocks[state.analysisStep-1].id);
-                            if (state.analysisStep < 3) {
-                                state.analysisStep++;
-                                showPasteUI(state.analysisStep-1);
-                            } else {
-                                finishAnalysis();
-                            }
-                        };
-                        document.getElementById('btnCancelAnalysis').onclick = () => {
-                            hidePasteUI();
-                            state.analysisInProgress = false;
-                        };
-                    }
-                } catch (err) {
-                    toast('❌ Error: ' + err.message);
-                    state.analysisInProgress = false;
-                }
-            }
+## 3. PALETA DE COLORES OFICIAL PNFT
+**Dominantes (60%):** #014d6b (azul oscuro), #0b6284 (azul medio), #063b7f (azul corporativo)
+**Secundarios (30%):** #62bdf3 (azul claro), #09b7ae (turquesa brillante), #0bd2ce (turquesa claro)
+**Acentos (10%):** #45258f (morado), #9ed16f (verde lima), #c9c9c9 (gris)
+**Base:** #FFFFFF (blanco), #333333 (texto oscuro)
 
-            function finishAnalysis() {
-                const json = buildInitialJSON();
-                state.json = JSON.stringify(json, null, 2);
-                document.getElementById('jsonEditor').value = state.json;
-                const ruta = json.infografía["ruta implementación"] || [];
-                state.blocks = ruta.map((item, idx) => ({
-                    id: Date.now() + idx, title: item.titulo, color: '#0B6284', icon: item.icono_3d || '🧠', text: item.descripción
-                }));
-                renderCanvas();
-                updatePNFTRecommendations();
-                hidePasteUI();
-                state.analysisInProgress = false;
-                saveState();
-                toast('✅ Análisis PNFT completado. Ya puedes editar los bloques.');
-            }
+---
 
-            function extractSectionsFromStructure() {
-                const estructura = state.stepResponses['estructura'] || '';
-                const headerRegex = /^(?:(?:PASO|BLOQUE|TARJETA|SECCIÓN)\s*[A-Za-z0-9]*[:\-]?|(?:\d+[\.\)]\s)|[-•]\s)(.*)$/gim;
-                const sections = []; let match; let lastIndex = 0;
-                while ((match = headerRegex.exec(estructura)) !== null) {
-                    if (sections.length > 0) sections[sections.length-1].text = estructura.substring(lastIndex, match.index).trim();
-                    sections.push({ title: match[1].trim(), text: '' });
-                    lastIndex = match.index + match[0].length;
-                }
-                if (sections.length > 0) sections[sections.length-1].text = estructura.substring(lastIndex).trim();
-                sections.forEach(s => {
-                    s.text = s.text.replace(/[─│┌┐└┘├┤┬┴┼═]/g, '').replace(/\[\d+[–\-]\d+\]\s*/g, '').replace(/→ FUNCIÓN:.*$/gm, '').replace(/\n{3,}/g, '\n\n').trim();
-                    const flujoIndex = s.text.indexOf('FLUJO VISUAL RESUMIDO'); if (flujoIndex !== -1) s.text = s.text.substring(0, flujoIndex).trim();
-                    const consIndex = s.text.indexOf('CONSIDERACIÓN FINAL'); if (consIndex !== -1) s.text = s.text.substring(0, consIndex).trim();
-                });
-                if (sections.length === 0) sections.push({ title: 'Infografía PNFT', text: estructura.replace(/[─│┌┐└┘├┤┬┴┼═]/g, '').trim() });
-                sections.forEach(s => { if (!s.text) s.text = '(Sin contenido específico extraído – edita este texto)'; });
-                return sections;
-            }
+## 4. TIPOGRAFÍA
+- **Familia:** Poppins
+- **Jerarquía:**
+  - Nivel 1: Poppins Bold 36px Blanco
+  - Nivel 2: Poppins Regular 18px Azul claro
+  - Nivel 3: Poppins SemiBold 20px Azul oscuro
+  - Nivel 4: Poppins Regular 14px
+  - Nivel 5: Poppins Bold 28px
+  - Nivel 6: Poppins Bold 18px
+  - Nivel 7: Poppins Regular 12-13px
 
-            function buildInitialJSON() {
-                const estructura = state.stepResponses['estructura'] || '';
-                const titleMatch = estructura.match(/título[:\s]*([^\n]+)/i) || [];
-                const subMatch = estructura.match(/subtítulo[:\s]*([^\n]+)/i) || [];
-                const sections = extractSectionsFromStructure();
-                const rutaImplementacion = sections.map((s, idx) => ({ paso: idx+1, titulo: s.title, icono_3d: '🧠', descripción: s.text }));
-                let rawTitle = titleMatch[1] ? titleMatch[1].trim() : (state.documentText.split('\n')[0] || 'Infografía PNFT');
-                rawTitle = rawTitle.replace(/[─│┌┐└┘├┤┬┴┼═]/g, '').replace(/\s{2,}/g, ' ').trim();
-                return { infografía: { titulo: rawTitle, subtitulo: subMatch[1] ? subMatch[1].trim() : 'Orientaciones para la implementación curricular', propósito: { pregunta: '¿CUÁL ES EL PROPÓSITO DE ESTA ESTRATEGIA?', contenido: '' }, "ruta implementación": rutaImplementacion, aspectos_clave: [], ejes_transversales: [], Recomendaciones: [], mensaje_clave: {}, lineamientos_diseno: { orientacion: 'horizontal', tipografia: 'Poppins', estilo_visual: 'educativo_tecnologico', iconografia: '3D educativa', calidad: 'alta', nitidez: 'alta', paleta_pnft: { turquesa_principal: '#09b7ae', turquesa_secundario: '#0bd2ce', azul_oscuro: '#014d6b', azul_medio: '#0b6284', celeste: '#62bdf3', azul_institucional: '#063b7f', morado: '#45258f', verde: '#9ed16f', gris: '#c9c9c9' } } };
-            }
+---
 
-            function updatePNFTRecommendations() {
-                const container = document.getElementById('pnftRecommendations');
-                const jerarquia = state.stepResponses['jerarquia'] || '', estilo = state.stepResponses['estilo'] || '';
-                if (!jerarquia && !estilo) { container.innerHTML = '<p style="font-size:0.85rem;">Ejecuta "Analizar con PNFT" para obtener sugerencias.</p>'; return; }
-                let html = '';
-                const tipografiaMatch = jerarquia.match(/Poppins\s*(Bold|SemiBold|Regular)/gi);
-                if (tipografiaMatch) html += `<p><strong>Tipografía sugerida:</strong> ${tipografiaMatch.join(', ')}</p>`;
-                if (estilo.includes('No modificar')) html += '<p><strong>⚠️ Restricción:</strong> No modificar, resumir ni reinterpretar el contenido.</p>';
-                if (estilo.includes('infantil')) html += '<p><strong>🚫 Prohibido:</strong> Estilo infantil, caricaturas, emojis, clipart.</p>';
-                container.innerHTML = html || '<p>Análisis completado.</p>';
-            }
+## 5. ESTILO VISUAL
+**Estilo seleccionado:** ${config.estilo} - ${estiloMap[config.estilo] || '3D Cartoon Educativo'}
+Características generales:
+- Volumen y profundidad, sombras suaves, gradientes sutiles, perspectiva natural, claymorphism.
+- Iconografía 3D (solo íconos 3D, render semirrealista, colores institucionales).
+- Ilustraciones de adolescentes y jóvenes, diversidad étnica, vestimenta casual-profesional, contexto educativo.
 
-            function checkFidelity() { /* igual que antes */ }
+---
 
-            function renderCanvas() {
-                const canvas = document.getElementById('canvas'); canvas.innerHTML = '';
-                state.blocks.forEach((block, index) => {
-                    const card = document.createElement('div'); card.className = 'block-card'; card.draggable = true; card.dataset.index = index;
-                    const words = block.text.split(/\s+/).length, ideas = block.text.split(/[.,;]/).length;
-                    let densityClass = ''; if (words > 60 || ideas > 5) { densityClass = 'density-bad'; card.classList.add('density-bad'); } else if (words > 40 || ideas > 4) { densityClass = 'density-warn'; card.classList.add('density-warn'); } else densityClass = 'density-ok';
-                    card.innerHTML = `<div class="block-header"><span class="block-icon">${block.icon}</span><span style="font-size:0.75rem;">Densidad <span class="density-indicator ${densityClass}"></span></span><button class="btn btn-sm remove-block">🗑️</button></div><textarea rows="3">${escapeHtml(block.text)}</textarea><div class="block-controls"><select class="block-color" style="width:auto;">${['#09B7AE','#0BD2CE','#014D6B','#0B6284','#62BDF3','#063B7F','#45258F','#9ED16F','#C9C9C9'].map(c => `<option value="${c}" ${block.color===c?'selected':''}>${c}</option>`).join('')}</select><select class="block-icon-select" style="width:auto;">${iconLibrary.map(ico => `<option value="${ico.emoji}" ${block.icon===ico.emoji?'selected':''}>${ico.emoji} ${ico.name} (${ico.style})</option>`).join('')}</select></div>`;
-                    card.querySelector('textarea').addEventListener('input', (e) => { state.blocks[index].text = e.target.value; updateJSONFromBlocks(); saveState(); });
-                    card.querySelector('.block-color').addEventListener('change', (e) => { state.blocks[index].color = e.target.value; updateJSONFromBlocks(); saveState(); });
-                    card.querySelector('.block-icon-select').addEventListener('change', (e) => { state.blocks[index].icon = e.target.value; updateJSONFromBlocks(); renderCanvas(); saveState(); });
-                    card.querySelector('.remove-block').addEventListener('click', () => { state.blocks.splice(index,1); updateJSONFromBlocks(); saveState(); renderCanvas(); });
-                    canvas.appendChild(card);
-                });
-            }
+## 6. DIVERSIDAD E INCLUSIÓN
+- Representación obligatoria de tonos claros, medios, afrodescendientes e indígenas.
+- Balance de género.
+- Contexto latinoamericano.
 
-            function updateJSONFromBlocks() {
-                try { const data = JSON.parse(state.json); const info = data.infografía || data; info["ruta implementación"] = state.blocks.map((b, idx) => ({ paso: idx+1, titulo: b.title, icono_3d: b.icon, descripción: b.text })); state.json = JSON.stringify(data, null, 2); document.getElementById('jsonEditor').value = state.json; } catch (e) {}
-            }
+---
 
-            function openPreview() {
-                const w = window.open('', 'preview', 'width=1200,height=800');
-                const [rw, rh] = state.settings.resolution.split('x').map(Number);
-                let html = `<!DOCTYPE html><html><head><meta charset="UTF-8"><title>Vista previa</title><link href="https://fonts.googleapis.com/css2?family=${state.settings.fontFamily}:wght@400;600;700&display=swap" rel="stylesheet"><style>body { font-family: '${state.settings.fontFamily}', sans-serif; background:#F5F7FA; margin:0; padding:20px; } .infografia { max-width:${rw}px; margin:0 auto; background:#fff; border-radius:20px; overflow:hidden; } .header { background:#063B7F; color:#fff; padding:30px; text-align:center; } .grid { display:flex; flex-wrap:wrap; gap:20px; padding:30px; } .card { border-radius:16px; padding:20px; color:#fff; flex:1 1 300px; } .card .icon { font-size:3rem; margin-bottom:10px; }</style></head><body><div class="infografia"><div class="header"><h1>${state.settings.title||'Infografía'}</h1><p>${state.settings.subtitle||''}</p></div><div class="grid">`;
-                state.blocks.forEach(b => { html += `<div class="card" style="background:${b.color};"><div class="icon">${b.icon}</div><h2>${b.text.split('\n')[0]}</h2><p>${b.text.replace(/\n/g,'<br>')}</p></div>`; });
-                html += `</div></div></body></html>`; w.document.write(html); w.document.close();
-            }
+## 7. ARQUITECTURA GENERAL
+- **Header:** 180 px (Logo, título, subtítulo, ilustración)
+- **Body:** 720 px (Bloques de contenido)
+- **Footer:** 180 px (Información complementaria)
+- **Layout:** ${layoutMap[config.layout] || 'Grid 2×3'}
 
-            function escapeHtml(text) { return text.replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;').replace(/"/g, '&quot;'); }
+---
 
-            // Eventos
-            document.getElementById('btnAddBlock').addEventListener('click', () => {
-                state.blocks.push({ id: Date.now(), title: 'Nuevo bloque', color: '#09B7AE', icon: '🧠', text: 'Escribe aquí...' });
-                updateJSONFromBlocks(); saveState(); renderCanvas();
+## 8. HEADER
+- Logo PNFT (superior izquierda)
+- Título principal: **${titulo}**
+- Subtítulo: **${subtitulo}**
+- Ilustración institucional (contexto educativo)
+
+---
+
+## 9. BODY (Bloques de contenido)
+La estructura se deriva del documento fuente. Se presentan ${blocks.length} bloques principales en flujo visual de izquierda a derecha.
+
+${blocks.map((b, i) => `
+**Bloque ${i+1}**
+- Número: ${i+1}
+- Ícono 3D: ${b.icono || 'Concepto relacionado'}
+- Título: ${b.titulo || 'Sin título'}
+- Descripción: ${b.descripcion || 'Sin descripción'}
+`).join('\n')}
+
+---
+
+## 10. FOOTER
+Tres bloques informativos (aspectos clave, ejes transversales, mensaje final) relacionados con:
+- Tiempo efectivo disponible
+- Ciudadanía y ética digital
+- Emprendimiento e innovación
+
+---
+
+## 11. CONFIGURACIÓN PEDAGÓGICA
+- **Audiencia:** ${config.audiencia || 'Docentes'}
+- **Fidelidad documental:** ${config.fidelidad || '100'}%
+- **Densidad cognitiva:** ${config.densidad || 'MEDIA'} (${config.densidad==='BAJA'?'1-3 ideas/bloque':config.densidad==='MEDIA'?'3-5 ideas/bloque':'5-8 ideas/bloque'})
+- **Intervención IA:** Modo ${config.intervencion || '2'} (${['Organizar únicamente','Organizar y jerarquizar','+ Sintetizar','+ Optimizar'][(parseInt(config.intervencion)||2)-1]})
+
+---
+
+## 12. RESTRICCIONES CRÍTICAS
+NO usar: emojis, flat design, clipart, estilo infantil, colores fuera de paleta, tipografías distintas a Poppins.
+SIEMPRE usar: diseño académico, estilo PNFT, iconografía 3D, distribución horizontal 16:9, arquitectura basada en documento fuente.
+
+---
+
+## INSTRUCCIONES FINALES
+Genera la infografía siguiendo exactamente la arquitectura, colores, tipografía y estilo indicados. Aplica la diversidad e inclusión obligatoria. El resultado debe ser profesional, educativo y alineado con la identidad PNFT.
+`;
+
+            document.getElementById('promptOutput').textContent = prompt;
+        }
+
+        function copyPrompt() {
+            const text = document.getElementById('promptOutput').textContent;
+            navigator.clipboard.writeText(text).then(() => {
+                alert('Prompt copiado al portapapeles.');
+            }).catch(() => {
+                // Fallback
+                const area = document.createElement('textarea');
+                area.value = text;
+                document.body.appendChild(area);
+                area.select();
+                document.execCommand('copy');
+                document.body.removeChild(area);
+                alert('Prompt copiado al portapapeles.');
             });
-            document.getElementById('btnLoadDocument').addEventListener('click', () => document.getElementById('fileInput').click());
-            document.getElementById('fileInput').addEventListener('change', async (e) => {
-                const file = e.target.files[0]; if (!file) return;
-                toast('⏳ Extrayendo texto...');
-                try {
-                    let text = ''; const ext = file.name.split('.').pop().toLowerCase();
-                    if (ext === 'txt') text = await file.text();
-                    else if (ext === 'docx') { const buf = await file.arrayBuffer(); text = (await mammoth.extractRawText({arrayBuffer: buf})).value; }
-                    else if (ext === 'pdf') { const buf = await file.arrayBuffer(); const pdf = await pdfjsLib.getDocument({data: buf}).promise; for (let i=1; i<=pdf.numPages; i++) { const page = await pdf.getPage(i); const content = await page.getTextContent(); text += content.items.map(it=>it.str).join(' ')+'\n'; } }
-                    else if (ext === 'pptx') { const buf = await file.arrayBuffer(); const json = pptx2json(buf); json.slides.forEach(s => s.texts.forEach(t => text += t+'\n')); }
-                    else throw new Error('Formato no soportado');
-                    state.documentText = text;
-                    toast('✅ Documento cargado. Usa "Analizar con PNFT" para procesarlo.');
-                    saveState();
-                } catch (err) { toast('❌ '+err.message); }
-            });
-            document.getElementById('btnAnalyze').addEventListener('click', runAllAnalysisBlocks);
-            document.getElementById('btnVerifyFidelity').addEventListener('click', checkFidelity);
-            document.getElementById('orientation').addEventListener('change', (e) => { state.settings.orientation = e.target.value; saveState(); });
-            document.getElementById('resolution').addEventListener('change', (e) => { state.settings.resolution = e.target.value; saveState(); });
-            document.getElementById('fontFamily').addEventListener('change', (e) => { state.settings.fontFamily = e.target.value; saveState(); });
-            document.getElementById('baseFontSize').addEventListener('input', (e) => { state.settings.baseFontSize = parseInt(e.target.value); saveState(); });
-            document.getElementById('docTitle').addEventListener('input', (e) => { state.settings.title = e.target.value; saveState(); });
-            document.getElementById('docSubtitle').addEventListener('input', (e) => { state.settings.subtitle = e.target.value; saveState(); });
-            document.getElementById('btnPreview').addEventListener('click', openPreview);
-            document.getElementById('btnBuildPrompt').addEventListener('click', () => {
-                let prompt = `Genera una infografía educativa PNFT con estos parámetros:\n\nDocumento fuente: ${state.documentText}\n\nOrientación: ${state.settings.orientation}\nResolución: ${state.settings.resolution}\nTipografía: ${state.settings.fontFamily}, tamaño base ${state.settings.baseFontSize}px\nTítulo: ${state.settings.title}\nSubtítulo: ${state.settings.subtitle}\n\nBloques:\n`;
-                state.blocks.forEach((b, i) => { prompt += `${i+1}. Color: ${b.color}, Icono: ${b.icon}\n${b.text}\n\n`; });
-                prompt += `Requisitos: formato 16:9, paleta PNFT, iconos 3D, estilo educativo profesional secundaria, no infantil.\nAnálisis de jerarquía:\n${state.stepResponses['jerarquia']||''}\n\nAnálisis de estilo:\n${state.stepResponses['estilo']||''}`;
-                navigator.clipboard.writeText(prompt).then(() => toast('📋 Prompt copiado'));
-            });
-            document.getElementById('btnUpdateFromJSON').addEventListener('click', () => {
-                try { const data = JSON.parse(document.getElementById('jsonEditor').value); state.json = document.getElementById('jsonEditor').value; const ruta = data.infografía["ruta implementación"] || []; state.blocks = ruta.map((item, idx) => ({ id: Date.now()+idx, title: item.titulo, color: '#0B6284', icon: item.icono_3d||'🧠', text: item.descripción })); renderCanvas(); saveState(); toast('✅ Actualizado desde JSON'); } catch (e) { toast('❌ JSON inválido'); }
-            });
-            document.getElementById('btnReset').addEventListener('click', () => {
-                if (confirm('¿Reiniciar?')) { state.documentText = ''; state.blocks = []; state.json = ''; state.stepResponses = {}; state.approvedSteps.clear(); document.getElementById('docTitle').value = ''; document.getElementById('docSubtitle').value = ''; saveState(); renderCanvas(); }
-            });
+        }
 
-            // Inicialización
-            const savedBlocks = localStorage.getItem('pnft_blocks'); if (savedBlocks) state.blocks = JSON.parse(savedBlocks);
-            const savedSettings = localStorage.getItem('pnft_settings'); if (savedSettings) { state.settings = JSON.parse(savedSettings); document.getElementById('orientation').value = state.settings.orientation; document.getElementById('resolution').value = state.settings.resolution; document.getElementById('fontFamily').value = state.settings.fontFamily; document.getElementById('baseFontSize').value = state.settings.baseFontSize; document.getElementById('docTitle').value = state.settings.title; document.getElementById('docSubtitle').value = state.settings.subtitle; }
-            state.documentText = localStorage.getItem('pnft_document') || '';
-            if (state.json) document.getElementById('jsonEditor').value = state.json;
-            if (state.stepResponses['estructura']) updatePNFTRecommendations();
-            renderCanvas();
-        })();
+        // ============================================================
+        //  REINICIO
+        // ============================================================
+        function resetApp() {
+            if (confirm('¿Reiniciar toda la configuración?')) {
+                localStorage.removeItem('pnft_state');
+                location.reload();
+            }
+        }
+
+        // ============================================================
+        //  ACTUALIZAR WIREFRAME AL CAMBIAR TÍTULO/SUBTÍTULO
+        // ============================================================
+        document.getElementById('infografiaTitulo').addEventListener('input', updateWireframe);
+        document.getElementById('infografiaSubtitulo').addEventListener('input', updateWireframe);
     </script>
+
 </body>
 </html>
