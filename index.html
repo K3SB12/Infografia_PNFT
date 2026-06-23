@@ -107,6 +107,7 @@
         .density-warn { background: #ff9800; }
         .density-bad { background: #f44336; }
         .image-preview { max-width: 300px; max-height: 200px; margin: 10px 0; border-radius: 10px; }
+        .original-response { display: none; }
         @media (max-width:800px) {
             .main-container { flex-direction:column; }
             .left-panel { width:100%; max-height:200px; }
@@ -169,11 +170,13 @@
                     <button class="btn btn-outline" id="btnPasteResponse" style="display:none;">📥 Pegar respuesta</button>
                 </div>
                 <div id="responseContainer" style="margin-top:1rem; display:none;">
-                    <label>Respuesta de la IA:</label>
-                    <div class="response-area" id="responseArea"></div>
+                    <label>Respuesta de la IA (puedes editarla):</label>
+                    <textarea id="responseArea" rows="8"></textarea>
+                    <input type="hidden" id="originalResponse" />
                     <div class="flex-row" style="margin-top:0.5rem;">
                         <button class="btn btn-sm" id="btnApprove">✅ Aprobar y continuar</button>
                         <button class="btn btn-outline btn-sm" id="btnRetry">🔄 Reenviar</button>
+                        <button class="btn btn-outline btn-sm" id="btnRestoreResponse">↩️ Restaurar original</button>
                         <button class="btn btn-outline btn-sm" id="btnRefineDensity" style="display:none;">🧠 Control de densidad</button>
                     </div>
                 </div>
@@ -231,6 +234,7 @@
                 json: localStorage.getItem('pnft_json') || '',
                 viewMode: 'json',
                 imageFile: null,
+                originalResponses: {} // Para restaurar respuestas originales
             };
 
             const iconLibrary = [
@@ -534,7 +538,8 @@
                     }
                     if (state.stepResponses[block.id]) {
                         document.getElementById('responseContainer').style.display = 'block';
-                        document.getElementById('responseArea').textContent = state.stepResponses[block.id];
+                        document.getElementById('responseArea').value = state.stepResponses[block.id];
+                        document.getElementById('originalResponse').value = state.stepResponses[block.id];
                         checkDensityWarnings(state.stepResponses[block.id]);
                     } else {
                         document.getElementById('responseContainer').style.display = 'none';
@@ -1257,7 +1262,8 @@
                 if (!prompt.trim()) return toast('Prompt vacío');
                 try {
                     const response = await sendToGemini(prompt);
-                    document.getElementById('responseArea').textContent = response;
+                    document.getElementById('responseArea').value = response;
+                    document.getElementById('originalResponse').value = response;
                     document.getElementById('responseContainer').style.display = 'block';
                     checkDensityWarnings(response);
                 } catch (err) { toast('❌ '+err.message); }
@@ -1273,14 +1279,23 @@
             document.getElementById('btnPasteResponse').addEventListener('click', async () => {
                 try {
                     const text = await navigator.clipboard.readText();
-                    document.getElementById('responseArea').textContent = text;
+                    document.getElementById('responseArea').value = text;
+                    document.getElementById('originalResponse').value = text;
                     document.getElementById('responseContainer').style.display = 'block';
                     checkDensityWarnings(text);
                 } catch { toast('No se pudo leer del portapapeles'); }
             });
 
+            document.getElementById('btnRestoreResponse').addEventListener('click', () => {
+                const original = document.getElementById('originalResponse').value;
+                if (original) {
+                    document.getElementById('responseArea').value = original;
+                    toast('↩️ Respuesta original restaurada');
+                }
+            });
+
             document.getElementById('btnApprove').addEventListener('click', () => {
-                const response = document.getElementById('responseArea').textContent;
+                const response = document.getElementById('responseArea').value.trim();
                 if (!response) return toast('No hay respuesta');
                 const blockId = analysisBlocks[state.currentStep].id;
                 state.stepResponses[blockId] = response;
@@ -1301,12 +1316,13 @@
 
             document.getElementById('btnRetry').addEventListener('click', () => {
                 document.getElementById('responseContainer').style.display = 'none';
-                document.getElementById('responseArea').textContent = '';
+                document.getElementById('responseArea').value = '';
+                document.getElementById('originalResponse').value = '';
                 document.getElementById('densityPanel').style.display = 'none';
             });
 
             document.getElementById('btnRefineDensity').addEventListener('click', () => {
-                showDensityControl(document.getElementById('responseArea').textContent);
+                showDensityControl(document.getElementById('responseArea').value);
             });
 
             document.getElementById('btnToggleView').addEventListener('click', () => {
