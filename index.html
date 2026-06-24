@@ -12,7 +12,7 @@
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
   <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@300;400;500;600;700;800&display=swap" rel="stylesheet">
   <style>
-    /* ===== RESET Y VARIABLES ===== */
+    /* ===== RESET Y VARIABLES (igual que antes) ===== */
     :root {
       --azul-oscuro: #014d6b;
       --azul-medio: #0b6284;
@@ -55,8 +55,7 @@
       display: grid;
       grid-template-columns: 290px 1fr;
     }
-
-    /* ===== SIDEBAR ===== */
+    /* ===== SIDEBAR (igual) ===== */
     .sidebar {
       background: linear-gradient(180deg, var(--azul-oscuro), var(--azul-corporativo));
       color: var(--blanco);
@@ -164,7 +163,7 @@
       color: #d8f7fb;
     }
 
-    /* ===== MAIN ===== */
+    /* ===== MAIN (igual) ===== */
     .main {
       padding: 34px;
       overflow: hidden;
@@ -252,7 +251,7 @@
       display: block;
     }
 
-    /* ===== PANELS ===== */
+    /* ===== PANELS (igual) ===== */
     .panel {
       display: none;
       animation: fade .22s ease;
@@ -570,10 +569,11 @@
       background: #ffffff;
       border: 1px solid #d7e8ef;
       box-shadow: 0 10px 20px rgba(1, 77, 107, .08);
-      min-height: 150px;
+      min-height: 100px;
       display: grid;
       grid-template-rows: auto auto 1fr;
       gap: 7px;
+      transition: all .2s;
     }
     .route-card:nth-child(odd) {
       background: linear-gradient(180deg, #ffffff, #edf9fb);
@@ -979,8 +979,15 @@
             <div class="option-card">
               <h4>Layout</h4>
               <select id="layout">
-                <option value="Secuencial lineal">Secuencial lineal</option>
                 <option value="Grid 2x3" selected>Grid 2×3</option>
+                <option value="Grid 3x2">Grid 3×2</option>
+                <option value="Grid 4x2">Grid 4×2</option>
+                <option value="Grid 2x4">Grid 2×4</option>
+                <option value="Grid 3x3">Grid 3×3</option>
+                <option value="Grid flexible">Grid flexible (auto-fill)</option>
+                <option value="Masonry">Masonry (columnas)</option>
+                <option value="Dashboard">Dashboard (paneles)</option>
+                <option value="Secuencial lineal">Secuencial lineal</option>
                 <option value="Tres columnas">Tres columnas</option>
                 <option value="Flujo Z">Flujo Z</option>
                 <option value="Pirámide">Pirámide</option>
@@ -1288,7 +1295,7 @@
     }
 
     // ================================================================
-    //  CARGA DE MÚLTIPLES DOCUMENTOS
+    //  CARGA DE MÚLTIPLES DOCUMENTOS (igual)
     // ================================================================
     function handleFileUpload(e) {
       const files = e.target.files;
@@ -1378,7 +1385,7 @@
     }
 
     // ================================================================
-    //  ANÁLISIS DEL DOCUMENTO
+    //  ANÁLISIS DEL DOCUMENTO (igual)
     // ================================================================
     function analyzeDocument() {
       const text = document.getElementById('sourceText').value.trim();
@@ -1592,7 +1599,7 @@
     }
 
     // ================================================================
-    //  VISTA PREVIA (wireframe) - refleja el layout seleccionado
+    //  VISTA PREVIA (wireframe) - NUEVOS LAYOUTS CSS GRID
     // ================================================================
     function renderPreview() {
       saveConfig();
@@ -1601,8 +1608,8 @@
       const layout = state.config.layout || 'Grid 2x3';
       const blocks = state.blocks;
 
-      const renderCard = (block) => `
-        <article class="route-card">
+      const renderCard = (block, extraClass = '') => `
+        <article class="route-card ${extraClass}" style="${extraClass.includes('span') ? 'grid-row: span 2;' : ''}">
           <div class="route-num">${escapeHTML(block.numero)}</div>
           <div class="route-icon" title="${escapeHTML(block.icono)}"></div>
           <h4>${escapeHTML(block.titulo)}</h4>
@@ -1613,75 +1620,144 @@
       let bodyContent = '';
       let gridStyle = '';
 
-      if (layout === 'Secuencial lineal') {
-        bodyContent = blocks.map((b, i) => `
-          ${renderCard(b)}
-          ${i < blocks.length - 1 ? '<div style="text-align:center;font-size:24px;color:var(--azul-claro);">↓</div>' : ''}
-        `).join('');
-        gridStyle = 'grid-template-columns: 1fr; max-width: 400px; margin:0 auto;';
-      } else if (layout === 'Grid 2x3') {
-        let cols = 3;
-        if (blocks.length <= 2) cols = 2;
-        else if (blocks.length <= 4) cols = 2;
-        else cols = 3;
-        if (blocks.length > 6) cols = 3;
-        const rows = Math.ceil(blocks.length / cols);
-        let grid = '';
-        for (let r = 0; r < rows; r++) {
-          const rowBlocks = blocks.slice(r * cols, (r + 1) * cols);
-          grid += rowBlocks.map(b => renderCard(b)).join('');
-        }
-        bodyContent = grid;
-        gridStyle = `grid-template-columns: repeat(${cols}, 1fr);`;
-      } else if (layout === 'Tres columnas') {
-        const mid = Math.floor(blocks.length / 3);
-        const col1 = blocks.slice(0, mid);
-        const col2 = blocks.slice(mid, mid * 2);
-        const col3 = blocks.slice(mid * 2);
-        const renderCol = (col, label) => `
-          <div style="display:flex;flex-direction:column;gap:10px;">
-            <div style="font-weight:800;color:var(--azul-oscuro);font-size:13px;text-align:center;">${label}</div>
-            ${col.map(b => renderCard(b)).join('')}
-          </div>
-        `;
-        bodyContent = `
-          ${renderCol(col1, 'Inicio')}
-          ${renderCol(col2, 'Desarrollo')}
-          ${renderCol(col3, 'Conclusión')}
-        `;
-        gridStyle = 'grid-template-columns: repeat(3, 1fr);';
-      } else if (layout === 'Flujo Z') {
-        const half = Math.ceil(blocks.length / 2);
-        const top = blocks.slice(0, half);
-        const bottom = blocks.slice(half);
-        const topHTML = top.map(b => renderCard(b)).join('');
-        const bottomHTML = bottom.slice().reverse().map(b => renderCard(b)).join('');
-        bodyContent = `
-          <div style="display:grid;grid-template-columns: repeat(${Math.min(top.length, 4)}, 1fr); gap:10px;">${topHTML}</div>
-          <div style="text-align:center;font-size:24px;color:var(--azul-claro);">↓ → → → → → → → → → → → → → → → → → ↓</div>
-          <div style="display:grid;grid-template-columns: repeat(${Math.min(bottom.length, 4)}, 1fr); gap:10px;">${bottomHTML}</div>
-        `;
-        gridStyle = 'grid-template-columns: 1fr;';
-      } else if (layout === 'Pirámide') {
-        let pyramidHTML = '';
-        let index = 0;
-        let level = 1;
-        while (index < blocks.length) {
-          const levelBlocks = blocks.slice(index, index + level);
-          const cols = levelBlocks.length;
-          pyramidHTML += `
-            <div style="display:grid;grid-template-columns: repeat(${cols}, 1fr); gap:10px; max-width:${Math.min(cols * 200, 800)}px; margin:0 auto;">
-              ${levelBlocks.map(b => renderCard(b)).join('')}
+      // Función para crear grid con número de columnas fijo
+      const fixedGrid = (cols, rows) => {
+        const total = blocks.length;
+        const cards = blocks.map((b, i) => renderCard(b)).join('');
+        return { content: cards, style: `grid-template-columns: repeat(${cols}, 1fr);` };
+      };
+
+      // Función para grid flexible con auto-fill
+      const flexibleGrid = () => {
+        const cards = blocks.map(b => renderCard(b)).join('');
+        return { content: cards, style: 'grid-template-columns: repeat(auto-fill, minmax(180px, 1fr));' };
+      };
+
+      // Función para masonry (simulado con columnas)
+      const masonryGrid = () => {
+        const cols = 3;
+        const colArrays = Array.from({ length: cols }, () => []);
+        blocks.forEach((b, i) => {
+          colArrays[i % cols].push(b);
+        });
+        let html = '';
+        colArrays.forEach(col => {
+          html += `<div style="display:flex;flex-direction:column;gap:10px;">${col.map(b => renderCard(b)).join('')}</div>`;
+        });
+        return { content: html, style: 'grid-template-columns: repeat(3, 1fr); align-items: start;' };
+      };
+
+      // Función para Dashboard (paneles de diferentes tamaños)
+      const dashboardGrid = () => {
+        const total = blocks.length;
+        let html = '';
+        // Asignar tamaños: primer bloque ocupa 2 columnas, segundo 1, tercero 1, cuarto 2, etc.
+        blocks.forEach((b, i) => {
+          let span = 1;
+          if (i === 0 && total > 1) span = 2;
+          if (i === 3 && total > 4) span = 2;
+          if (i === 5 && total > 6) span = 2;
+          html += renderCard(b, span > 1 ? 'span-2' : '');
+        });
+        // Estilo grid con algunas celdas que ocupen 2 columnas (se maneja con grid-column: span 2)
+        const style = `grid-template-columns: repeat(4, 1fr); .span-2 { grid-column: span 2; }`;
+        return { content: html, style: style };
+      };
+
+      let layoutResult;
+      switch (layout) {
+        case 'Grid 2x3':
+          layoutResult = fixedGrid(2, 3);
+          break;
+        case 'Grid 3x2':
+          layoutResult = fixedGrid(3, 2);
+          break;
+        case 'Grid 4x2':
+          layoutResult = fixedGrid(4, 2);
+          break;
+        case 'Grid 2x4':
+          layoutResult = fixedGrid(2, 4);
+          break;
+        case 'Grid 3x3':
+          layoutResult = fixedGrid(3, 3);
+          break;
+        case 'Grid flexible':
+          layoutResult = flexibleGrid();
+          break;
+        case 'Masonry':
+          layoutResult = masonryGrid();
+          break;
+        case 'Dashboard':
+          layoutResult = dashboardGrid();
+          break;
+        case 'Secuencial lineal':
+          bodyContent = blocks.map((b, i) => `
+            ${renderCard(b)}
+            ${i < blocks.length - 1 ? '<div style="text-align:center;font-size:24px;color:var(--azul-claro);">↓</div>' : ''}
+          `).join('');
+          gridStyle = 'grid-template-columns: 1fr; max-width: 400px; margin:0 auto;';
+          break;
+        case 'Tres columnas': {
+          const mid = Math.floor(blocks.length / 3);
+          const col1 = blocks.slice(0, mid);
+          const col2 = blocks.slice(mid, mid * 2);
+          const col3 = blocks.slice(mid * 2);
+          const renderCol = (col, label) => `
+            <div style="display:flex;flex-direction:column;gap:10px;">
+              <div style="font-weight:800;color:var(--azul-oscuro);font-size:13px;text-align:center;">${label}</div>
+              ${col.map(b => renderCard(b)).join('')}
             </div>
           `;
-          index += level;
-          level++;
+          bodyContent = `
+            ${renderCol(col1, 'Inicio')}
+            ${renderCol(col2, 'Desarrollo')}
+            ${renderCol(col3, 'Conclusión')}
+          `;
+          gridStyle = 'grid-template-columns: repeat(3, 1fr);';
+          break;
         }
-        bodyContent = pyramidHTML;
-        gridStyle = 'grid-template-columns: 1fr;';
-      } else {
-        bodyContent = blocks.map(b => renderCard(b)).join('');
-        gridStyle = 'grid-template-columns: repeat(3, 1fr);';
+        case 'Flujo Z': {
+          const half = Math.ceil(blocks.length / 2);
+          const top = blocks.slice(0, half);
+          const bottom = blocks.slice(half);
+          const topHTML = top.map(b => renderCard(b)).join('');
+          const bottomHTML = bottom.slice().reverse().map(b => renderCard(b)).join('');
+          bodyContent = `
+            <div style="display:grid;grid-template-columns: repeat(${Math.min(top.length, 4)}, 1fr); gap:10px;">${topHTML}</div>
+            <div style="text-align:center;font-size:24px;color:var(--azul-claro);">↓ → → → → → → → → → → → → → → → → → ↓</div>
+            <div style="display:grid;grid-template-columns: repeat(${Math.min(bottom.length, 4)}, 1fr); gap:10px;">${bottomHTML}</div>
+          `;
+          gridStyle = 'grid-template-columns: 1fr;';
+          break;
+        }
+        case 'Pirámide': {
+          let pyramidHTML = '';
+          let index = 0;
+          let level = 1;
+          while (index < blocks.length) {
+            const levelBlocks = blocks.slice(index, index + level);
+            const cols = levelBlocks.length;
+            pyramidHTML += `
+              <div style="display:grid;grid-template-columns: repeat(${cols}, 1fr); gap:10px; max-width:${Math.min(cols * 200, 800)}px; margin:0 auto;">
+                ${levelBlocks.map(b => renderCard(b)).join('')}
+              </div>
+            `;
+            index += level;
+            level++;
+          }
+          bodyContent = pyramidHTML;
+          gridStyle = 'grid-template-columns: 1fr;';
+          break;
+        }
+        default:
+          layoutResult = fixedGrid(3, 2);
+          break;
+      }
+
+      // Si no se asignó bodyContent desde los casos especiales, usar layoutResult
+      if (!bodyContent && layoutResult) {
+        bodyContent = layoutResult.content;
+        gridStyle = layoutResult.style;
       }
 
       document.getElementById('previewStage').innerHTML = `
@@ -1721,7 +1797,7 @@
     }
 
     // ================================================================
-    //  AUDITORÍA
+    //  AUDITORÍA (igual)
     // ================================================================
     function runAudit() {
       saveConfig();
